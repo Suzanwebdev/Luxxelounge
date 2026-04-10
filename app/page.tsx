@@ -32,22 +32,24 @@ export default async function HomePage() {
           <div className="absolute inset-0 z-10 bg-gradient-to-r from-black/50 via-black/25 to-black/5" />
           <div className="absolute inset-0 z-20 flex items-end">
             <Container className="p-2 sm:p-3 md:p-6">
-              <div className="max-w-[25.2rem] space-y-2 rounded-xl bg-black/35 p-2.5 text-white backdrop-blur-[2px] sm:space-y-2.5 sm:rounded-2xl sm:p-3 md:p-3.5">
-                <p className="text-[0.625rem] uppercase tracking-[0.2em] text-white/80 sm:text-xs">Luxury Interiors</p>
-                <h1 className="font-heading text-[1.05rem] leading-[1.1] sm:text-[1.2rem] md:text-[2.1rem]">
+              <div className="max-w-[25.2rem] space-y-2.5 rounded-xl bg-black/35 p-2.5 text-white backdrop-blur-[2px] sm:space-y-3 sm:rounded-2xl md:p-4">
+                <p className="text-[0.625rem] uppercase tracking-[0.2em] text-white/80 md:text-[0.6875rem]">
+                  Luxury Interiors
+                </p>
+                <h1 className="font-heading text-[1.05rem] leading-[1.08] sm:text-[1.2rem] md:text-[2.1rem]">
                   {homeData.heroTitle}
                 </h1>
-                <p className="max-w-md text-xs leading-relaxed text-white/85 sm:text-sm">
+                <p className="max-w-xl text-xs leading-snug text-white/85 sm:text-[0.8125rem]">
                   Curated furniture and decor for elegant homes. Crafted to feel exclusive, warm, and timeless.
                 </p>
-                <div className="flex flex-col gap-1.5 sm:flex-row sm:gap-2">
-                  <Button size="sm" className="w-full rounded-xl text-xs sm:w-auto">
+                <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
+                  <Button size="sm" className="h-8 px-3.5 text-xs sm:w-auto">
                     Shop New Arrivals
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
-                    className="w-full rounded-xl border-white/40 bg-white/10 text-xs text-white hover:bg-white/20 sm:w-auto"
+                    className="h-8 border-white/40 bg-white/10 px-3.5 text-xs text-white hover:bg-white/20 sm:w-auto"
                   >
                     Explore Collections
                   </Button>
