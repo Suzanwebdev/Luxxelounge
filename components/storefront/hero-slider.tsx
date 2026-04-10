@@ -11,6 +11,7 @@ const KEN_DURATION_S = 5.6;
 export type HeroSlide = {
   src: string;
   alt: string;
+  objectPosition?: string;
 };
 
 export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
@@ -45,16 +46,14 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
   return (
     <div className="relative h-[62vh] min-h-[380px] w-full md:h-[70vh] md:min-h-[500px]">
       {slides.map((slide, i) => {
-        const showFullImage = i === 1 || i === 2;
-        const useKenBurns = i === index && !skipKenBurns && !showFullImage;
-        const imageFit = showFullImage ? "object-contain" : "object-cover";
+        const useKenBurns = i === index && !skipKenBurns && i === 0;
+        const objectPosition = slide.objectPosition ?? "center";
 
         return (
         <div
           key={slide.src}
           className={cn(
             "absolute inset-0 overflow-hidden transition-opacity duration-700 ease-out",
-            showFullImage && "bg-zinc-950",
             i === index ? "z-[1] opacity-100" : "z-0 opacity-0"
           )}
           aria-hidden={i !== index}
@@ -71,7 +70,8 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
                 src={slide.src}
                 alt={slide.alt}
                 fill
-                className="object-cover object-center"
+                className="object-cover"
+                style={{ objectPosition }}
                 priority={i === 0}
                 sizes="100vw"
               />
@@ -81,7 +81,8 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
               src={slide.src}
               alt={slide.alt}
               fill
-              className={cn(imageFit, "object-center")}
+              className="object-cover"
+              style={{ objectPosition }}
               priority={i === 0}
               sizes="100vw"
             />

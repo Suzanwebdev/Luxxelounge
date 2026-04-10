@@ -3,21 +3,23 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ProductCard, CategoryChip, PromoBanner } from "@/components/storefront/cards";
-import { HeroSlider } from "@/components/storefront/hero-slider";
+import { HeroSlider, type HeroSlide } from "@/components/storefront/hero-slider";
 import { Container, Heading, Section } from "@/components/storefront/primitives";
 import { getHomeData } from "@/lib/storefront/queries";
 
-const HERO_SLIDES = [
+const HERO_SLIDES: HeroSlide[] = [
   { src: "/brand/hero-banner.png", alt: "Luxxelounge curated living room interior" },
   {
     src: "/brand/hero-slide-2.png",
-    alt: "Sculptural premium sofa in luxury setting"
+    alt: "Sculptural premium sofa in luxury setting",
+    objectPosition: "center 42%"
   },
   {
     src: "/brand/hero-slide-3.png",
-    alt: "Elegant neutral lounge interior with statement sofa"
+    alt: "Elegant neutral lounge interior with statement sofa",
+    objectPosition: "center 36%"
   }
-] as const;
+];
 
 export default async function HomePage() {
   const homeData = await getHomeData();
