@@ -58,12 +58,10 @@ export default async function HomePage() {
 
       <Section className="py-4">
         <Container>
-          <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-            <div className="flex w-max gap-3">
-              {HOMEPAGE_CATEGORY_CARDS.map(({ label, href }) => (
-                <CategoryChip key={label} name={label} href={href} />
-              ))}
-            </div>
+          <div className="flex flex-wrap justify-center gap-3">
+            {HOMEPAGE_CATEGORY_CARDS.map(({ label, href }) => (
+              <CategoryChip key={label} name={label} href={href} />
+            ))}
           </div>
         </Container>
       </Section>
