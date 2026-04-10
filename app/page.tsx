@@ -31,21 +31,23 @@ export default async function HomePage() {
           <HeroSlider slides={[...HERO_SLIDES]} />
           <div className="absolute inset-0 z-10 bg-gradient-to-r from-black/50 via-black/25 to-black/5" />
           <div className="absolute inset-0 z-20 flex items-end">
-            <Container className="p-3 sm:p-5 md:p-10">
-              <div className="max-w-2xl space-y-4 rounded-2xl bg-black/35 p-4 text-white backdrop-blur-[2px] sm:space-y-5 sm:rounded-3xl md:p-6">
-                <p className="text-xs uppercase tracking-[0.2em] text-white/80 md:text-sm">Luxury Interiors</p>
-                <h1 className="font-heading text-[1.75rem] leading-[1.08] sm:text-[2rem] md:text-[3.5rem]">
+            <Container className="p-2 sm:p-3 md:p-6">
+              <div className="max-w-[25.2rem] space-y-2 rounded-xl bg-black/35 p-2.5 text-white backdrop-blur-[2px] sm:space-y-2.5 sm:rounded-2xl sm:p-3 md:p-3.5">
+                <p className="text-[0.625rem] uppercase tracking-[0.2em] text-white/80 sm:text-xs">Luxury Interiors</p>
+                <h1 className="font-heading text-[1.05rem] leading-[1.1] sm:text-[1.2rem] md:text-[2.1rem]">
                   {homeData.heroTitle}
                 </h1>
-                <p className="max-w-xl text-sm text-white/85 sm:text-base">
+                <p className="max-w-md text-xs leading-relaxed text-white/85 sm:text-sm">
                   Curated furniture and decor for elegant homes. Crafted to feel exclusive, warm, and timeless.
                 </p>
-                <div className="flex flex-col gap-2.5 sm:flex-row sm:gap-3">
-                  <Button size="lg" className="w-full sm:w-auto">Shop New Arrivals</Button>
+                <div className="flex flex-col gap-1.5 sm:flex-row sm:gap-2">
+                  <Button size="sm" className="w-full rounded-xl text-xs sm:w-auto">
+                    Shop New Arrivals
+                  </Button>
                   <Button
-                    size="lg"
+                    size="sm"
                     variant="outline"
-                    className="w-full border-white/40 bg-white/10 text-white hover:bg-white/20 sm:w-auto"
+                    className="w-full rounded-xl border-white/40 bg-white/10 text-xs text-white hover:bg-white/20 sm:w-auto"
                   >
                     Explore Collections
                   </Button>
