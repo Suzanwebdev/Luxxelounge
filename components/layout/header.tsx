@@ -19,7 +19,7 @@ export function AnnouncementBar() {
 export function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
-      <Container className="flex h-16 items-center gap-2 md:h-20 md:gap-3">
+      <Container className="relative flex h-16 items-center gap-2 md:h-20 md:gap-3">
         <button className="rounded-xl p-2 hover:bg-accent md:hidden" aria-label="Open menu">
           <Menu className="h-5 w-5" />
         </button>
@@ -34,7 +34,7 @@ export function Navbar() {
             </p>
           </div>
         </Link>
-        <nav className="hidden items-center gap-6 pl-8 text-sm md:flex">
+        <nav className="hidden items-center gap-8 text-sm md:absolute md:left-1/2 md:flex md:-translate-x-1/2">
           <Link href="/shop" className="hover:text-primary">Shop</Link>
           <Link href="/collections/home-furniture" className="hover:text-primary">Catalog</Link>
           <Link href="/about" className="hover:text-primary">About</Link>
