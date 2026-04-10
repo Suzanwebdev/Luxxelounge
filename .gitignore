@@ -1,4 +1,5 @@
 .next/
+.luxxelounge-next-cache/
 node_modules/
 .env
 .env.local
