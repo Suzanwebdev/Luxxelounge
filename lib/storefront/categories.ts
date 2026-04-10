@@ -31,12 +31,9 @@ export const NAV_CATEGORY_LINKS: readonly { label: string; href: string }[] = [
   }))
 ];
 
-/** Homepage horizontal category cards — display labels match merchandising; hrefs map to shop filters / nav categories. */
-export const HOMEPAGE_CATEGORY_CARDS: readonly { label: string; href: string }[] = [
-  { label: "Home Furniture", href: "/shop?q=furniture" },
-  { label: "Accent Chairs", href: categoryShopHref("Lounge Chairs") },
-  { label: "Coffee Tables", href: categoryShopHref("Tables") },
-  { label: "Sofas", href: categoryShopHref("Sofas") },
-  { label: "Lighting", href: "/shop?q=lighting" },
-  { label: "Wall Decor", href: "/shop?q=decor" }
-];
+/** Homepage category row — same nine labels and shop links as the nav category list. */
+export const HOMEPAGE_CATEGORY_CARDS: readonly { label: string; href: string }[] =
+  STOREFRONT_CATEGORY_NAMES.map((name) => ({
+    label: name,
+    href: categoryShopHref(name)
+  }));
