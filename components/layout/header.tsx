@@ -23,15 +23,9 @@ export function Navbar() {
         <button className="rounded-xl p-2 hover:bg-accent md:hidden" aria-label="Open menu">
           <Menu className="h-5 w-5" />
         </button>
-        <Link href="/" className="flex shrink-0 items-center gap-3">
+        <Link href="/" className="flex shrink-0 items-center">
           <div className="relative h-9 w-9 overflow-hidden rounded-lg border border-border bg-white md:h-11 md:w-11 md:rounded-xl">
             <Image src="/brand/logo.png" alt="Luxxelounge logo" fill className="object-cover" />
-          </div>
-          <div>
-            <p className="font-heading text-lg text-primary md:text-xl">Luxxelounge</p>
-            <p className="-mt-0.5 hidden text-[10px] tracking-[0.18em] text-muted-foreground sm:block">
-              COUCH & INTERIORS
-            </p>
           </div>
         </Link>
         <nav className="hidden items-center gap-8 text-sm md:absolute md:left-1/2 md:flex md:-translate-x-1/2">
