@@ -44,16 +44,22 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
 
   return (
     <div className="relative h-[62vh] min-h-[380px] w-full md:h-[70vh] md:min-h-[500px]">
-      {slides.map((slide, i) => (
+      {slides.map((slide, i) => {
+        const showFullImage = i === 1 || i === 2;
+        const useKenBurns = i === index && !skipKenBurns && !showFullImage;
+        const imageFit = showFullImage ? "object-contain" : "object-cover";
+
+        return (
         <div
           key={slide.src}
           className={cn(
             "absolute inset-0 overflow-hidden transition-opacity duration-700 ease-out",
+            showFullImage && "bg-zinc-950",
             i === index ? "z-[1] opacity-100" : "z-0 opacity-0"
           )}
           aria-hidden={i !== index}
         >
-          {i === index && !skipKenBurns ? (
+          {useKenBurns ? (
             <motion.div
               key={`${i}-${motionTick}`}
               className="absolute inset-0"
@@ -75,13 +81,14 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
               src={slide.src}
               alt={slide.alt}
               fill
-              className="object-cover object-center"
+              className={cn(imageFit, "object-center")}
               priority={i === 0}
               sizes="100vw"
             />
           )}
         </div>
-      ))}
+        );
+      })}
 
       {count > 1 && (
         <>
