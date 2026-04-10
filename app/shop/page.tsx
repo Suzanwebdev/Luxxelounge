@@ -1,6 +1,7 @@
 import { ProductCard } from "@/components/storefront/cards";
 import { Container, Heading, Section } from "@/components/storefront/primitives";
 import { Input } from "@/components/ui/input";
+import { STOREFRONT_CATEGORY_NAMES } from "@/lib/storefront/categories";
 import { getShopProducts } from "@/lib/storefront/queries";
 
 type ShopPageProps = {
@@ -34,6 +35,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     })
     .filter((product) => {
       if (!category || category === "all products") return true;
+      if (product.category.toLowerCase() === category) return true;
       const haystack = `${product.name} ${product.description} ${product.category} ${(product.tags || []).join(" ")}`
         .toLowerCase();
       return haystack.includes(category);
@@ -49,8 +51,19 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           description="Browse premium furniture and decor with elegant filtering and sorting controls."
         />
         <form className="mb-6 grid gap-3 rounded-3xl border border-border bg-card p-4 md:grid-cols-4" method="get">
+          <datalist id="shop-category-suggestions">
+            {STOREFRONT_CATEGORY_NAMES.map((name) => (
+              <option key={name} value={name} />
+            ))}
+          </datalist>
           <Input name="q" defaultValue={params?.q || ""} placeholder="Search products..." />
-          <Input name="category" defaultValue={params?.category || ""} placeholder="Category (e.g. Sofas)" />
+          <Input
+            name="category"
+            list="shop-category-suggestions"
+            defaultValue={params?.category || ""}
+            placeholder="Category"
+            autoComplete="off"
+          />
           <Input placeholder="Price range" disabled />
           <select
             name="sort"

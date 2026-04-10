@@ -9,24 +9,7 @@ import { ChevronDown, Menu, Search, ShoppingBag, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/storefront/primitives";
 import { CartDrawer } from "@/components/layout/cart-drawer";
-
-function categoryHref(name: string) {
-  return `/shop?category=${encodeURIComponent(name)}`;
-}
-
-/** Ordered for browsing: whole catalog first, then living → dining → workspace → accents */
-const NAV_CATEGORY_LINKS = [
-  { label: "All Products", href: "/shop" },
-  { label: "Sofas", href: categoryHref("Sofas") },
-  { label: "Lounge Chairs", href: categoryHref("Lounge Chairs") },
-  { label: "Chairs", href: categoryHref("Chairs") },
-  { label: "Benches", href: categoryHref("Benches") },
-  { label: "Poufs", href: categoryHref("Poufs") },
-  { label: "Tables", href: categoryHref("Tables") },
-  { label: "Dining Set", href: categoryHref("Dining Set") },
-  { label: "Bar Stools", href: categoryHref("Bar Stools") },
-  { label: "Desk", href: categoryHref("Desk") }
-] as const;
+import { NAV_CATEGORY_LINKS } from "@/lib/storefront/categories";
 
 export function AnnouncementBar() {
   return (

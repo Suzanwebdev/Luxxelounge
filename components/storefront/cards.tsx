@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Heart, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BadgeSet, Price } from "@/components/storefront/primitives";
+import { categoryShopHref, isStorefrontCategory } from "@/lib/storefront/categories";
 import type { Product } from "@/lib/storefront/mock-data";
 
 export function ProductCard({ product }: { product: Product }) {
@@ -21,7 +22,16 @@ export function ProductCard({ product }: { product: Product }) {
       <div className="space-y-3 p-4">
         <BadgeSet tags={product.tags} />
         <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">{product.category}</p>
+          {isStorefrontCategory(product.category) ? (
+            <Link
+              href={categoryShopHref(product.category)}
+              className="block text-sm font-medium leading-tight text-muted-foreground transition hover:text-primary"
+            >
+              {product.category}
+            </Link>
+          ) : (
+            <p className="text-sm font-medium leading-tight text-muted-foreground">{product.category}</p>
+          )}
           <h3 className="font-heading text-xl">{product.name}</h3>
         </div>
         <Price price={product.price} compareAt={product.compareAt} />
@@ -41,7 +51,7 @@ export function ProductCard({ product }: { product: Product }) {
 
 export function CategoryChip({ name, href }: { name: string; href?: string }) {
   const classes =
-    "group flex aspect-square w-28 shrink-0 items-center justify-center rounded-2xl border border-border bg-card p-3 text-center transition hover:-translate-y-0.5 hover:border-primary/30 hover:bg-accent/30 sm:w-32 md:w-36";
+    "group luxury-panel flex aspect-square w-28 shrink-0 items-center justify-center border border-border/60 p-3 text-center shadow-none transition hover:-translate-y-0.5 hover:border-primary/30 hover:bg-accent/30 sm:w-32 md:w-36";
 
   if (href) {
     return (

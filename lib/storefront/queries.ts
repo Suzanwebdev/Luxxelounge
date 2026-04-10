@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { STOREFRONT_CATEGORY_NAMES } from "@/lib/storefront/categories";
 import {
   categoryChips as fallbackCategoryChips,
   homeCollections as fallbackCollections,
@@ -40,7 +41,7 @@ function mapRowToProduct(row: {
     rating: Number(row.rating || 0),
     reviews: row.total_reviews || 0,
     image: row.product_images?.[0]?.image_url || fallbackProducts[0].image,
-    category: cat?.name || "Home Furnitures",
+    category: cat?.name || STOREFRONT_CATEGORY_NAMES[0],
     colors: ["Champagne Beige", "Walnut"],
     sizes: ["Standard", "Large"],
     stock: row.stock_qty || 0,

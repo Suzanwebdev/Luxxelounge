@@ -1,3 +1,5 @@
+import { STOREFRONT_CATEGORY_NAMES } from "./categories";
+
 export type ProductTag = "New" | "Best Seller" | "Limited" | "Sale";
 
 export type Product = {
@@ -17,14 +19,7 @@ export type Product = {
   description: string;
 };
 
-export const categoryChips = [
-  "Home Furniture",
-  "Accent Chairs",
-  "Coffee Tables",
-  "Sofas",
-  "Lighting",
-  "Wall Decor"
-];
+export const categoryChips: string[] = [...STOREFRONT_CATEGORY_NAMES];
 
 export const products: Product[] = [
   {
@@ -53,7 +48,7 @@ export const products: Product[] = [
     reviews: 42,
     image:
       "https://images.unsplash.com/photo-1581539250439-c96689b516dd?auto=format&fit=crop&w=1400&q=80",
-    category: "Coffee Tables",
+    category: "Tables",
     colors: ["Ivory Stone"],
     sizes: ["120cm"],
     stock: 11,
@@ -69,7 +64,7 @@ export const products: Product[] = [
     reviews: 58,
     image:
       "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&w=1400&q=80",
-    category: "Accent Chairs",
+    category: "Lounge Chairs",
     colors: ["Warm Taupe", "Olive"],
     sizes: ["Single"],
     stock: 3,
@@ -78,20 +73,20 @@ export const products: Product[] = [
   },
   {
     id: "p-4",
-    slug: "aurum-floor-lamp",
-    name: "Aurum Floor Lamp",
+    slug: "lunar-leather-bar-stool",
+    name: "Lunar Leather Bar Stool",
     price: 2100,
     compareAt: 2400,
     rating: 4.6,
     reviews: 31,
     image:
-      "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?auto=format&fit=crop&w=1400&q=80",
-    category: "Lighting",
-    colors: ["Matte Gold"],
-    sizes: ["180cm"],
+      "https://images.unsplash.com/photo-1503602642458-75644789aafb?auto=format&fit=crop&w=1400&q=80",
+    category: "Bar Stools",
+    colors: ["Matte Black", "Brass"],
+    sizes: ["65cm seat"],
     stock: 15,
     tags: ["Sale"],
-    description: "Soft ambient glow with an elevated metal finish."
+    description: "Quilted leather seat with a slim metal frame for elevated counter dining."
   },
   {
     id: "p-5",
@@ -102,7 +97,7 @@ export const products: Product[] = [
     reviews: 40,
     image:
       "https://images.unsplash.com/photo-1616627452099-ecfdd6f8cb9f?auto=format&fit=crop&w=1400&q=80",
-    category: "Home Furniture",
+    category: "Tables",
     colors: ["Walnut"],
     sizes: ["140cm"],
     stock: 7,
@@ -118,7 +113,7 @@ export const products: Product[] = [
     reviews: 19,
     image:
       "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1400&q=80",
-    category: "Home Furniture",
+    category: "Poufs",
     colors: ["Sand"],
     sizes: ["Standard"],
     stock: 20,

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ProductCard, CategoryChip, PromoBanner } from "@/components/storefront/cards";
+import { categoryShopHref } from "@/lib/storefront/categories";
 import { HeroSlider, type HeroSlide } from "@/components/storefront/hero-slider";
 import { Container, Heading, Section } from "@/components/storefront/primitives";
 import { getHomeData } from "@/lib/storefront/queries";
@@ -60,7 +61,7 @@ export default async function HomePage() {
           <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
             <div className="flex w-max gap-3">
             {homeData.categoryChips.map((chip) => (
-              <CategoryChip key={chip} name={chip} href={`/shop?category=${encodeURIComponent(chip)}`} />
+              <CategoryChip key={chip} name={chip} href={categoryShopHref(chip)} />
             ))}
             </div>
           </div>
