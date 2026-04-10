@@ -15,15 +15,10 @@ export default async function HomePage() {
       <Section className="pb-6 pt-8 md:pt-10">
         <Container>
           <div className="relative overflow-hidden rounded-[2rem] border border-border bg-black/10">
+            <div className="relative h-[62vh] min-h-[380px] w-full md:h-[70vh] md:min-h-[500px]">
+              <Image src={heroImage} alt="Luxxelounge hero interior" fill className="object-cover object-center" priority />
+            </div>
             <div className="absolute inset-0 z-10 bg-gradient-to-r from-black/50 via-black/25 to-black/5" />
-            <Image
-              src={heroImage}
-              alt="Luxxelounge hero interior"
-              width={2200}
-              height={1200}
-              className="h-[62vh] min-h-[380px] w-full object-cover md:h-[68vh] md:min-h-[460px]"
-              priority
-            />
             <div className="absolute inset-0 z-20 flex items-end p-3 sm:p-5 md:p-10">
               <div className="max-w-2xl space-y-4 rounded-2xl bg-black/35 p-4 text-white backdrop-blur-[2px] sm:space-y-5 sm:rounded-3xl md:p-6">
                 <p className="text-xs uppercase tracking-[0.2em] text-white/80 md:text-sm">Luxury Interiors</p>
