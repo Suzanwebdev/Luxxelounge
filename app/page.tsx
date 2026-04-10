@@ -48,7 +48,7 @@ export default async function HomePage() {
         <Container>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {homeData.categoryChips.map((chip) => (
-              <CategoryChip key={chip} name={chip} />
+              <CategoryChip key={chip} name={chip} href={`/shop?category=${encodeURIComponent(chip)}`} />
             ))}
           </div>
         </Container>
