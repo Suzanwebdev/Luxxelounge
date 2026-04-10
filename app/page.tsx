@@ -46,12 +46,10 @@ export default async function HomePage() {
 
       <Section className="py-4">
         <Container>
-          <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-            <div className="flex w-max gap-2 sm:w-auto sm:flex-wrap">
-              {homeData.categoryChips.map((chip) => (
-                <CategoryChip key={chip} name={chip} />
-              ))}
-            </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            {homeData.categoryChips.map((chip) => (
+              <CategoryChip key={chip} name={chip} />
+            ))}
           </div>
         </Container>
       </Section>
