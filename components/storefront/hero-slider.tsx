@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const AUTO_MS = 6000;
@@ -53,23 +52,6 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
 
       {count > 1 && (
         <>
-          <button
-            type="button"
-            onClick={() => go(-1)}
-            className="absolute left-3 top-1/2 z-[3] -translate-y-1/2 rounded-full border border-white/25 bg-black/20 p-2 text-white backdrop-blur-sm transition hover:bg-black/35 md:left-5"
-            aria-label="Previous slide"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => go(1)}
-            className="absolute right-3 top-1/2 z-[3] -translate-y-1/2 rounded-full border border-white/25 bg-black/20 p-2 text-white backdrop-blur-sm transition hover:bg-black/35 md:right-5"
-            aria-label="Next slide"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
-
           <div
             className="absolute bottom-4 left-1/2 z-[3] flex -translate-x-1/2 gap-2 md:bottom-6"
             role="tablist"
