@@ -64,6 +64,8 @@ function useOrbitContainerDims(containerRef: React.RefObject<HTMLElement | null>
     const ro = new ResizeObserver(() => measure());
     ro.observe(el);
     return () => ro.disconnect();
+    // containerRef is stable; we only need mount + one observer per container element
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ref object identity is fixed
   }, []);
 
   return dims;
@@ -141,6 +143,7 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
   const FRONT_EPS = 0.04;
 
   const applyTransforms = React.useCallback(() => {
+    if (n === 0) return;
     const { rx, rz } = dims;
     const rot = rotationRef.current;
     const neighbor = (2 * Math.PI) / n;
@@ -213,6 +216,7 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
   }, [dims, n]);
 
   React.useLayoutEffect(() => {
+    if (n === 0) return;
     if (reducedMotion) {
       rotationRef.current = rotationForIndexAtFront(0, n);
     }
@@ -220,7 +224,7 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
   }, [applyTransforms, reducedMotion, n]);
 
   React.useEffect(() => {
-    if (reducedMotion) return;
+    if (reducedMotion || n === 0) return;
 
     let last = performance.now();
 
@@ -334,6 +338,10 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
       bringIndexToFront(i);
     }
   };
+
+  if (n === 0) {
+    return null;
+  }
 
   return (
     <section

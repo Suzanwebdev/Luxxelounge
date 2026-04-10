@@ -51,6 +51,7 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
 
   const go = React.useCallback(
     (dir: number) => {
+      if (count < 1) return;
       setIndex((i) => (i + dir + count) % count);
     },
     [count]

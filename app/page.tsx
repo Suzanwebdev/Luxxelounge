@@ -84,8 +84,8 @@ export default async function HomePage() {
         <Container>
           <Heading eyebrow="Best Sellers" title="Most Loved Pieces" />
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-            {homeData.bestSellers.concat(homeData.bestSellers.slice(0, 2)).map((product, index) => (
-              <ProductCard key={`${product.id}-${index}`} product={product} />
+            {homeData.bestSellers.slice(0, 8).map((product) => (
+              <ProductCard key={product.id} product={product} />
             ))}
           </div>
         </Container>
