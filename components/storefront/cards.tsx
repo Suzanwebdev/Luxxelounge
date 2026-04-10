@@ -51,19 +51,23 @@ export function ProductCard({ product }: { product: Product }) {
 
 export function CategoryChip({ name, href }: { name: string; href?: string }) {
   const classes =
-    "group luxury-panel flex aspect-square w-28 shrink-0 items-center justify-center border border-border/60 p-3 text-center shadow-none transition hover:-translate-y-0.5 hover:border-primary/30 hover:bg-accent/30 sm:w-32 md:w-36";
+    "group flex aspect-square w-[7.25rem] shrink-0 items-center justify-center rounded-2xl border border-border bg-white p-3 text-center shadow-none transition-colors duration-200 hover:border-[hsl(38,12%,72%)] sm:w-32 md:w-[9.25rem]";
+
+  const label = (
+    <p className="font-body text-balance text-sm font-medium leading-snug text-foreground">{name}</p>
+  );
 
   if (href) {
     return (
       <Link href={href} className={classes}>
-        <p className="font-medium leading-tight text-foreground">{name}</p>
+        {label}
       </Link>
     );
   }
 
   return (
     <button className={classes} type="button">
-      <p className="font-medium leading-tight text-foreground">{name}</p>
+      {label}
     </button>
   );
 }

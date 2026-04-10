@@ -30,3 +30,13 @@ export const NAV_CATEGORY_LINKS: readonly { label: string; href: string }[] = [
     href: categoryShopHref(name)
   }))
 ];
+
+/** Homepage horizontal category cards — display labels match merchandising; hrefs map to shop filters / nav categories. */
+export const HOMEPAGE_CATEGORY_CARDS: readonly { label: string; href: string }[] = [
+  { label: "Home Furniture", href: "/shop?q=furniture" },
+  { label: "Accent Chairs", href: categoryShopHref("Lounge Chairs") },
+  { label: "Coffee Tables", href: categoryShopHref("Tables") },
+  { label: "Sofas", href: categoryShopHref("Sofas") },
+  { label: "Lighting", href: "/shop?q=lighting" },
+  { label: "Wall Decor", href: "/shop?q=decor" }
+];
