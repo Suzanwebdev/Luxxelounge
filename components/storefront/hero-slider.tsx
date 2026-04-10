@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -14,21 +13,23 @@ export type HeroSlide = {
   objectPosition?: string;
 };
 
-/** Next/Image `fill` wraps the img in a span; without stretching that span, portrait assets letterbox inside the hero. */
+/**
+ * Plain <img> so portrait slides get true edge-to-edge `object-fit: cover`.
+ * `next/image` + `fill` kept letterboxing these assets in production despite wrapper tweaks.
+ */
 function HeroSlideImage({ slide, priority }: { slide: HeroSlide; priority: boolean }) {
   const objectPosition = slide.objectPosition ?? "center";
   return (
-    <div className="relative size-full [&>span]:!absolute [&>span]:inset-0 [&>span]:block [&>span]:size-full">
-      <Image
-        src={slide.src}
-        alt={slide.alt}
-        fill
-        className="!h-full !w-full max-w-none origin-center scale-[1.1] object-cover"
-        style={{ objectFit: "cover", objectPosition }}
-        priority={priority}
-        sizes="100vw"
-      />
-    </div>
+    // eslint-disable-next-line @next/next/no-img-element -- hero needs predictable cover; local /public assets only
+    <img
+      src={slide.src}
+      alt={slide.alt}
+      className="absolute inset-0 !h-full !w-full max-w-none origin-center scale-[1.1] object-cover"
+      style={{ objectFit: "cover", objectPosition }}
+      loading={priority ? "eager" : "lazy"}
+      {...(priority ? { fetchPriority: "high" as const } : {})}
+      decoding="async"
+    />
   );
 }
 
@@ -65,7 +66,6 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
     <div className="relative h-[min(78vh,920px)] min-h-[400px] w-full md:h-[min(82vh,960px)] md:min-h-[520px]">
       {slides.map((slide, i) => {
         const useKenBurns = i === index && !skipKenBurns && i === 0;
-        const objectPosition = slide.objectPosition ?? "center";
 
         return (
         <div
