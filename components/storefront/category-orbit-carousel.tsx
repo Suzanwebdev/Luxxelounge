@@ -92,6 +92,11 @@ function rotationForIndexAtFront(i: number, n: number): number {
   return Math.PI / 2 - (2 * Math.PI * i) / n;
 }
 
+function smoothstep01(t: number): number {
+  const x = Math.max(0, Math.min(1, t));
+  return x * x * (3 - 2 * x);
+}
+
 type CategoryOrbitCarouselProps = {
   items: readonly OrbitCategoryItem[];
   className?: string;
@@ -99,6 +104,7 @@ type CategoryOrbitCarouselProps = {
 
 /**
  * Premium 3D oval orbit for category cards — GPU transforms, rAF loop, drag + hover pause + click-to-front.
+ * The horizontally centered card (tie-break: nearer in Z) is always the hero: largest scale, full opacity, no blur, top z-index.
  */
 export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouselProps) {
   const n = items.length;
@@ -135,19 +141,30 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
   const FRONT_EPS = 0.04;
 
   const applyTransforms = React.useCallback(() => {
-    const { rx, rz, card } = dims;
+    const { rx, rz } = dims;
     const rot = rotationRef.current;
-    let frontZ = -Infinity;
-    let frontI = -1;
+    const neighbor = (2 * Math.PI) / n;
+
+    let focusI = 0;
+    let minAbsX = Infinity;
+    let bestZAtMinX = -Infinity;
 
     for (let i = 0; i < n; i++) {
       const angle = (2 * Math.PI * i) / n + rot;
+      const x = rx * Math.cos(angle);
       const z = rz * Math.sin(angle);
-      if (z > frontZ) {
-        frontZ = z;
-        frontI = i;
+      const ax = Math.abs(x);
+      if (ax < minAbsX - 1e-9) {
+        minAbsX = ax;
+        bestZAtMinX = z;
+        focusI = i;
+      } else if (Math.abs(ax - minAbsX) <= 1e-9 && z > bestZAtMinX) {
+        bestZAtMinX = z;
+        focusI = i;
       }
     }
+
+    const angleFocus = (2 * Math.PI * focusI) / n + rot;
 
     for (let i = 0; i < n; i++) {
       const el = itemRefs.current[i];
@@ -156,23 +173,38 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
       const angle = (2 * Math.PI * i) / n + rot;
       const x = rx * Math.cos(angle);
       const z = rz * Math.sin(angle);
-      const tClamped = rz > 0.001 ? Math.max(0, Math.min(1, (z + rz) / (2 * rz))) : 0.5;
-      const scale = 0.78 + tClamped * 0.38;
-      const opacity = 0.52 + tClamped * 0.48;
-      const blurPx = (1 - tClamped) * 1.25;
-      const isFront = i === frontI && z > rz * 0.32;
+
+      let da = Math.abs(angle - angleFocus);
+      if (da > Math.PI) da = 2 * Math.PI - da;
+      const tDist = smoothstep01(Math.min(1, da / (neighbor * 0.52)));
+
+      const isCenter = i === focusI;
+      let scale = 1.22 * (1 - tDist) + 0.78 * tDist;
+      let opacity = 1 * (1 - tDist) + 0.56 * tDist;
+      let blurPx = tDist * 2.2;
+
+      if (isCenter) {
+        scale = 1.22;
+        opacity = 1;
+        blurPx = 0;
+      } else {
+        scale = Math.min(0.9, Math.max(0.75, scale));
+        opacity = Math.min(0.8, Math.max(0.5, opacity));
+      }
+
+      const zLayer = isCenter ? 320 : Math.round(60 + z * 0.35);
 
       el.style.transform = `translate3d(${x.toFixed(2)}px, 0, ${z.toFixed(2)}px) scale(${scale.toFixed(4)})`;
       el.style.opacity = opacity.toFixed(3);
-      el.style.zIndex = String(Math.round(40 + z));
-      el.style.filter = blurPx > 0.35 ? `blur(${blurPx.toFixed(2)}px)` : "none";
-      el.dataset.front = isFront ? "true" : "false";
+      el.style.zIndex = String(zLayer);
+      el.style.filter = blurPx > 0.4 ? `blur(${blurPx.toFixed(2)}px)` : "none";
+      el.dataset.front = isCenter ? "true" : "false";
 
       const surface = cardSurfaceRefs.current[i];
       if (surface) {
-        if (isFront) {
+        if (isCenter) {
           surface.style.boxShadow =
-            "0 10px 30px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04), 0 0 42px -8px rgba(180, 150, 110, 0.22)";
+            "0 10px 30px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04), 0 0 48px -6px rgba(180, 150, 110, 0.28)";
         } else {
           surface.style.boxShadow = "0 10px 30px rgba(0,0,0,0.06)";
         }
