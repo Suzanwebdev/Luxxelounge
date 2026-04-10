@@ -4,7 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { Menu, Search, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Container } from "@/components/storefront/primitives";
 import { CartDrawer } from "@/components/layout/cart-drawer";
 
@@ -33,10 +32,11 @@ export function Navbar() {
           <Link href="/collections/home-furniture" className="hover:text-primary">Catalog</Link>
           <Link href="/about" className="hover:text-primary">About</Link>
         </nav>
-        <div className="ml-auto hidden w-full max-w-sm md:block">
-          <Input placeholder="Search furniture, decor, collections..." />
-        </div>
-        <Button variant="ghost" size="sm" className="md:hidden">
+        <Button
+          variant="ghost"
+          className="ml-auto h-10 w-10 rounded-xl border border-border p-0 md:h-11 md:w-11 md:rounded-2xl"
+          aria-label="Search products"
+        >
           <Search className="h-4 w-4" />
         </Button>
         <CartDrawer triggerClassName="rounded-xl border border-border px-2.5 py-2 md:rounded-2xl md:px-3">
