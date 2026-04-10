@@ -10,16 +10,22 @@ import { Button } from "@/components/ui/button";
 import { Container } from "@/components/storefront/primitives";
 import { CartDrawer } from "@/components/layout/cart-drawer";
 
-const NAV_CATEGORIES = [
-  "Sofas",
-  "Chairs",
-  "Lounge Chairs",
-  "Tables",
-  "Bar Stools",
-  "Dining Set",
-  "Desk",
-  "Poufs",
-  "Benches"
+function categoryHref(name: string) {
+  return `/shop?category=${encodeURIComponent(name)}`;
+}
+
+/** Ordered for browsing: whole catalog first, then living → dining → workspace → accents */
+const NAV_CATEGORY_LINKS = [
+  { label: "All Products", href: "/shop" },
+  { label: "Sofas", href: categoryHref("Sofas") },
+  { label: "Lounge Chairs", href: categoryHref("Lounge Chairs") },
+  { label: "Chairs", href: categoryHref("Chairs") },
+  { label: "Benches", href: categoryHref("Benches") },
+  { label: "Poufs", href: categoryHref("Poufs") },
+  { label: "Tables", href: categoryHref("Tables") },
+  { label: "Dining Set", href: categoryHref("Dining Set") },
+  { label: "Bar Stools", href: categoryHref("Bar Stools") },
+  { label: "Desk", href: categoryHref("Desk") }
 ] as const;
 
 export function AnnouncementBar() {
@@ -81,14 +87,18 @@ export function Navbar() {
                     Categories
                   </p>
                   <div className="flex flex-col gap-0.5 pb-2">
-                    {NAV_CATEGORIES.map((category) => (
+                    {NAV_CATEGORY_LINKS.map((item, index) => (
                       <Link
-                        key={category}
-                        href={`/shop?category=${encodeURIComponent(category)}`}
-                        className="rounded-xl px-3 py-2 text-muted-foreground hover:bg-accent hover:text-foreground"
+                        key={item.label}
+                        href={item.href}
+                        className={
+                          index === 0
+                            ? "rounded-xl px-3 py-2 font-medium text-foreground hover:bg-accent"
+                            : "rounded-xl px-3 py-2 text-muted-foreground hover:bg-accent hover:text-foreground"
+                        }
                         onClick={() => setMobileOpen(false)}
                       >
-                        {category}
+                        {item.label}
                       </Link>
                     ))}
                   </div>
@@ -116,14 +126,18 @@ export function Navbar() {
               Categories
               <ChevronDown className="h-3.5 w-3.5" />
             </button>
-            <div className="invisible absolute left-1/2 top-full z-50 mt-3 w-52 -translate-x-1/2 rounded-2xl border border-border bg-card p-2 opacity-0 shadow-sm transition-all group-hover:visible group-hover:opacity-100">
-              {NAV_CATEGORIES.map((category) => (
+            <div className="invisible absolute left-1/2 top-full z-50 mt-3 w-56 -translate-x-1/2 rounded-2xl border border-border bg-card p-2 opacity-0 shadow-sm transition-all group-hover:visible group-hover:opacity-100">
+              {NAV_CATEGORY_LINKS.map((item, index) => (
                 <Link
-                  key={category}
-                  href={`/shop?category=${encodeURIComponent(category)}`}
-                  className="block rounded-xl px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+                  key={item.label}
+                  href={item.href}
+                  className={
+                    index === 0
+                      ? "block rounded-xl px-3 py-2 text-sm font-medium text-foreground hover:bg-accent"
+                      : "block rounded-xl px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+                  }
                 >
-                  {category}
+                  {item.label}
                 </Link>
               ))}
             </div>
