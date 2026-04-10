@@ -14,6 +14,24 @@ export type HeroSlide = {
   objectPosition?: string;
 };
 
+/** Next/Image `fill` wraps the img in a span; without stretching that span, portrait assets letterbox inside the hero. */
+function HeroSlideImage({ slide, priority }: { slide: HeroSlide; priority: boolean }) {
+  const objectPosition = slide.objectPosition ?? "center";
+  return (
+    <div className="relative size-full [&>span]:!absolute [&>span]:inset-0 [&>span]:block [&>span]:size-full">
+      <Image
+        src={slide.src}
+        alt={slide.alt}
+        fill
+        className="!h-full !w-full max-w-none origin-center scale-[1.1] object-cover"
+        style={{ objectFit: "cover", objectPosition }}
+        priority={priority}
+        sizes="100vw"
+      />
+    </div>
+  );
+}
+
 export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
   const [index, setIndex] = React.useState(0);
   const [motionTick, setMotionTick] = React.useState(0);
@@ -66,26 +84,10 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
               animate={{ scale: 1.02, x: "0.6%", y: "-0.35%" }}
               transition={{ duration: KEN_DURATION_S, ease: [0.22, 1, 0.36, 1] }}
             >
-              <Image
-                src={slide.src}
-                alt={slide.alt}
-                fill
-                className="origin-center scale-[1.1] object-cover"
-                style={{ objectFit: "cover", objectPosition }}
-                priority={i === 0}
-                sizes="100vw"
-              />
+              <HeroSlideImage slide={slide} priority={i === 0} />
             </motion.div>
           ) : (
-            <Image
-              src={slide.src}
-              alt={slide.alt}
-              fill
-              className="origin-center scale-[1.1] object-cover"
-              style={{ objectFit: "cover", objectPosition }}
-              priority={i === 0}
-              sizes="100vw"
-            />
+            <HeroSlideImage slide={slide} priority={i === 0} />
           )}
         </div>
         );
