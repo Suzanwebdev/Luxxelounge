@@ -41,21 +41,19 @@ export function ProductCard({ product }: { product: Product }) {
 
 export function CategoryChip({ name, href }: { name: string; href?: string }) {
   const classes =
-    "group block w-full rounded-2xl border border-border bg-card px-4 py-4 text-left transition hover:-translate-y-0.5 hover:border-primary/30 hover:bg-accent/30";
+    "group flex aspect-square w-28 shrink-0 items-center justify-center rounded-2xl border border-border bg-card p-3 text-center transition hover:-translate-y-0.5 hover:border-primary/30 hover:bg-accent/30 sm:w-32 md:w-36";
 
   if (href) {
     return (
       <Link href={href} className={classes}>
-        <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Category</p>
-        <p className="mt-1 font-medium text-foreground">{name}</p>
+        <p className="font-medium leading-tight text-foreground">{name}</p>
       </Link>
     );
   }
 
   return (
     <button className={classes} type="button">
-      <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Category</p>
-      <p className="mt-1 font-medium text-foreground">{name}</p>
+      <p className="font-medium leading-tight text-foreground">{name}</p>
     </button>
   );
 }
