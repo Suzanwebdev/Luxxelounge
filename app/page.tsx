@@ -1,22 +1,31 @@
-import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ProductCard, CategoryChip, PromoBanner } from "@/components/storefront/cards";
+import { HeroSlider } from "@/components/storefront/hero-slider";
 import { Container, Heading, Section } from "@/components/storefront/primitives";
 import { getHomeData } from "@/lib/storefront/queries";
 
+const HERO_SLIDES = [
+  { src: "/brand/hero-banner.png", alt: "Luxxelounge curated living room interior" },
+  {
+    src: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=2400&q=80",
+    alt: "Refined lounge with warm lighting and elegant furnishings"
+  },
+  {
+    src: "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=2400&q=80",
+    alt: "Sophisticated dining and living space with premium details"
+  }
+] as const;
+
 export default async function HomePage() {
   const homeData = await getHomeData();
-  const heroImage = "/brand/hero-banner.png";
   return (
     <>
       <Section className="pb-6 pt-8 md:pt-10">
         <div className="relative w-full overflow-hidden bg-black/10">
-          <div className="relative h-[62vh] min-h-[380px] w-full md:h-[70vh] md:min-h-[500px]">
-            <Image src={heroImage} alt="Luxxelounge hero interior" fill className="object-cover object-center" priority />
-          </div>
+          <HeroSlider slides={[...HERO_SLIDES]} />
           <div className="absolute inset-0 z-10 bg-gradient-to-r from-black/50 via-black/25 to-black/5" />
           <div className="absolute inset-0 z-20 flex items-end">
             <Container className="p-3 sm:p-5 md:p-10">
