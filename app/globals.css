@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 38 18% 95%;
+  --foreground: 220 18% 14%;
+  --card: 0 0% 100%;
+  --card-foreground: 220 18% 14%;
+  --primary: 40 45% 49%;
+  --primary-foreground: 45 60% 98%;
+  --accent: 36 30% 89%;
+  --accent-foreground: 220 18% 14%;
+  --muted: 40 18% 93%;
+  --muted-foreground: 220 8% 35%;
+  --border: 38 20% 83%;
+  --emerald: 163 60% 30%;
+}
+
+* {
+  @apply border-border;
+}
+
+html,
+body {
+  @apply bg-background text-foreground font-body antialiased;
+}
+
+a {
+  @apply transition-colors;
+}
+
+.luxury-panel {
+  @apply rounded-xl3 bg-card shadow-card;
+}
