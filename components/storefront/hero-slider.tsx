@@ -44,7 +44,7 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
   }, [count, go]);
 
   return (
-    <div className="relative h-[62vh] min-h-[380px] w-full md:h-[70vh] md:min-h-[500px]">
+    <div className="relative h-[min(78vh,920px)] min-h-[400px] w-full md:h-[min(82vh,960px)] md:min-h-[520px]">
       {slides.map((slide, i) => {
         const useKenBurns = i === index && !skipKenBurns && i === 0;
         const objectPosition = slide.objectPosition ?? "center";
@@ -53,7 +53,7 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
         <div
           key={slide.src}
           className={cn(
-            "absolute inset-0 overflow-hidden transition-opacity duration-700 ease-out",
+            "absolute inset-0 size-full min-h-0 overflow-hidden transition-opacity duration-700 ease-out",
             i === index ? "z-[1] opacity-100" : "z-0 opacity-0"
           )}
           aria-hidden={i !== index}
@@ -61,7 +61,7 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
           {useKenBurns ? (
             <motion.div
               key={`${i}-${motionTick}`}
-              className="absolute inset-0"
+              className="absolute inset-0 size-full min-h-0"
               initial={{ scale: 1.09, x: "-0.8%", y: "0.2%" }}
               animate={{ scale: 1.02, x: "0.6%", y: "-0.35%" }}
               transition={{ duration: KEN_DURATION_S, ease: [0.22, 1, 0.36, 1] }}
@@ -70,8 +70,8 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
                 src={slide.src}
                 alt={slide.alt}
                 fill
-                className="object-cover"
-                style={{ objectPosition }}
+                className="object-cover object-center"
+                style={{ objectFit: "cover", objectPosition }}
                 priority={i === 0}
                 sizes="100vw"
               />
@@ -81,8 +81,8 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
               src={slide.src}
               alt={slide.alt}
               fill
-              className="object-cover"
-              style={{ objectPosition }}
+              className="object-cover object-center"
+              style={{ objectFit: "cover", objectPosition }}
               priority={i === 0}
               sizes="100vw"
             />
