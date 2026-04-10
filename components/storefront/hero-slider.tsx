@@ -61,7 +61,7 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
           {useKenBurns ? (
             <motion.div
               key={`${i}-${motionTick}`}
-              className="absolute inset-0 size-full min-h-0"
+              className="absolute inset-0 size-full min-h-0 overflow-hidden"
               initial={{ scale: 1.09, x: "-0.8%", y: "0.2%" }}
               animate={{ scale: 1.02, x: "0.6%", y: "-0.35%" }}
               transition={{ duration: KEN_DURATION_S, ease: [0.22, 1, 0.36, 1] }}
@@ -70,7 +70,7 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
                 src={slide.src}
                 alt={slide.alt}
                 fill
-                className="object-cover object-center"
+                className="origin-center scale-[1.1] object-cover"
                 style={{ objectFit: "cover", objectPosition }}
                 priority={i === 0}
                 sizes="100vw"
@@ -81,7 +81,7 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
               src={slide.src}
               alt={slide.alt}
               fill
-              className="object-cover object-center"
+              className="origin-center scale-[1.1] object-cover"
               style={{ objectFit: "cover", objectPosition }}
               priority={i === 0}
               sizes="100vw"

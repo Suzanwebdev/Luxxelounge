@@ -26,7 +26,7 @@ export default async function HomePage() {
   return (
     <>
       <Section className="pb-6 pt-0">
-        <div className="relative w-full overflow-hidden bg-black">
+        <div className="relative w-full overflow-hidden">
           <HeroSlider slides={[...HERO_SLIDES]} />
           <div className="absolute inset-0 z-10 bg-gradient-to-r from-black/50 via-black/25 to-black/5" />
           <div className="absolute inset-0 z-20 flex items-end">
