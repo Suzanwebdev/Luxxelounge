@@ -17,20 +17,53 @@ type OrbitDims = {
   card: number;
 };
 
-function useOrbitDimensions(): OrbitDims {
-  const [dims, setDims] = React.useState<OrbitDims>({ rx: 200, rz: 48, card: 104 });
+/** Fit ellipse + card size to the actual carousel container (mobile + desktop). */
+function dimsForContainerWidth(w: number): OrbitDims {
+  const width = Math.max(w, 260);
+  let card: number;
+  let rx: number;
+  if (width < 360) {
+    card = Math.round(Math.min(80, Math.max(68, width * 0.21)));
+    rx = Math.min((width - 8) * 0.4, 108);
+  } else if (width < 480) {
+    card = 76;
+    rx = Math.min(width * 0.38, 120);
+  } else if (width < 640) {
+    card = 86;
+    rx = Math.min(width * 0.38, 138);
+  } else if (width < 1024) {
+    card = 100;
+    rx = Math.min(width * 0.36, 190);
+  } else {
+    card = 116;
+    rx = Math.min(width * 0.34, 248);
+  }
+  const rz = rx * (width < 640 ? 0.3 : 0.24);
+  return {
+    rx: Math.max(rx, 64),
+    rz: Math.max(rz, 18),
+    card
+  };
+}
 
-  React.useEffect(() => {
-    const update = () => {
-      const w = typeof window !== "undefined" ? window.innerWidth : 1024;
-      if (w < 480) setDims({ rx: 92, rz: 26, card: 76 });
-      else if (w < 640) setDims({ rx: 118, rz: 32, card: 88 });
-      else if (w < 1024) setDims({ rx: 168, rz: 44, card: 100 });
-      else setDims({ rx: 240, rz: 56, card: 116 });
+function useOrbitContainerDims(containerRef: React.RefObject<HTMLElement | null>) {
+  const [dims, setDims] = React.useState<OrbitDims>(() =>
+    typeof window !== "undefined" ? dimsForContainerWidth(window.innerWidth - 32) : { rx: 100, rz: 28, card: 80 }
+  );
+
+  React.useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      const w = el.clientWidth;
+      setDims(dimsForContainerWidth(w));
     };
-    update();
-    window.addEventListener("resize", update, { passive: true });
-    return () => window.removeEventListener("resize", update);
+
+    measure();
+    const ro = new ResizeObserver(() => measure());
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
 
   return dims;
@@ -69,8 +102,22 @@ type CategoryOrbitCarouselProps = {
  */
 export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouselProps) {
   const n = items.length;
-  const dims = useOrbitDimensions();
+  const orbitContainerRef = React.useRef<HTMLDivElement | null>(null);
+  const dims = useOrbitContainerDims(orbitContainerRef);
   const reducedMotion = usePrefersReducedMotion();
+  const coarsePointerRef = React.useRef(
+    typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches
+  );
+
+  React.useLayoutEffect(() => {
+    const mq = window.matchMedia("(pointer: coarse)");
+    coarsePointerRef.current = mq.matches;
+    const fn = () => {
+      coarsePointerRef.current = mq.matches;
+    };
+    mq.addEventListener("change", fn);
+    return () => mq.removeEventListener("change", fn);
+  }, []);
 
   const rotationRef = React.useRef(0);
   const snapTargetRef = React.useRef<number | null>(null);
@@ -84,7 +131,6 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
   const cardSurfaceRefs = React.useRef<(HTMLElement | null)[]>([]);
 
   const AUTO_SPEED = 0.042;
-  const DRAG_SENS = 0.0048;
   const LERP = 0.09;
   const FRONT_EPS = 0.04;
 
@@ -229,7 +275,8 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
     if (!draggingRef.current || reducedMotion) return;
     const dx = e.clientX - dragStartXRef.current;
     if (Math.abs(dx) > 6) movedRef.current = true;
-    rotationRef.current = dragStartRotRef.current - dx * DRAG_SENS;
+    const sens = coarsePointerRef.current ? 0.0072 : 0.0048;
+    rotationRef.current = dragStartRotRef.current - dx * sens;
   };
 
   const onPointerUp = (e: React.PointerEvent) => {
@@ -260,13 +307,14 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
     <section
       ref={sectionRef}
       className={cn(
-        "relative overflow-hidden py-10 md:py-16",
+        "relative overflow-x-clip overflow-y-visible py-8 sm:py-10 md:py-16",
         "bg-[linear-gradient(180deg,hsl(38,22%,96%)_0%,hsl(36,18%,94%)_45%,hsl(38,20%,95%)_100%)]",
+        "pb-[max(2rem,env(safe-area-inset-bottom,0px))]",
         className
       )}
     >
       <div
-        className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
+        className="mx-auto max-w-7xl pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:px-6 lg:px-8"
         onMouseEnter={() => {
           pausedRef.current = true;
         }}
@@ -274,18 +322,19 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
           pausedRef.current = false;
         }}
       >
-        <p className="mb-2 text-center text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+        <p className="mb-1.5 text-center text-[0.65rem] font-medium uppercase tracking-[0.18em] text-muted-foreground sm:text-xs sm:tracking-[0.2em]">
           Browse by category
         </p>
-        <h2 className="mb-10 text-center font-heading text-2xl text-foreground md:text-3xl">
+        <h2 className="mb-6 text-center font-heading text-xl text-foreground sm:mb-8 sm:text-2xl md:mb-10 md:text-3xl">
           Curated for your space
         </h2>
 
         <div
-          className="relative mx-auto flex min-h-[min(52vw,320px)] w-full max-w-5xl items-center justify-center md:min-h-[380px]"
+          ref={orbitContainerRef}
+          className="relative mx-auto flex min-h-[260px] w-full max-w-5xl items-center justify-center sm:min-h-[min(52vw,320px)] md:min-h-[380px]"
           style={{
-            perspective: "min(1400px, 95vw)",
-            perspectiveOrigin: "50% 45%"
+            perspective: "min(1200px, 100vw)",
+            perspectiveOrigin: "50% 42%"
           }}
         >
           <div
@@ -299,13 +348,13 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
             <div
               role="region"
               aria-label="Category carousel"
-              className="relative mx-auto cursor-grab touch-pan-y active:cursor-grabbing"
+              className="relative mx-auto w-full max-w-full cursor-grab touch-none select-none active:cursor-grabbing"
               style={{
-                transform: "rotateX(11deg)",
+                transform: `rotateX(${dims.card < 82 ? 8 : 11}deg)`,
                 transformStyle: "preserve-3d",
-                height: dims.card + 48,
+                height: dims.card + (dims.card < 82 ? 40 : 48),
                 width: "100%",
-                maxWidth: dims.rx * 2 + dims.card + 48
+                maxWidth: "100%"
               }}
               onPointerDown={onPointerDown}
               onPointerMove={onPointerMove}
@@ -347,8 +396,8 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
                       data-orbit-card
                       onClick={(e) => onCardClick(e, i)}
                       className={cn(
-                        "flex size-full items-center justify-center rounded-2xl border border-[hsl(38,18%,88%)] bg-white p-3 text-center",
-                        "font-body text-sm font-medium leading-snug text-foreground text-balance",
+                        "flex min-h-[44px] min-w-[44px] size-full items-center justify-center rounded-2xl border border-[hsl(38,18%,88%)] bg-white p-2 text-center sm:p-3",
+                        "font-body text-[0.7rem] font-medium leading-snug text-foreground text-balance sm:text-sm",
                         "transition-[box-shadow,border-color] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
                         "select-none hover:border-[hsl(38,12%,72%)] active:scale-[0.98]",
                         "shadow-[0_10px_30px_rgba(0,0,0,0.08)]"
@@ -368,8 +417,11 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
           </div>
         </div>
 
-        <p className="mt-8 text-center text-xs text-muted-foreground">
-          Drag to explore · Hover to pause · Tap a card to bring it forward
+        <p className="mt-6 px-1 text-center text-[0.65rem] leading-relaxed text-muted-foreground sm:mt-8 sm:text-xs">
+          <span className="md:hidden">Swipe the carousel · Tap a card to focus · Tap again to open</span>
+          <span className="hidden md:inline">
+            Drag to explore · Hover to pause · Tap a card to bring it forward
+          </span>
         </p>
       </div>
     </section>
