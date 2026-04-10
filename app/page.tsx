@@ -10,12 +10,12 @@ import { getHomeData } from "@/lib/storefront/queries";
 const HERO_SLIDES = [
   { src: "/brand/hero-banner.png", alt: "Luxxelounge curated living room interior" },
   {
-    src: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=2400&q=80",
-    alt: "Refined lounge with warm lighting and elegant furnishings"
+    src: "/brand/hero-slide-2.png",
+    alt: "Sculptural premium sofa in luxury setting"
   },
   {
-    src: "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=2400&q=80",
-    alt: "Sophisticated dining and living space with premium details"
+    src: "/brand/hero-slide-3.png",
+    alt: "Elegant neutral lounge interior with statement sofa"
   }
 ] as const;
 
