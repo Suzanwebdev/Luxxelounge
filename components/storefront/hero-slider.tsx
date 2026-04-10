@@ -63,7 +63,7 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
   }, [count, go]);
 
   return (
-    <div className="relative h-[min(47vh,552px)] min-h-[240px] w-full md:h-[min(49vh,576px)] md:min-h-[312px]">
+    <div className="relative h-[min(78vh,920px)] min-h-[400px] w-full md:h-[min(82vh,960px)] md:min-h-[520px]">
       {slides.map((slide, i) => {
         const useKenBurns = i === index && !skipKenBurns && i === 0;
 
@@ -96,7 +96,7 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
       {count > 1 && (
         <>
           <div
-            className="absolute bottom-2.5 left-1/2 z-[3] flex -translate-x-1/2 gap-1.5 md:bottom-4"
+            className="absolute bottom-4 left-1/2 z-[3] flex -translate-x-1/2 gap-2 md:bottom-6"
             role="tablist"
             aria-label="Hero slides"
           >
@@ -109,8 +109,8 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
                 aria-label={`Slide ${i + 1}`}
                 onClick={() => setIndex(i)}
                 className={cn(
-                  "h-1 rounded-full transition-all",
-                  i === index ? "w-3.5 bg-white" : "w-1 bg-white/45 hover:bg-white/70"
+                  "h-1.5 rounded-full transition-all",
+                  i === index ? "w-6 bg-white" : "w-1.5 bg-white/45 hover:bg-white/70"
                 )}
               />
             ))}
