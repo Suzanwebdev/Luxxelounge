@@ -2,7 +2,8 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ProductCard, CategoryChip, PromoBanner } from "@/components/storefront/cards";
+import { ProductCard, PromoBanner } from "@/components/storefront/cards";
+import { CategoryOrbitCarousel } from "@/components/storefront/category-orbit-carousel";
 import { HOMEPAGE_CATEGORY_CARDS } from "@/lib/storefront/categories";
 import { HeroSlider, type HeroSlide } from "@/components/storefront/hero-slider";
 import { Container, Heading, Section } from "@/components/storefront/primitives";
@@ -60,15 +61,7 @@ export default async function HomePage() {
           </div>
       </Section>
 
-      <Section className="py-4">
-        <Container>
-          <div className="flex flex-wrap justify-center gap-3">
-            {HOMEPAGE_CATEGORY_CARDS.map(({ label, href }) => (
-              <CategoryChip key={label} name={label} href={href} />
-            ))}
-          </div>
-        </Container>
-      </Section>
+      <CategoryOrbitCarousel items={HOMEPAGE_CATEGORY_CARDS} />
 
       <Section>
         <Container>
