@@ -27,7 +27,7 @@ export function Footer() {
               All Products
             </Link>
             <Link href="/collections" className="block text-muted-foreground hover:text-primary">
-              Catalog
+              Categories
             </Link>
             <Link href="/track-order" className="block text-muted-foreground hover:text-primary">
               Track Order
