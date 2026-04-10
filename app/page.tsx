@@ -105,16 +105,16 @@ export default async function HomePage() {
       </Section>
 
       <Section>
-        <Container className="grid gap-8 rounded-3xl border border-border bg-card p-6 md:grid-cols-2 md:items-center md:p-10">
+        <Container className="max-w-4xl rounded-3xl border border-border bg-card p-5 md:grid md:grid-cols-[1fr_auto] md:items-center md:gap-6 md:p-7">
           <div>
-            <h3 className="font-heading text-3xl">Join the Private Edit</h3>
-            <p className="mt-2 text-muted-foreground">
+            <h3 className="font-heading text-2xl md:text-[1.75rem]">Join the Private Edit</h3>
+            <p className="mt-1.5 text-sm text-muted-foreground md:text-base">
               Receive curated drops, styling notes, and early access to limited releases.
             </p>
           </div>
-          <div className="flex gap-2">
-            <Input placeholder="Enter your email" />
-            <Button>
+          <div className="mt-4 flex gap-2 md:mt-0">
+            <Input placeholder="Enter your email" className="h-11 md:w-72" />
+            <Button size="sm" className="h-11 px-4">
               Subscribe
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
