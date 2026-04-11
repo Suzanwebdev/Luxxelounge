@@ -31,9 +31,67 @@ export const NAV_CATEGORY_LINKS: readonly { label: string; href: string }[] = [
   }))
 ];
 
-/** Homepage category row — same nine labels and shop links as the nav category list. */
-export const HOMEPAGE_CATEGORY_CARDS: readonly { label: string; href: string }[] =
-  STOREFRONT_CATEGORY_NAMES.map((name) => ({
-    label: name,
-    href: categoryShopHref(name)
-  }));
+/** Homepage orbit carousel — nav-aligned categories with product imagery. */
+export type HomepageCategoryCardItem = {
+  label: string;
+  href: string;
+  imageSrc: string;
+  imageAlt: string;
+};
+
+export const HOMEPAGE_CATEGORY_CARDS: readonly HomepageCategoryCardItem[] = [
+  {
+    label: "Sofas",
+    href: categoryShopHref("Sofas"),
+    imageSrc: "/images/category-orbit/sofas.png",
+    imageAlt: "Modern sofa on black background"
+  },
+  {
+    label: "Lounge Chairs",
+    href: categoryShopHref("Lounge Chairs"),
+    imageSrc: "/images/category-orbit/lounge-chairs.png",
+    imageAlt: "Chrome frame lounge chair"
+  },
+  {
+    label: "Chairs",
+    href: categoryShopHref("Chairs"),
+    imageSrc: "/images/category-orbit/chairs.png",
+    imageAlt: "Upholstered armchair"
+  },
+  {
+    label: "Benches",
+    href: categoryShopHref("Benches"),
+    imageSrc: "/images/category-orbit/benches.png",
+    imageAlt: "Channeled upholstered bench"
+  },
+  {
+    label: "Poufs",
+    href: categoryShopHref("Poufs"),
+    imageSrc: "/images/category-orbit/poufs.png",
+    imageAlt: "Boucle lounge chair"
+  },
+  {
+    label: "Tables",
+    href: categoryShopHref("Tables"),
+    imageSrc: "/images/category-orbit/tables.png",
+    imageAlt: "Chrome frame bench"
+  },
+  {
+    label: "Dining Set",
+    href: categoryShopHref("Dining Set"),
+    imageSrc: "/images/category-orbit/dining-set.png",
+    imageAlt: "Light wood dining room with garden view"
+  },
+  {
+    label: "Bar Stools",
+    href: categoryShopHref("Bar Stools"),
+    imageSrc: "/images/category-orbit/bar-stools.png",
+    imageAlt: "Black wooden dining chair"
+  },
+  {
+    label: "Desk",
+    href: categoryShopHref("Desk"),
+    imageSrc: "/images/category-orbit/desk.png",
+    imageAlt: "Wood and cane chair"
+  }
+];

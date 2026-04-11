@@ -16,8 +16,14 @@ export function ProductCard({ product }: { product: Product }) {
       transition={{ duration: 0.2 }}
       className="luxury-panel overflow-hidden border border-border/60"
     >
-      <div className="relative aspect-[4/3]">
-        <Image src={product.image} alt={product.name} fill className="object-cover" />
+      <div className="relative aspect-[4/3] min-h-[10rem] bg-muted">
+        <Image
+          src={product.image}
+          alt={product.name}
+          fill
+          className="object-cover"
+          sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
+        />
       </div>
       <div className="space-y-3 p-4">
         <BadgeSet tags={product.tags} />
