@@ -245,7 +245,7 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
       if (isCenter) {
         opacity = 1;
       } else {
-        opacity = Math.min(0.76, Math.max(0.44, opacity));
+        opacity = Math.min(0.72, Math.max(0.38, opacity));
       }
 
       const ringD = ringIndexDistance(i, focusI, n);
@@ -432,39 +432,9 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
           Curated for your space
         </h2>
 
-        {/* Safari/iOS: 3D orbit stacks and glitches; use a flat strip below md. */}
-        <div
-          className="md:hidden"
-          aria-label="Browse categories"
-        >
-          <div className="-mx-1 flex gap-3 overflow-x-auto overscroll-x-contain px-1 pb-1 pt-0.5 [scrollbar-width:thin] [touch-action:pan-x]">
-            {items.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className="snap-center flex w-[42vw] max-w-[11rem] shrink-0 flex-col overflow-hidden rounded-2xl border border-[hsl(38,16%,86%)] bg-gradient-to-b from-white to-[hsl(38,28%,97%)] shadow-[0_10px_30px_rgba(0,0,0,0.08)]"
-              >
-                <div className="relative aspect-square w-full bg-neutral-950">
-                  <img
-                    src={item.imageSrc}
-                    alt={item.imageAlt}
-                    className="absolute inset-0 h-full w-full object-contain p-1"
-                    loading="lazy"
-                    decoding="async"
-                    draggable={false}
-                  />
-                </div>
-                <span className="border-t border-[hsl(38,16%,90%)] bg-gradient-to-b from-[hsl(38,28%,98%)] to-white px-1 py-2 text-center text-[0.7rem] font-medium leading-tight text-foreground">
-                  {item.label}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-
         <div
           ref={orbitContainerRef}
-          className="relative mx-auto hidden min-h-[400px] w-full max-w-5xl items-center justify-center px-2 py-6 sm:min-h-[min(68vw,520px)] sm:px-4 sm:py-8 md:flex md:min-h-[620px] md:py-12"
+          className="relative mx-auto flex min-h-[min(78vw,320px)] w-full max-w-5xl items-center justify-center px-2 py-5 sm:min-h-[min(68vw,420px)] sm:px-4 sm:py-8 md:min-h-[620px] md:py-12"
           style={{
             perspective: "1200px",
             perspectiveOrigin: "50% 46%"
@@ -483,7 +453,7 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
               aria-label="Category carousel"
               className="relative mx-auto w-full max-w-full cursor-grab touch-none select-none active:cursor-grabbing"
               style={{
-                transform: `rotateX(${dims.card < 112 ? 10 : 14}deg)`,
+                transform: `rotateX(${dims.card < 112 ? 9 : 13}deg)`,
                 transformStyle: "preserve-3d",
                 height:
                   Math.ceil(dims.card * SCALE_Y_BY_RING_DISTANCE[0]) + (dims.card < 112 ? 96 : 108),
@@ -544,19 +514,16 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
                         style={{
                           height: orbitImageSlotPx,
                           WebkitTransform: "translateZ(0.1px)",
-                          transform: "translateZ(0.1px)"
+                          transform: "translateZ(0.1px)",
+                          backgroundColor: "#0a0a0a",
+                          backgroundImage: `url(${JSON.stringify(item.imageSrc)})`,
+                          backgroundSize: "contain",
+                          backgroundPosition: "center",
+                          backgroundRepeat: "no-repeat"
                         }}
-                      >
-                        <img
-                          src={item.imageSrc}
-                          alt={item.imageAlt}
-                          className="pointer-events-none absolute left-0 top-0 block h-full w-full object-contain p-0.5 sm:p-1"
-                          style={{ transform: "translateZ(0)" }}
-                          loading="eager"
-                          decoding="async"
-                          draggable={false}
-                        />
-                      </span>
+                        role="img"
+                        aria-label={item.imageAlt}
+                      />
                       <span className="relative z-[1] flex min-h-0 flex-1 items-center justify-center border-t border-[hsl(38,16%,90%)] bg-gradient-to-b from-[hsl(38,28%,98%)] to-white px-1 py-1 text-balance sm:py-2 sm:text-[0.8125rem]">
                         {item.label}
                       </span>
@@ -569,10 +536,7 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
         </div>
 
         <p className="mt-8 px-2 text-center text-[0.65rem] leading-relaxed text-muted-foreground sm:mt-10 sm:text-xs md:mt-14">
-          <span className="md:hidden">Swipe sideways for more categories · Tap to shop</span>
-          <span className="hidden md:inline">
-            Rotates automatically · Drag to explore · Tap a card to bring it forward
-          </span>
+          Rotates automatically · Swipe or drag to explore · Tap a card to bring it forward · Tap again to open
         </p>
       </div>
     </section>
