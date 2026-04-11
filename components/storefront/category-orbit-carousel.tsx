@@ -535,9 +535,6 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
           </div>
         </div>
 
-        <p className="mt-8 px-2 text-center text-[0.65rem] leading-relaxed text-muted-foreground sm:mt-10 sm:text-xs md:mt-14">
-          Rotates automatically · Swipe or drag to explore · Tap a card to bring it forward · Tap again to open
-        </p>
       </div>
     </section>
   );
