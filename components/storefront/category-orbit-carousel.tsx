@@ -119,11 +119,14 @@ function ringIndexDistance(i: number, focus: number, n: number): number {
 }
 
 /** Taller focus card; neighbors share height by equal `d`, then step down. Width unchanged (`scaleX = 1`). */
-const SCALE_Y_BY_RING_DISTANCE = [1.3, 1.07, 0.96, 0.88, 0.82, 0.77] as const;
+const SCALE_Y_BY_RING_DISTANCE_DESKTOP = [1.3, 1.07, 0.96, 0.88, 0.82, 0.77] as const;
+/** Stronger hierarchy on small screens so the tiering is visible on mobile. */
+const SCALE_Y_BY_RING_DISTANCE_MOBILE = [1.42, 1.08, 0.9, 0.76, 0.66, 0.58] as const;
 
-function scaleYForRingDistance(d: number): number {
-  const k = Math.min(d, SCALE_Y_BY_RING_DISTANCE.length - 1);
-  return SCALE_Y_BY_RING_DISTANCE[k];
+function scaleYForRingDistance(d: number, compact: boolean): number {
+  const table = compact ? SCALE_Y_BY_RING_DISTANCE_MOBILE : SCALE_Y_BY_RING_DISTANCE_DESKTOP;
+  const k = Math.min(d, table.length - 1);
+  return table[k];
 }
 
 /**
@@ -237,19 +240,22 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
       const isCenter = i === focusI;
       const zRender = z + (isCenter ? HERO_Z_POP : 0);
 
+      const compact = dims.card < 112;
       let da = Math.abs(angle - angleFocus);
       if (da > Math.PI) da = 2 * Math.PI - da;
       const tDist = smoothstep01(Math.min(1, da / (neighbor * 0.38)));
       let opacity = 1 * (1 - tDist) + 0.5 * tDist;
 
+      const ringD = ringIndexDistance(i, focusI, n);
       if (isCenter) {
         opacity = 1;
       } else {
-        opacity = Math.min(0.72, Math.max(0.38, opacity));
+        opacity = compact
+          ? Math.min(0.68, Math.max(0.28, opacity - ringD * 0.06))
+          : Math.min(0.72, Math.max(0.38, opacity));
       }
 
-      const ringD = ringIndexDistance(i, focusI, n);
-      const scaleY = scaleYForRingDistance(ringD);
+      const scaleY = scaleYForRingDistance(ringD, compact);
 
       const zSpan = rzEff * 2;
       const zLayer = isCenter ? 450 : Math.round(12 + ((z + rzEff) / zSpan) * 235);
@@ -456,7 +462,12 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
                 transform: `rotateX(${dims.card < 112 ? 9 : 13}deg)`,
                 transformStyle: "preserve-3d",
                 height:
-                  Math.ceil(dims.card * SCALE_Y_BY_RING_DISTANCE[0]) + (dims.card < 112 ? 96 : 108),
+                  Math.ceil(
+                    dims.card *
+                      (dims.card < 112
+                        ? SCALE_Y_BY_RING_DISTANCE_MOBILE[0]
+                        : SCALE_Y_BY_RING_DISTANCE_DESKTOP[0])
+                  ) + (dims.card < 112 ? 96 : 108),
                 width: "100%",
                 maxWidth: "100%"
               }}
@@ -516,14 +527,25 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
                           WebkitTransform: "translateZ(0.1px)",
                           transform: "translateZ(0.1px)",
                           backgroundColor: "#0a0a0a",
-                          backgroundImage: `url(${JSON.stringify(item.imageSrc)})`,
+                          backgroundImage: `url("${item.imageSrc}")`,
                           backgroundSize: "contain",
                           backgroundPosition: "center",
                           backgroundRepeat: "no-repeat"
                         }}
                         role="img"
                         aria-label={item.imageAlt}
-                      />
+                      >
+                        <img
+                          src={item.imageSrc}
+                          alt=""
+                          aria-hidden="true"
+                          className="pointer-events-none absolute inset-0 h-full w-full object-contain p-0.5 sm:p-1"
+                          style={{ WebkitTransform: "translateZ(0)", transform: "translateZ(0)" }}
+                          loading="eager"
+                          decoding="async"
+                          draggable={false}
+                        />
+                      </span>
                       <span className="relative z-[1] flex min-h-0 flex-1 items-center justify-center border-t border-[hsl(38,16%,90%)] bg-gradient-to-b from-[hsl(38,28%,98%)] to-white px-1 py-1 text-balance sm:py-2 sm:text-[0.8125rem]">
                         {item.label}
                       </span>

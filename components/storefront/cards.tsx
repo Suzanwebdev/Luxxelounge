@@ -3,13 +3,17 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Heart, ShoppingBag } from "lucide-react";
+import { Heart, MessageCircle, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BadgeSet, Price } from "@/components/storefront/primitives";
 import { categoryShopHref, isStorefrontCategory } from "@/lib/storefront/categories";
+import { buildWhatsAppProductHref } from "@/lib/storefront/whatsapp";
 import type { Product } from "@/lib/storefront/mock-data";
 
 export function ProductCard({ product }: { product: Product }) {
+  const whatsappHref = buildWhatsAppProductHref({ product, source: "product-card" });
+  const showWhatsApp = Boolean(whatsappHref);
+
   return (
     <motion.article
       whileHover={{ y: -4 }}
@@ -50,6 +54,19 @@ export function ProductCard({ product }: { product: Product }) {
             <Heart className="h-4 w-4" />
           </Button>
         </div>
+        {showWhatsApp ? (
+          <div className="space-y-1.5">
+            <Button asChild variant="outline" className="w-full">
+              <a href={whatsappHref ?? "#"} target="_blank" rel="noopener noreferrer">
+                <MessageCircle className="mr-2 h-4 w-4" />
+                Chat Before You Buy
+              </a>
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Ask about finishes, delivery details, and payment guidance on WhatsApp.
+            </p>
+          </div>
+        ) : null}
       </div>
     </motion.article>
   );

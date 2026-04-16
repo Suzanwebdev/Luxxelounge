@@ -1,13 +1,17 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BadgeSet, Container, Heading, Price, Section } from "@/components/storefront/primitives";
 import { getProductBySlug } from "@/lib/storefront/queries";
+import { buildWhatsAppProductHref } from "@/lib/storefront/whatsapp";
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
   if (!product) notFound();
+  const whatsappHref = buildWhatsAppProductHref({ product, source: "product-page" });
+  const showWhatsApp = Boolean(whatsappHref);
 
   return (
     <Section>
@@ -35,6 +39,19 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <Button size="lg">Add to Cart</Button>
             <Button size="lg" variant="outline">Add to Wishlist</Button>
           </div>
+          {showWhatsApp ? (
+            <div className="rounded-2xl border border-border bg-card/70 p-4">
+              <p className="mb-2 text-sm text-muted-foreground">
+                Chat with our design advisor to confirm finishes, delivery windows, and payment options.
+              </p>
+              <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
+                <a href={whatsappHref ?? "#"} target="_blank" rel="noopener noreferrer">
+                  <MessageCircle className="mr-2 h-4 w-4" />
+                  Talk on WhatsApp Before Purchase
+                </a>
+              </Button>
+            </div>
+          ) : null}
         </div>
       </Container>
     </Section>
