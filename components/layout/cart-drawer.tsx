@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import * as Dialog from "@radix-ui/react-dialog";
+import Link from "next/link";
 import { X } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn, formatGhs } from "@/lib/utils";
@@ -41,8 +42,16 @@ export function CartDrawer({
                 <span>Subtotal</span>
                 <span>{formatGhs(9400)}</span>
               </div>
-              <Button className="w-full">Proceed to Checkout</Button>
-              <Button variant="outline" className="w-full">View Cart</Button>
+              <Dialog.Close asChild>
+                <Button asChild className="w-full">
+                  <Link href="/checkout">Proceed to Checkout</Link>
+                </Button>
+              </Dialog.Close>
+              <Dialog.Close asChild>
+                <Button asChild variant="outline" className="w-full">
+                  <Link href="/cart">View Cart</Link>
+                </Button>
+              </Dialog.Close>
             </div>
           </motion.div>
         </Dialog.Content>
