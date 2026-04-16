@@ -3,16 +3,19 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Heart, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BadgeSet, Price } from "@/components/storefront/primitives";
 import { WhatsAppAssistCta } from "@/components/storefront/whatsapp-assist-cta";
 import { useCart } from "@/components/storefront/cart-provider";
+import { writeExpressCheckout } from "@/lib/storefront/express-checkout";
 import { categoryShopHref, isStorefrontCategory } from "@/lib/storefront/categories";
 import type { Product } from "@/lib/storefront/mock-data";
 
 export function ProductCard({ product }: { product: Product }) {
+  const router = useRouter();
   const { addItem } = useCart();
   const [justAdded, setJustAdded] = React.useState(false);
 
@@ -20,6 +23,11 @@ export function ProductCard({ product }: { product: Product }) {
     addItem(product, 1);
     setJustAdded(true);
     window.setTimeout(() => setJustAdded(false), 1400);
+  };
+
+  const onBuyNow = () => {
+    writeExpressCheckout({ items: [{ slug: product.slug, quantity: 1 }] });
+    router.push("/checkout?express=1");
   };
 
   return (
@@ -54,15 +62,26 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
         <Price price={product.price} compareAt={product.compareAt} />
         <div className="flex gap-2">
-          <Button className="flex-1" onClick={onAddToCart}>
+          <Button type="button" className="flex-1" onClick={onBuyNow}>
             <ShoppingBag className="mr-2 h-4 w-4" />
-            {justAdded ? "Added to Cart" : "Buy Now"}
+            Buy Now
           </Button>
-          <Button variant="outline" size="default" aria-label="Add to wishlist">
+          <Button
+            type="button"
+            variant="outline"
+            size="default"
+            aria-label="Quick add to cart"
+            title="Quick add to cart"
+            onClick={onAddToCart}
+          >
             <Heart className="h-4 w-4" />
           </Button>
         </div>
-        {justAdded ? <p className="text-xs text-primary">Added. Open cart to review quantities.</p> : null}
+        {justAdded ? (
+          <p className="text-xs text-primary" role="status" aria-live="polite">
+            Added to cart. Open the bag to review or checkout.
+          </p>
+        ) : null}
         <WhatsAppAssistCta
           product={product}
           source="product-card"

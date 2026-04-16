@@ -10,7 +10,10 @@ type CartLine = {
 
 type CartState = {
   lines: CartLine[];
+  /** Number of distinct products (cart lines), used for header badge. */
   itemCount: number;
+  /** Sum of all line quantities. */
+  totalQuantity: number;
   subtotal: number;
   addItem: (product: Product, qty?: number) => void;
   removeItem: (productId: string) => void;
@@ -88,7 +91,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const value = React.useMemo<CartState>(
     () => ({
       lines,
-      itemCount: sumCount(lines),
+      itemCount: lines.length,
+      totalQuantity: sumCount(lines),
       subtotal: sumSubtotal(lines),
       addItem,
       removeItem,
