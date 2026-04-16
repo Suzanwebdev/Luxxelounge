@@ -27,17 +27,23 @@ export default async function AdminDashboardPage() {
       </div>
 
       <article className="rounded-3xl border border-border bg-card p-5">
-        <h2 className="font-heading text-2xl">Top Products</h2>
-        <div className="mt-4 space-y-3">
-          {data.topProducts.map((product) => (
-            <div key={product.name} className="rounded-2xl border border-border p-3">
-              <p className="font-medium">{product.name}</p>
-              <p className="text-xs text-muted-foreground">
-                {product.total_reviews} reviews • Rating {Number(product.rating || 0).toFixed(1)}
-              </p>
-            </div>
-          ))}
-        </div>
+        <h2 className="font-heading text-2xl">Top products</h2>
+        {data.topProducts.length === 0 ? (
+          <p className="mt-4 rounded-2xl border border-dashed border-border p-6 text-sm text-muted-foreground">
+            No active products with reviews yet. Add catalog items under Products and mark them active.
+          </p>
+        ) : (
+          <div className="mt-4 space-y-3">
+            {data.topProducts.map((product) => (
+              <div key={product.name} className="rounded-2xl border border-border p-3">
+                <p className="font-medium">{product.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {product.total_reviews} reviews • Rating {Number(product.rating || 0).toFixed(1)}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
       </article>
     </section>
   );

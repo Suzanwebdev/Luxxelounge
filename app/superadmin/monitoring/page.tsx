@@ -10,7 +10,12 @@ export default async function SuperadminMonitoringPage() {
       </div>
 
       <article className="rounded-3xl border border-border bg-card p-5">
-        <h2 className="font-heading text-2xl">Error Logs</h2>
+        <h2 className="font-heading text-2xl">Error logs</h2>
+        {errors.length === 0 ? (
+          <p className="mt-3 rounded-2xl border border-dashed border-border p-5 text-sm text-muted-foreground">
+            No application errors recorded in <code className="rounded bg-muted px-1">error_logs</code>.
+          </p>
+        ) : null}
         <div className="mt-3 space-y-2">
           {errors.map((error) => (
             <div key={error.id} className="rounded-2xl border border-border p-3">
@@ -22,7 +27,12 @@ export default async function SuperadminMonitoringPage() {
       </article>
 
       <article className="rounded-3xl border border-border bg-card p-5">
-        <h2 className="font-heading text-2xl">Suspicious Activity</h2>
+        <h2 className="font-heading text-2xl">Suspicious activity</h2>
+        {suspicious.length === 0 ? (
+          <p className="mt-3 rounded-2xl border border-dashed border-border p-5 text-sm text-muted-foreground">
+            No suspicious activity entries.
+          </p>
+        ) : null}
         <div className="mt-3 space-y-2">
           {suspicious.map((entry) => (
             <div key={entry.id} className="rounded-2xl border border-border p-3">

@@ -16,7 +16,8 @@ export default async function SuperadminUsersPage() {
       <article className="rounded-3xl border border-border bg-card p-5">
         <h2 className="font-heading text-2xl">Create Staff Account</h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          This registers platform role records. Auth user provisioning is marked as TODO in server action.
+          Adds email to the <code className="rounded bg-muted px-1">admins</code> allowlist and logs the invite. Creating
+          the Supabase Auth user is still a manual or scripted step in production.
         </p>
         <form action={createStaffAccountAction} className="mt-3 grid gap-3 md:grid-cols-4">
           <Input name="email" placeholder="staff@luxxelounge.com" required />
@@ -30,7 +31,13 @@ export default async function SuperadminUsersPage() {
       </article>
 
       <article className="rounded-3xl border border-border bg-card p-5">
-        <h2 className="font-heading text-2xl">Roles & Permissions</h2>
+        <h2 className="font-heading text-2xl">Roles and profiles</h2>
+        {users.length === 0 ? (
+          <p className="mt-3 rounded-2xl border border-dashed border-border p-5 text-sm text-muted-foreground">
+            No profiles yet. Apply migration <code className="rounded bg-muted px-1">0002_admin_read_profiles</code> if
+            staff cannot list accounts after signup.
+          </p>
+        ) : null}
         <div className="mt-3 space-y-2">
           {users.map((user) => (
             <div key={user.id} className="rounded-2xl border border-border p-3">
@@ -42,7 +49,12 @@ export default async function SuperadminUsersPage() {
       </article>
 
       <article className="rounded-3xl border border-border bg-card p-5">
-        <h2 className="font-heading text-2xl">Login Audit Log</h2>
+        <h2 className="font-heading text-2xl">Login audit log</h2>
+        {logs.length === 0 ? (
+          <p className="mt-3 rounded-2xl border border-dashed border-border p-5 text-sm text-muted-foreground">
+            No login audit rows yet.
+          </p>
+        ) : null}
         <div className="mt-3 space-y-2">
           {logs.map((log) => (
             <div key={log.id} className="rounded-2xl border border-border p-3">

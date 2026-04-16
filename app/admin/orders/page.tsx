@@ -14,6 +14,11 @@ export default async function AdminOrdersPage() {
       </div>
 
       <article className="rounded-3xl border border-border bg-card p-5">
+        {orders.length === 0 ? (
+          <p className="rounded-2xl border border-dashed border-border p-6 text-sm text-muted-foreground">
+            No orders yet. When customers check out, they will appear here with status controls.
+          </p>
+        ) : null}
         <div className="space-y-3">
           {orders.map((order) => (
             <div key={order.id} className="rounded-2xl border border-border p-3">

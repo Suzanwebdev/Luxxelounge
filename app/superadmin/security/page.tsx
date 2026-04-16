@@ -22,7 +22,12 @@ export default async function SuperadminSecurityPage() {
       </article>
 
       <article className="rounded-3xl border border-border bg-card p-5">
-        <h2 className="font-heading text-2xl">Suspicious Activity Viewer</h2>
+        <h2 className="font-heading text-2xl">Suspicious activity</h2>
+        {suspicious.length === 0 ? (
+          <p className="mt-3 rounded-2xl border border-dashed border-border p-5 text-sm text-muted-foreground">
+            No entries in <code className="rounded bg-muted px-1">suspicious_activity_logs</code>.
+          </p>
+        ) : null}
         <div className="mt-3 space-y-2">
           {suspicious.map((entry) => (
             <div key={entry.id} className="rounded-2xl border border-border p-3">

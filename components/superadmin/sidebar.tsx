@@ -23,7 +23,10 @@ export function SuperadminSidebar() {
       <nav className="space-y-1">
         {links.map((link) => {
           const Icon = link.icon;
-          const active = pathname === link.href;
+          const active =
+            link.href === "/superadmin"
+              ? pathname === "/superadmin"
+              : pathname === link.href || pathname.startsWith(`${link.href}/`);
           return (
             <Link
               key={link.href}

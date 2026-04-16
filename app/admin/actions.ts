@@ -3,15 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireAdminAccess } from "@/lib/admin/auth";
-
-function toSlug(input: string) {
-  return input
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
-}
+import { STOREFRONT_CATEGORY_NAMES } from "@/lib/storefront/categories";
+import { toSlug } from "@/lib/slug";
 
 export async function upsertProductAction(formData: FormData) {
   await requireAdminAccess();
@@ -90,6 +83,71 @@ export async function createCategoryAction(formData: FormData) {
   if (error) return;
   revalidatePath("/admin/categories");
   revalidatePath("/shop");
+}
+
+export async function syncStorefrontCategoriesAction() {
+  await requireAdminAccess();
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) return;
+  for (const name of STOREFRONT_CATEGORY_NAMES) {
+    const slug = toSlug(name);
+    const { error } = await supabase.from("categories").upsert({ name, slug, is_active: true }, { onConflict: "slug" });
+    if (error) return;
+  }
+  revalidatePath("/admin/categories");
+  revalidatePath("/admin/products");
+  revalidatePath("/shop");
+  revalidatePath("/");
+}
+
+export async function toggleCategoryActiveAction(formData: FormData) {
+  await requireAdminAccess();
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) return;
+  const id = String(formData.get("id") || "");
+  const next = String(formData.get("active")) === "true";
+  if (!id) return;
+  const { error } = await supabase.from("categories").update({ is_active: next }).eq("id", id);
+  if (error) return;
+  revalidatePath("/admin/categories");
+  revalidatePath("/shop");
+}
+
+export async function createDiscountAction(formData: FormData) {
+  await requireAdminAccess();
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) return;
+  const code = String(formData.get("code") || "")
+    .trim()
+    .toUpperCase();
+  const discountType = String(formData.get("discountType") || "percent") as "percent" | "fixed" | "free_shipping";
+  const value = Number(formData.get("value") || 0);
+  const minSpendRaw = String(formData.get("minSpend") || "").trim();
+  const minSpend = minSpendRaw ? Number(minSpendRaw) : null;
+  if (!code || !["percent", "fixed", "free_shipping"].includes(discountType)) return;
+  if (discountType !== "free_shipping" && (Number.isNaN(value) || value < 0)) return;
+
+  const { error } = await supabase.from("discounts").insert({
+    code,
+    discount_type: discountType,
+    value: discountType === "free_shipping" ? 0 : value,
+    min_spend: minSpend && !Number.isNaN(minSpend) ? minSpend : null,
+    is_active: true
+  });
+  if (error) return;
+  revalidatePath("/admin/discounts");
+}
+
+export async function toggleDiscountActiveAction(formData: FormData) {
+  await requireAdminAccess();
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) return;
+  const id = String(formData.get("id") || "");
+  const next = String(formData.get("active")) === "true";
+  if (!id) return;
+  const { error } = await supabase.from("discounts").update({ is_active: next }).eq("id", id);
+  if (error) return;
+  revalidatePath("/admin/discounts");
 }
 
 export async function updateOrderStatusAction(formData: FormData) {

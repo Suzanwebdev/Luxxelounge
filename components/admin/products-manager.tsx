@@ -13,6 +13,8 @@ type ProductRow = {
   id: string;
   name: string;
   slug: string;
+  description: string | null;
+  category_id: string | null;
   status: string;
   regular_price: number;
   sale_price: number | null;
@@ -82,7 +84,7 @@ export function ProductsManager({
         >
           <Input name="name" placeholder="Product name" defaultValue={editing?.name} required />
           <Input name="slug" placeholder="product-slug" defaultValue={editing?.slug} />
-          <Textarea name="description" placeholder="Product description" defaultValue={editing?.name} />
+          <Textarea name="description" placeholder="Product description" defaultValue={editing?.description ?? ""} />
           <div className="grid grid-cols-2 gap-3">
             <Input name="regularPrice" type="number" min={0} placeholder="Regular price" defaultValue={editing?.regular_price} required />
             <Input name="salePrice" type="number" min={0} placeholder="Sale price (optional)" defaultValue={editing?.sale_price ?? ""} />
@@ -103,14 +105,19 @@ export function ProductsManager({
             </select>
             <select
               name="categoryId"
-              defaultValue={defaultCategory}
+              defaultValue={editing?.category_id || defaultCategory}
+              key={editing?.id ?? "new"}
               className="h-11 rounded-2xl border border-border bg-card px-3 text-sm"
             >
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
+              {categories.length === 0 ? (
+                <option value="">No categories — sync Categories page first</option>
+              ) : (
+                categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))
+              )}
             </select>
           </div>
           <div className="rounded-2xl border border-border p-3">
@@ -149,6 +156,12 @@ export function ProductsManager({
       <section className="rounded-3xl border border-border bg-card p-5">
         <h2 className="font-heading text-2xl">Product Catalog</h2>
         <div className="mt-4 space-y-3">
+          {products.length === 0 ? (
+            <p className="rounded-2xl border border-dashed border-border p-6 text-sm text-muted-foreground">
+              No products in the database. Create one with the form on the left, or sync categories first if the
+              category list is empty.
+            </p>
+          ) : null}
           {products.map((product) => (
             <article key={product.id} className="rounded-2xl border border-border p-3">
               <p className="font-medium">{product.name}</p>

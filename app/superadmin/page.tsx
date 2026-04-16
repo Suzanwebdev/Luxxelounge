@@ -46,7 +46,13 @@ export default async function SuperadminControlCenterPage() {
       </article>
 
       <article className="rounded-3xl border border-border bg-card p-5">
-        <h2 className="font-heading text-2xl">Feature Flags Master Control</h2>
+        <h2 className="font-heading text-2xl">Feature flags</h2>
+        {entries.length === 0 ? (
+          <p className="mt-3 rounded-2xl border border-dashed border-border p-5 text-sm text-muted-foreground">
+            No feature flags are stored in <code className="rounded bg-muted px-1">site_settings.feature_flags</code>{" "}
+            yet. Defaults from application code apply. Saving toggles in Admin → Settings will populate keys here.
+          </p>
+        ) : null}
         <div className="mt-3 grid gap-3 md:grid-cols-2">
           {entries.map(([key, enabled]) => (
             <div key={key} className="rounded-2xl border border-border p-3">
