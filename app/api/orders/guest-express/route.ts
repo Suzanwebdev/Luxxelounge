@@ -29,7 +29,10 @@ export async function POST(request: NextRequest) {
   const supabase = createSupabaseAdminClient();
   if (!supabase) {
     return NextResponse.json(
-      { error: "Checkout is not configured (missing SUPABASE_SERVICE_ROLE_KEY)." },
+      {
+        error:
+          "Server Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY, plus SUPABASE_SERVICE_ROLE_KEY (Vercel / .env.local), then redeploy or restart the dev server."
+      },
       { status: 503 }
     );
   }
