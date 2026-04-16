@@ -1,7 +1,6 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { WhatsAppAssistCta } from "@/components/storefront/whatsapp-assist-cta";
+import { ProductPurchaseActions } from "@/components/storefront/product-purchase-actions";
 import { BadgeSet, Container, Heading, Price, Section } from "@/components/storefront/primitives";
 import { getProductBySlug } from "@/lib/storefront/queries";
 
@@ -32,19 +31,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <p className="mt-1 text-muted-foreground">Delivery estimate: 2-4 business days</p>
             <p className="mt-1 text-muted-foreground">Easy returns within 7 days</p>
           </div>
-          <div className="flex gap-3">
-            <Button size="lg">Add to Cart</Button>
-            <Button size="lg" variant="outline">Add to Wishlist</Button>
-          </div>
-          <div className="rounded-2xl border border-border bg-card/70 p-4">
-            <WhatsAppAssistCta
-              product={product}
-              source="product-page"
-              ctaLabel="Talk on WhatsApp Before Purchase"
-              helperText="Chat with our design advisor to confirm finishes, delivery windows, and payment options."
-              className="max-w-xl"
-            />
-          </div>
+          <ProductPurchaseActions product={product} />
         </div>
       </Container>
     </Section>

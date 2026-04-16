@@ -9,6 +9,7 @@ import { ChevronDown, Menu, Search, ShoppingBag, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/storefront/primitives";
 import { CartDrawer } from "@/components/layout/cart-drawer";
+import { useCart } from "@/components/storefront/cart-provider";
 import { NAV_CATEGORY_LINKS } from "@/lib/storefront/categories";
 
 export function AnnouncementBar() {
@@ -21,6 +22,7 @@ export function AnnouncementBar() {
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const { itemCount } = useCart();
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
@@ -135,7 +137,14 @@ export function Navbar() {
           <Search className="h-4 w-4" />
         </Button>
         <CartDrawer triggerClassName="rounded-xl border border-border px-2.5 py-2 md:rounded-2xl md:px-3">
-          <ShoppingBag className="h-4 w-4" />
+          <span className="relative inline-flex items-center">
+            <ShoppingBag className="h-4 w-4" />
+            {itemCount > 0 ? (
+              <span className="absolute -right-2 -top-2 inline-flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+                {itemCount > 99 ? "99+" : itemCount}
+              </span>
+            ) : null}
+          </span>
         </CartDrawer>
       </Container>
     </header>

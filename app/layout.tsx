@@ -5,6 +5,7 @@ import "./globals.css";
 import { AnnouncementBar, Navbar } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { StoreRealtimeSync } from "@/components/storefront/realtime-sync";
+import { CartProvider } from "@/components/storefront/cart-provider";
 
 const heading = Playfair_Display({ subsets: ["latin"], variable: "--font-heading" });
 const body = Inter({ subsets: ["latin"], variable: "--font-body" });
@@ -18,11 +19,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body className={`${heading.variable} ${body.variable}`}>
-        <AnnouncementBar />
-        <Navbar />
-        <StoreRealtimeSync />
-        <main>{children}</main>
-        <Footer />
+        <CartProvider>
+          <AnnouncementBar />
+          <Navbar />
+          <StoreRealtimeSync />
+          <main>{children}</main>
+          <Footer />
+        </CartProvider>
       </body>
     </html>
   );
