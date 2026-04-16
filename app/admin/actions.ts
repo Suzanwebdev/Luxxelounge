@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getMissingSupabasePublicEnvVars } from "@/lib/supabase/env";
 import { requireAdminAccess } from "@/lib/admin/auth";
 import { STOREFRONT_CATEGORY_NAMES } from "@/lib/storefront/categories";
 import { toSlug } from "@/lib/slug";
@@ -101,9 +102,16 @@ export async function syncStorefrontCategoriesAction(
   const admin = createSupabaseAdminClient();
   const supabase = admin ?? (await createSupabaseServerClient());
   if (!supabase) {
+    const missing = getMissingSupabasePublicEnvVars();
+    if (missing.length > 0) {
+      return {
+        ok: false,
+        message: `Missing environment variables: ${missing.join(", ")}. Add them to .env.local (project root), copy from Supabase → Project Settings → API, then restart npm run dev.`
+      };
+    }
     return {
       ok: false,
-      message: "Supabase is not configured. Add NEXT_PUBLIC_SUPABASE_URL and keys to your environment."
+      message: "Could not create a Supabase client. Restart npm run dev after saving .env.local."
     };
   }
 
