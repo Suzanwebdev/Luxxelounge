@@ -1,9 +1,6 @@
 import Link from "next/link";
-import {
-  createCategoryAction,
-  syncStorefrontCategoriesAction,
-  toggleCategoryActiveAction
-} from "@/app/admin/actions";
+import { createCategoryAction, toggleCategoryActiveAction } from "@/app/admin/actions";
+import { SyncStorefrontCategoriesForm } from "@/components/admin/sync-storefront-categories-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getAdminExtraCategories, getAdminStorefrontCategoryRows } from "@/lib/admin/queries";
@@ -36,11 +33,7 @@ export default async function AdminCategoriesPage() {
                 : "All homepage categories exist in the database."}
             </p>
           </div>
-          <form action={syncStorefrontCategoriesAction}>
-            <Button type="submit" variant="outline" className="w-full border-primary/50 font-semibold text-primary sm:w-auto">
-              Sync homepage categories to database
-            </Button>
-          </form>
+          <SyncStorefrontCategoriesForm />
         </div>
 
         <div className="mt-6 overflow-x-auto rounded-2xl border border-border">

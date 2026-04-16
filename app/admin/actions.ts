@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireAdminAccess } from "@/lib/admin/auth";
 import { STOREFRONT_CATEGORY_NAMES } from "@/lib/storefront/categories";
 import { toSlug } from "@/lib/slug";
@@ -85,19 +86,51 @@ export async function createCategoryAction(formData: FormData) {
   revalidatePath("/shop");
 }
 
-export async function syncStorefrontCategoriesAction() {
+export type SyncCategoriesState = {
+  ok: boolean | null;
+  message: string;
+  count?: number;
+};
+
+/** Used with `useActionState` on the categories page. Prefers service role so sync succeeds even if RLS blocks anon writes. */
+export async function syncStorefrontCategoriesAction(
+  _prev: SyncCategoriesState,
+  _formData: FormData
+): Promise<SyncCategoriesState> {
   await requireAdminAccess();
-  const supabase = await createSupabaseServerClient();
-  if (!supabase) return;
+  const admin = createSupabaseAdminClient();
+  const supabase = admin ?? (await createSupabaseServerClient());
+  if (!supabase) {
+    return {
+      ok: false,
+      message: "Supabase is not configured. Add NEXT_PUBLIC_SUPABASE_URL and keys to your environment."
+    };
+  }
+
+  let count = 0;
   for (const name of STOREFRONT_CATEGORY_NAMES) {
     const slug = toSlug(name);
     const { error } = await supabase.from("categories").upsert({ name, slug, is_active: true }, { onConflict: "slug" });
-    if (error) return;
+    if (error) {
+      return {
+        ok: false,
+        message: `Could not save “${name}”: ${error.message}. If this is a permission error, set SUPABASE_SERVICE_ROLE_KEY on the server.`,
+        count
+      };
+    }
+    count++;
   }
+
   revalidatePath("/admin/categories");
   revalidatePath("/admin/products");
   revalidatePath("/shop");
   revalidatePath("/");
+
+  return {
+    ok: true,
+    message: `Synced ${count} homepage categories to the database.`,
+    count
+  };
 }
 
 export async function toggleCategoryActiveAction(formData: FormData) {
