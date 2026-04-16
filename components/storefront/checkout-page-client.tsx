@@ -96,7 +96,11 @@ export function CheckoutPageClient() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         items,
-        guestEmail: email.trim()
+        guestEmail: email.trim(),
+        guestPhone: phone.trim() || undefined,
+        guestFullName: fullName.trim() || undefined,
+        shippingLine1: address.trim() || undefined,
+        shippingCity: city.trim() || undefined
       })
     });
     const orderJson = (await orderRes.json()) as { orderId?: string; error?: string };
@@ -186,7 +190,7 @@ export function CheckoutPageClient() {
             <select
               className="h-11 w-full rounded-2xl border border-border bg-card px-3 text-sm"
               value={provider}
-              onChange={(e) => setProvider(e.target.value)}
+              onChange={(e) => setProvider(e.target.value as "moolre" | "paystack" | "flutterwave")}
             >
               <option value="moolre">Moolre (Primary)</option>
               <option value="paystack">Paystack</option>

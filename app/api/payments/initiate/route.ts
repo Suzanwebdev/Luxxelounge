@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { initiatePayment, resolveEnabledProvider } from "@/lib/payments";
 import type { PaymentProviderName } from "@/lib/payments/types";
 
@@ -16,7 +17,9 @@ export async function POST(request: NextRequest) {
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
 
-  const supabase = await createSupabaseServerClient();
+  // Guest orders use customer_id null; RLS hides them from the anon key. Prefer service role when available.
+  const admin = createSupabaseAdminClient();
+  const supabase = admin ?? (await createSupabaseServerClient());
   if (!supabase) return NextResponse.json({ error: "Supabase is not configured" }, { status: 500 });
 
   const { data: order } = await supabase
@@ -27,7 +30,11 @@ export async function POST(request: NextRequest) {
   if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
 
   const provider = (await resolveEnabledProvider(parsed.data.provider as PaymentProviderName | undefined)) as PaymentProviderName;
-  const callbackUrl = `${process.env.APP_BASE_URL || "http://localhost:3000"}/checkout/return`;
+  const appBase =
+    process.env.APP_BASE_URL ||
+    process.env.NEXT_PUBLIC_APP_BASE_URL ||
+    request.nextUrl.origin;
+  const callbackUrl = `${appBase.replace(/\/$/, "")}/checkout/return`;
   const result = await initiatePayment(provider, {
     orderId: order.id,
     orderNumber: order.order_number,

@@ -14,7 +14,11 @@ const bodySchema = z.object({
     )
     .min(1)
     .max(40),
-  guestEmail: z.string().email().optional()
+  guestEmail: z.string().email().optional(),
+  guestPhone: z.string().max(40).optional(),
+  guestFullName: z.string().max(120).optional(),
+  shippingLine1: z.string().max(240).optional(),
+  shippingCity: z.string().max(120).optional()
 });
 
 function uniqueOrderNumber() {
@@ -36,14 +40,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid checkout payload" }, { status: 400 });
   }
 
-  const resolved: { name: string; sku: string; qty: number; unit: number; total: number }[] = [];
+  const merged = new Map<string, number>();
   for (const line of parsed.data.items) {
-    const product = products.find((p) => p.slug === line.slug);
+    merged.set(line.slug, (merged.get(line.slug) ?? 0) + line.quantity);
+  }
+
+  const resolved: { name: string; sku: string; qty: number; unit: number; total: number }[] = [];
+  for (const [slug, qtyRaw] of merged) {
+    const product = products.find((p) => p.slug === slug);
     if (!product) {
-      return NextResponse.json({ error: `Unknown product: ${line.slug}` }, { status: 400 });
+      return NextResponse.json({ error: `Unknown product: ${slug}` }, { status: 400 });
     }
     const unit = Number(product.price);
-    const qty = line.quantity;
+    const qty = Math.min(99, Math.max(1, Math.round(qtyRaw)));
     resolved.push({
       name: product.name,
       sku: product.id,
@@ -56,18 +65,30 @@ export async function POST(request: NextRequest) {
   const subtotal = resolved.reduce((acc, r) => acc + r.total, 0);
   const orderNumber = uniqueOrderNumber();
 
+  const shipping =
+    parsed.data.shippingLine1 || parsed.data.shippingCity || parsed.data.guestFullName || parsed.data.guestPhone
+      ? {
+          full_name: parsed.data.guestFullName ?? null,
+          line1: parsed.data.shippingLine1 ?? null,
+          city: parsed.data.shippingCity ?? null,
+          phone: parsed.data.guestPhone ?? null
+        }
+      : null;
+
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert({
       order_number: orderNumber,
       customer_id: null,
       guest_email: parsed.data.guestEmail ?? null,
+      guest_phone: parsed.data.guestPhone?.trim() || null,
       status: "pending",
       subtotal_amount: subtotal,
       discount_amount: 0,
       shipping_amount: 0,
       total_amount: subtotal,
       currency: "GHS",
+      shipping_address: shipping,
       placed_at: new Date().toISOString()
     })
     .select("id")
