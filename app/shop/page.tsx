@@ -1,5 +1,6 @@
 import { ProductCard } from "@/components/storefront/cards";
 import { Container, Heading, Section } from "@/components/storefront/primitives";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { STOREFRONT_CATEGORY_NAMES } from "@/lib/storefront/categories";
 import { getShopProducts } from "@/lib/storefront/queries";
@@ -50,7 +51,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           title="All Products"
           description="Browse premium furniture and decor with elegant filtering and sorting controls."
         />
-        <form className="mb-6 grid gap-3 rounded-3xl border border-border bg-card p-4 md:grid-cols-4" method="get">
+        <form className="mb-6 grid gap-3 rounded-3xl border border-border bg-card p-4 md:grid-cols-[1fr_1fr_1fr_auto_auto]" method="get">
           <datalist id="shop-category-suggestions">
             {STOREFRONT_CATEGORY_NAMES.map((name) => (
               <option key={name} value={name} />
@@ -75,6 +76,9 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             <option value="price-low">Sort: Price low-high</option>
             <option value="price-high">Sort: Price high-low</option>
           </select>
+          <Button type="submit" className="h-11 shrink-0">
+            Apply filters
+          </Button>
         </form>
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((product) => (

@@ -1,5 +1,10 @@
+import Link from "next/link";
 import { formatGhs } from "@/lib/utils";
 import { getAdminDashboardData } from "@/lib/admin/queries";
+import { STOREFRONT_CATEGORY_NAMES } from "@/lib/storefront/categories";
+import { Button } from "@/components/ui/button";
+
+const STOREFRONT_CATEGORY_TOTAL = STOREFRONT_CATEGORY_NAMES.length;
 
 export default async function AdminDashboardPage() {
   const data = await getAdminDashboardData();
@@ -11,7 +16,7 @@ export default async function AdminDashboardPage() {
         <h1 className="font-heading text-4xl">Dashboard Overview</h1>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <article className="rounded-3xl border border-border bg-card p-5">
           <p className="text-sm text-muted-foreground">Revenue</p>
           <p className="mt-1 font-heading text-3xl">{formatGhs(data.revenue)}</p>
@@ -23,6 +28,16 @@ export default async function AdminDashboardPage() {
         <article className="rounded-3xl border border-border bg-card p-5">
           <p className="text-sm text-muted-foreground">AOV</p>
           <p className="mt-1 font-heading text-3xl">{formatGhs(data.averageOrderValue)}</p>
+        </article>
+        <article className="rounded-3xl border border-border bg-card p-5">
+          <p className="text-sm text-muted-foreground">Categories</p>
+          <p className="mt-1 font-heading text-3xl">{data.categoryCount}</p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Storefront linked {data.storefrontCategoriesLinked}/{STOREFRONT_CATEGORY_TOTAL}
+          </p>
+          <Button className="mt-3" variant="outline" size="sm" asChild>
+            <Link href="/admin/categories">Manage categories</Link>
+          </Button>
         </article>
       </div>
 

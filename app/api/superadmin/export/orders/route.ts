@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAdminDataClient } from "@/lib/admin/db";
 import { requireSuperadminAccess } from "@/lib/superadmin/auth";
 
 function toCsv(rows: Record<string, unknown>[]) {
@@ -11,7 +11,7 @@ function toCsv(rows: Record<string, unknown>[]) {
 
 export async function GET() {
   await requireSuperadminAccess();
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getAdminDataClient();
   if (!supabase) return new NextResponse("Supabase is not configured", { status: 500 });
 
   const { data } = await supabase

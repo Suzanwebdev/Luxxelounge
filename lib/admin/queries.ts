@@ -1,42 +1,53 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAdminDataClient } from "@/lib/admin/db";
 import { STOREFRONT_CATEGORY_NAMES, categoryShopHref } from "@/lib/storefront/categories";
 import { toSlug } from "@/lib/slug";
 
 export async function getAdminDashboardData() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getAdminDataClient();
   if (!supabase) {
     return {
       revenue: 0,
       orders: 0,
       averageOrderValue: 0,
-      topProducts: []
+      topProducts: [],
+      categoryCount: 0,
+      storefrontCategoriesLinked: 0
     };
   }
 
-  const [{ data: orders }, { data: topProducts }] = await Promise.all([
+  const [{ data: orders }, { data: topProducts }, { data: categoryRows }] = await Promise.all([
     supabase.from("orders").select("total_amount,status"),
     supabase
       .from("products")
       .select("name,total_reviews,rating")
       .eq("status", "active")
       .order("total_reviews", { ascending: false })
-      .limit(5)
+      .limit(5),
+    supabase.from("categories").select("id,name,slug,is_active")
   ]);
 
   const paidOrders = (orders || []).filter((o) => o.status === "paid" || o.status === "delivered");
   const revenue = paidOrders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
   const orderCount = paidOrders.length;
 
+  const categories = categoryRows || [];
+  const storefrontCategoriesLinked = STOREFRONT_CATEGORY_NAMES.filter((name) => {
+    const slug = toSlug(name);
+    return categories.some((c) => c.slug === slug || c.name === name);
+  }).length;
+
   return {
     revenue,
     orders: orderCount,
     averageOrderValue: orderCount > 0 ? revenue / orderCount : 0,
-    topProducts: topProducts || []
+    topProducts: topProducts || [],
+    categoryCount: categories.length,
+    storefrontCategoriesLinked
   };
 }
 
 export async function getAdminProducts() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getAdminDataClient();
   if (!supabase) return [];
 
   const { data } = await supabase
@@ -50,7 +61,7 @@ export async function getAdminProducts() {
 }
 
 export async function getAdminCategories() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getAdminDataClient();
   if (!supabase) return [];
 
   const { data } = await supabase.from("categories").select("id,name,slug,is_active").order("name");
@@ -94,7 +105,7 @@ export async function getAdminExtraCategories() {
 }
 
 export async function getAdminCustomerProfiles() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getAdminDataClient();
   if (!supabase) return [];
   const { data } = await supabase
     .from("profiles")
@@ -105,7 +116,7 @@ export async function getAdminCustomerProfiles() {
 }
 
 export async function getAdminDiscounts() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getAdminDataClient();
   if (!supabase) return [];
   const { data } = await supabase
     .from("discounts")
@@ -116,14 +127,14 @@ export async function getAdminDiscounts() {
 }
 
 export async function getAdminHomeContentSections() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getAdminDataClient();
   if (!supabase) return {};
   const { data } = await supabase.from("home_content").select("sections").eq("id", 1).single();
   return (data?.sections || {}) as Record<string, unknown>;
 }
 
 export async function getAdminOrders() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getAdminDataClient();
   if (!supabase) return [];
 
   const { data } = await supabase
@@ -135,7 +146,7 @@ export async function getAdminOrders() {
 }
 
 export async function getSiteSettings() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getAdminDataClient();
   if (!supabase) return null;
   const { data } = await supabase.from("site_settings").select("*").eq("id", 1).single();
   return data;

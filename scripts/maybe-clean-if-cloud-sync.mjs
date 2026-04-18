@@ -1,6 +1,11 @@
 /**
  * OneDrive / Dropbox / iCloud / Google Drive often corrupt `.next` Webpack chunks.
- * Before dev/build, wipe `.next` when the repo lives under a known sync path.
+ * Runs before **production builds** only (`prebuild`). We intentionally do **not** wipe
+ * before every `next dev`: deleting `.next` while a dev server (or a second terminal)
+ * is still using it causes `ENOENT routes-manifest.json` and a blank "Internal Server Error".
+ *
+ * When chunks look corrupt during dev, run: `npm run dev:fresh` (or `npm run clean` then `npm run dev`).
+ *
  * Set SKIP_CLOUD_SYNC_CLEAN=1 to disable (e.g. CI or if you trust your setup).
  */
 import { execSync } from "child_process";

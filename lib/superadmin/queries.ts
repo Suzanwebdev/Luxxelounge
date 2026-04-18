@@ -1,7 +1,7 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAdminDataClient } from "@/lib/admin/db";
 
 export async function getSuperadminOverview() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getAdminDataClient();
   if (!supabase) {
     return {
       maintenanceMode: false,
@@ -30,7 +30,7 @@ export async function getSuperadminOverview() {
 }
 
 export async function getSuperadminUsers() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getAdminDataClient();
   if (!supabase) return [];
   const { data } = await supabase
     .from("profiles")
@@ -41,7 +41,7 @@ export async function getSuperadminUsers() {
 }
 
 export async function getSuperadminPayments() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getAdminDataClient();
   if (!supabase) return [];
   const { data } = await supabase
     .from("payments")
@@ -52,7 +52,7 @@ export async function getSuperadminPayments() {
 }
 
 export async function getWebhookLogs() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getAdminDataClient();
   if (!supabase) return [];
   const { data } = await supabase
     .from("webhook_logs")
@@ -63,7 +63,7 @@ export async function getWebhookLogs() {
 }
 
 export async function getSystemLogs() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getAdminDataClient();
   if (!supabase) return { errors: [], suspicious: [] };
   const [{ data: errors }, { data: suspicious }] = await Promise.all([
     supabase.from("error_logs").select("id,source,level,message,created_at").order("created_at", { ascending: false }).limit(50),
@@ -77,7 +77,7 @@ export async function getSystemLogs() {
 }
 
 export async function getLoginAuditLogs() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getAdminDataClient();
   if (!supabase) return [];
   const { data } = await supabase
     .from("login_audit_logs")
@@ -88,7 +88,7 @@ export async function getLoginAuditLogs() {
 }
 
 export async function getHomeContentSections() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getAdminDataClient();
   if (!supabase) return {};
   const { data } = await supabase.from("home_content").select("sections").eq("id", 1).single();
   return (data?.sections || {}) as Record<string, unknown>;

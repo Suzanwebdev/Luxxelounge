@@ -1,8 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getAdminDataClient } from "@/lib/admin/db";
 import { getMissingSupabasePublicEnvVars } from "@/lib/supabase/env";
 import { requireAdminAccess } from "@/lib/admin/auth";
 import { STOREFRONT_CATEGORY_NAMES } from "@/lib/storefront/categories";
@@ -10,7 +9,7 @@ import { toSlug } from "@/lib/slug";
 
 export async function upsertProductAction(formData: FormData) {
   await requireAdminAccess();
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getAdminDataClient();
   if (!supabase) return;
 
   const id = String(formData.get("id") || "");
@@ -64,7 +63,7 @@ export async function upsertProductAction(formData: FormData) {
 
 export async function deleteProductAction(formData: FormData) {
   await requireAdminAccess();
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getAdminDataClient();
   if (!supabase) return;
   const id = String(formData.get("id") || "");
   if (!id) return;
@@ -76,7 +75,7 @@ export async function deleteProductAction(formData: FormData) {
 
 export async function createCategoryAction(formData: FormData) {
   await requireAdminAccess();
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getAdminDataClient();
   if (!supabase) return;
   const name = String(formData.get("name") || "").trim();
   const slug = toSlug(String(formData.get("slug") || name));
@@ -99,8 +98,7 @@ export async function syncStorefrontCategoriesAction(
   _formData: FormData
 ): Promise<SyncCategoriesState> {
   await requireAdminAccess();
-  const admin = createSupabaseAdminClient();
-  const supabase = admin ?? (await createSupabaseServerClient());
+  const supabase = await getAdminDataClient();
   if (!supabase) {
     const missing = getMissingSupabasePublicEnvVars();
     if (missing.length > 0) {
@@ -115,19 +113,20 @@ export async function syncStorefrontCategoriesAction(
     };
   }
 
-  let count = 0;
-  for (const name of STOREFRONT_CATEGORY_NAMES) {
-    const slug = toSlug(name);
-    const { error } = await supabase.from("categories").upsert({ name, slug, is_active: true }, { onConflict: "slug" });
-    if (error) {
-      return {
-        ok: false,
-        message: `Could not save “${name}”: ${error.message}. If this is a permission error, set SUPABASE_SERVICE_ROLE_KEY on the server.`,
-        count
-      };
-    }
-    count++;
+  const rows = STOREFRONT_CATEGORY_NAMES.map((name) => ({
+    name,
+    slug: toSlug(name),
+    is_active: true
+  }));
+  const { error } = await supabase.from("categories").upsert(rows, { onConflict: "slug" });
+  if (error) {
+    return {
+      ok: false,
+      message: `Could not sync categories: ${error.message}. Set SUPABASE_SERVICE_ROLE_KEY on the server if this is a permission error.`,
+      count: 0
+    };
   }
+  const count = rows.length;
 
   revalidatePath("/admin/categories");
   revalidatePath("/admin/products");
@@ -143,7 +142,7 @@ export async function syncStorefrontCategoriesAction(
 
 export async function toggleCategoryActiveAction(formData: FormData) {
   await requireAdminAccess();
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getAdminDataClient();
   if (!supabase) return;
   const id = String(formData.get("id") || "");
   const next = String(formData.get("active")) === "true";
@@ -156,7 +155,7 @@ export async function toggleCategoryActiveAction(formData: FormData) {
 
 export async function createDiscountAction(formData: FormData) {
   await requireAdminAccess();
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getAdminDataClient();
   if (!supabase) return;
   const code = String(formData.get("code") || "")
     .trim()
@@ -181,7 +180,7 @@ export async function createDiscountAction(formData: FormData) {
 
 export async function toggleDiscountActiveAction(formData: FormData) {
   await requireAdminAccess();
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getAdminDataClient();
   if (!supabase) return;
   const id = String(formData.get("id") || "");
   const next = String(formData.get("active")) === "true";
@@ -193,7 +192,7 @@ export async function toggleDiscountActiveAction(formData: FormData) {
 
 export async function updateOrderStatusAction(formData: FormData) {
   await requireAdminAccess();
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getAdminDataClient();
   if (!supabase) return;
   const id = String(formData.get("id") || "");
   const status = String(formData.get("status") || "");
@@ -205,7 +204,7 @@ export async function updateOrderStatusAction(formData: FormData) {
 
 export async function updateSiteSettingsAction(formData: FormData) {
   await requireAdminAccess();
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getAdminDataClient();
   if (!supabase) return;
 
   const storeName = String(formData.get("storeName") || "Luxxelounge");

@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "clean": "node scripts/clean-next.mjs",
-    "predev": "node scripts/maybe-clean-if-cloud-sync.mjs",
     "prebuild": "node scripts/maybe-clean-if-cloud-sync.mjs",
     "dev": "next dev",
+    "dev:fresh": "npm run clean && next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

@@ -9,6 +9,10 @@ import { HeroSlider, type HeroSlide } from "@/components/storefront/hero-slider"
 import { Container, Heading, Section } from "@/components/storefront/primitives";
 import { getHomeData } from "@/lib/storefront/queries";
 
+type HomePageProps = {
+  searchParams?: Promise<{ notice?: string }>;
+};
+
 const HERO_SLIDES: HeroSlide[] = [
   { src: "/brand/hero-banner.png", alt: "Luxxelounge curated living room interior" },
   {
@@ -23,10 +27,34 @@ const HERO_SLIDES: HeroSlide[] = [
   }
 ];
 
-export default async function HomePage() {
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const params = searchParams ? await searchParams : undefined;
   const homeData = await getHomeData();
+  const showSupabaseEnvNotice = params?.notice === "supabase_env";
+
   return (
     <>
+      {showSupabaseEnvNotice ? (
+        <Section className="py-4 pt-6">
+          <Container>
+            <div
+              role="status"
+              className="rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-foreground"
+            >
+              <p className="font-medium">Supabase configuration required</p>
+              <p className="mt-1 text-muted-foreground">
+                Admin sign-in needs valid <code className="rounded bg-muted px-1 py-0.5 text-xs">NEXT_PUBLIC_SUPABASE_URL</code>{" "}
+                and <code className="rounded bg-muted px-1 py-0.5 text-xs">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> in{" "}
+                <code className="rounded bg-muted px-1 py-0.5 text-xs">.env.local</code>. See{" "}
+                <code className="rounded bg-muted px-1 py-0.5 text-xs">.env.example</code> for the full list.
+              </p>
+              <Button className="mt-3" variant="outline" size="sm" asChild>
+                <Link href="/">Dismiss</Link>
+              </Button>
+            </div>
+          </Container>
+        </Section>
+      ) : null}
       <Section className="pb-6 pt-0">
         <div className="relative w-full overflow-hidden">
           <HeroSlider slides={[...HERO_SLIDES]} />

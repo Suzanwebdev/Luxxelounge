@@ -1,4 +1,5 @@
 import { createStaffAccountAction } from "@/app/superadmin/actions";
+import { ProfileRoleAssignForm } from "@/components/superadmin/profile-role-assign-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getLoginAuditLogs, getSuperadminUsers } from "@/lib/superadmin/queries";
@@ -32,17 +33,36 @@ export default async function SuperadminUsersPage() {
 
       <article className="rounded-3xl border border-border bg-card p-5">
         <h2 className="font-heading text-2xl">Roles and profiles</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Change <code className="rounded bg-muted px-1 text-xs">profiles.role</code> and keep{" "}
+          <code className="rounded bg-muted px-1 text-xs">admins</code> /{" "}
+          <code className="rounded bg-muted px-1 text-xs">superadmins</code> allowlists in sync for sign-in. Superadmin
+          adds the email to both allowlists; customer removes them.
+        </p>
         {users.length === 0 ? (
           <p className="mt-3 rounded-2xl border border-dashed border-border p-5 text-sm text-muted-foreground">
             No profiles yet. Apply migration <code className="rounded bg-muted px-1">0002_admin_read_profiles</code> if
             staff cannot list accounts after signup.
           </p>
         ) : null}
-        <div className="mt-3 space-y-2">
+        <div className="mt-4 space-y-3">
           {users.map((user) => (
-            <div key={user.id} className="rounded-2xl border border-border p-3">
-              <p className="font-medium">{user.full_name || user.email}</p>
-              <p className="text-xs text-muted-foreground">{user.email} • {user.role}</p>
+            <div
+              key={user.id}
+              className="flex flex-col gap-3 rounded-2xl border border-border p-4 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div className="min-w-0">
+                <p className="font-medium">{user.full_name || user.email}</p>
+                <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+              </div>
+              <ProfileRoleAssignForm
+                profile={{
+                  id: user.id,
+                  email: user.email,
+                  full_name: user.full_name,
+                  role: user.role
+                }}
+              />
             </div>
           ))}
         </div>

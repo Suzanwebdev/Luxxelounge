@@ -2,6 +2,8 @@ import { setFeatureFlagAction, setMaintenanceModeAction } from "@/app/superadmin
 import { Button } from "@/components/ui/button";
 import { getSuperadminOverview } from "@/lib/superadmin/queries";
 
+export const dynamic = "force-dynamic";
+
 export default async function SuperadminControlCenterPage() {
   const overview = await getSuperadminOverview();
   const entries = Object.entries(overview.featureFlags);

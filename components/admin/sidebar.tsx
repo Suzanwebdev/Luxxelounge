@@ -2,7 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Package, Tags, ShoppingCart, Users, TicketPercent, FileText, Settings } from "lucide-react";
+import {
+  Crown,
+  LayoutDashboard,
+  Package,
+  Tags,
+  ShoppingCart,
+  Users,
+  TicketPercent,
+  FileText,
+  Settings
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -16,12 +26,29 @@ const links = [
   { href: "/admin/settings", label: "Settings", icon: Settings }
 ];
 
-export function AdminSidebar() {
+type AdminSidebarProps = {
+  /** Show link to `/superadmin` when this account is a platform superadmin. */
+  showSuperadminLink?: boolean;
+};
+
+export function AdminSidebar({ showSuperadminLink = false }: AdminSidebarProps) {
   const pathname = usePathname();
   return (
     <aside className="w-full rounded-3xl border border-border bg-card p-3 md:w-72">
       <p className="px-3 pb-3 pt-2 font-heading text-2xl text-primary">Admin</p>
       <nav className="space-y-1">
+        {showSuperadminLink ? (
+          <Link
+            href="/superadmin"
+            className={cn(
+              "mb-2 flex items-center gap-2 rounded-2xl border border-primary/30 bg-primary/10 px-3 py-2 text-sm font-medium text-primary",
+              pathname.startsWith("/superadmin") ? "ring-1 ring-primary/40" : "hover:bg-primary/15"
+            )}
+          >
+            <Crown className="h-4 w-4" />
+            Superadmin dashboard
+          </Link>
+        ) : null}
         {links.map((link) => {
           const Icon = link.icon;
           const active =
