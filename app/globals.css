@@ -21,9 +21,16 @@
   @apply border-border;
 }
 
-html,
+html {
+  @apply h-full;
+}
+
 body {
-  @apply bg-background text-foreground font-body antialiased;
+  @apply min-h-full flex flex-col bg-background text-foreground font-body antialiased;
+}
+
+main {
+  @apply min-w-0 w-full flex-1;
 }
 
 a {

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { OrbitCategoryImageSlot } from "@/components/storefront/orbit-category-image-slot";
 import { cn } from "@/lib/utils";
 
 const EASE_CSS = "cubic-bezier(0.4, 0, 0.2, 1)";
@@ -520,32 +521,11 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
                       )}
                       draggable={false}
                     >
-                      <span
-                        className="relative z-[1] block w-full shrink-0 overflow-hidden bg-neutral-950"
-                        style={{
-                          height: orbitImageSlotPx,
-                          WebkitTransform: "translateZ(0.1px)",
-                          transform: "translateZ(0.1px)",
-                          backgroundColor: "#0a0a0a",
-                          backgroundImage: `url("${item.imageSrc}")`,
-                          backgroundSize: "contain",
-                          backgroundPosition: "center",
-                          backgroundRepeat: "no-repeat"
-                        }}
-                        role="img"
-                        aria-label={item.imageAlt}
-                      >
-                        <img
-                          src={item.imageSrc}
-                          alt=""
-                          aria-hidden="true"
-                          className="pointer-events-none absolute inset-0 h-full w-full object-contain p-0.5 sm:p-1"
-                          style={{ WebkitTransform: "translateZ(0)", transform: "translateZ(0)" }}
-                          loading="eager"
-                          decoding="async"
-                          draggable={false}
-                        />
-                      </span>
+                      <OrbitCategoryImageSlot
+                        imageSrc={item.imageSrc}
+                        imageAlt={item.imageAlt}
+                        heightPx={orbitImageSlotPx}
+                      />
                       <span className="relative z-[1] flex min-h-0 flex-1 items-center justify-center border-t border-[hsl(38,16%,90%)] bg-gradient-to-b from-[hsl(38,28%,98%)] to-white px-1 py-1 text-balance sm:py-2 sm:text-[0.8125rem]">
                         {item.label}
                       </span>
