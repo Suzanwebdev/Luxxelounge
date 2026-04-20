@@ -17,20 +17,20 @@
   --emerald: 163 60% 30%;
 }
 
-* {
-  @apply border-border;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
+/* Do NOT apply border-color to every element — it breaks images, SVGs, and some Radix layers. */
+
 html {
-  @apply h-full;
+  @apply h-full scroll-smooth;
 }
 
 body {
-  @apply min-h-full flex flex-col bg-background text-foreground font-body antialiased;
-}
-
-main {
-  @apply min-w-0 w-full flex-1;
+  @apply min-h-full bg-background text-foreground font-body antialiased;
 }
 
 a {
