@@ -1,0 +1,15 @@
+.next/
+.luxxelounge-next-cache/
+node_modules/
+# Env secrets — keep real keys only in .env.local (ignored) or host dashboard (e.g. Vercel)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+dist/
+build/
+coverage/
+*.log
+*.tsbuildinfo
+.vercel
