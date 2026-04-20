@@ -27,9 +27,8 @@ export async function middleware(request: NextRequest) {
         return request.cookies.getAll();
       },
       setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) => {
-          request.cookies.set(name, value);
-        });
+        // Next.js 15: do not mutate request.cookies here — it can crash the Edge runtime.
+        // Session refresh is applied only via response.cookies (see Supabase SSR middleware notes).
         response = NextResponse.next({
           request: { headers: requestHeaders }
         });

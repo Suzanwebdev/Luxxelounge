@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseEnv } from "@/lib/supabase/env";
 import { STOREFRONT_CATEGORY_NAMES } from "@/lib/storefront/categories";
 import {
   categoryChips as fallbackCategoryChips,
@@ -237,16 +238,38 @@ export async function getBlogPosts() {
   return data || [];
 }
 
-/** Top announcement strip (shared layout). */
+/**
+ * Top announcement strip (shared layout).
+ * Uses Supabase REST with the anon key only — avoids `createSupabaseServerClient()` / `cookies()` here.
+ * In Next.js 15, cookie-based Supabase clients in the root layout can trigger runtime errors during RSC render.
+ */
 export async function getSiteAnnouncement(): Promise<string> {
-  const supabase = await createSupabaseServerClient();
-  if (!supabase) {
+  const env = getSupabaseEnv();
+  if (!env) {
     return ANNOUNCEMENT_FALLBACK;
   }
-  const { data } = await supabase.from("home_content").select("sections").eq("id", 1).single();
-  const sections = data?.sections as HomeContentSections | undefined;
-  const text = typeof sections?.announcement === "string" ? sections.announcement.trim() : "";
-  return text || ANNOUNCEMENT_FALLBACK;
+  try {
+    const res = await fetch(
+      `${env.url}/rest/v1/home_content?select=sections&id=eq.1`,
+      {
+        headers: {
+          apikey: env.anonKey,
+          Authorization: `Bearer ${env.anonKey}`,
+          Accept: "application/json"
+        },
+        next: { revalidate: 30 }
+      }
+    );
+    if (!res.ok) {
+      return ANNOUNCEMENT_FALLBACK;
+    }
+    const rows = (await res.json()) as { sections?: unknown }[];
+    const sections = rows?.[0]?.sections as HomeContentSections | undefined;
+    const text = typeof sections?.announcement === "string" ? sections.announcement.trim() : "";
+    return text || ANNOUNCEMENT_FALLBACK;
+  } catch {
+    return ANNOUNCEMENT_FALLBACK;
+  }
 }
 
 export async function getBlogBySlug(slug: string) {
