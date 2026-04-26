@@ -39,7 +39,16 @@ export async function middleware(request: NextRequest) {
     }
   });
 
-  await supabase.auth.getUser();
+  // Keep navigation fast even when auth endpoint is slow/unreachable.
+  // If session refresh stalls, continue rendering instead of blocking the whole page.
+  try {
+    await Promise.race([
+      supabase.auth.getUser(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("auth refresh timeout")), 1800))
+    ]);
+  } catch {
+    // noop: response still carries pathname header; auth gates inside pages handle real access.
+  }
 
   return response;
 }

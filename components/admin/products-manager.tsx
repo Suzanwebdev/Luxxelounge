@@ -38,31 +38,41 @@ export function ProductsManager({
 }) {
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState<ProductRow | null>(null);
-  const [uploadedUrl, setUploadedUrl] = useState("");
+  const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const defaultCategory = categories[0]?.id || "";
 
-  const currentImage = useMemo(() => {
-    if (uploadedUrl) return uploadedUrl;
-    return editing?.product_images?.[0]?.image_url || "";
-  }, [uploadedUrl, editing]);
+  const previewImages = useMemo(() => {
+    if (uploadedUrls.length > 0) return uploadedUrls;
+    return (editing?.product_images || [])
+      .map((img) => img.image_url || "")
+      .filter(Boolean);
+  }, [uploadedUrls, editing]);
 
-  async function uploadImage(file: File) {
+  async function uploadImages(files: FileList) {
     const supabase = createSupabaseBrowserClient();
     if (!supabase) return;
 
+    setUploadError(null);
     setUploading(true);
-    const path = `admin/${Date.now()}-${file.name.replace(/\s+/g, "-")}`;
-    const { error } = await supabase.storage.from("product-images").upload(path, file, {
-      upsert: true
-    });
-    if (error) {
-      setUploading(false);
-      return;
+    const nextUrls: string[] = [];
+    for (const file of Array.from(files)) {
+      const path = `admin/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${file.name.replace(/\s+/g, "-")}`;
+      const { error } = await supabase.storage.from("product-images").upload(path, file, {
+        upsert: true
+      });
+      if (error) {
+        setUploadError(`Could not upload "${file.name}". Please try again.`);
+        continue;
+      }
+      const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+      nextUrls.push(data.publicUrl);
     }
 
-    const { data } = supabase.storage.from("product-images").getPublicUrl(path);
-    setUploadedUrl(data.publicUrl);
+    if (nextUrls.length > 0) {
+      setUploadedUrls((prev) => [...prev, ...nextUrls]);
+    }
     setUploading(false);
   }
 
@@ -73,11 +83,12 @@ export function ProductsManager({
         <form
           action={(formData) => {
             if (editing) formData.set("id", editing.id);
-            if (uploadedUrl) formData.set("imageUrl", uploadedUrl);
+            formData.set("imageUrls", JSON.stringify(uploadedUrls));
             startTransition(async () => {
               await upsertProductAction(formData);
               setEditing(null);
-              setUploadedUrl("");
+              setUploadedUrls([]);
+              setUploadError(null);
             });
           }}
           className="mt-4 space-y-3"
@@ -121,17 +132,28 @@ export function ProductsManager({
             </select>
           </div>
           <div className="rounded-2xl border border-border p-3">
-            <p className="mb-2 text-sm text-muted-foreground">Upload product image</p>
+            <p className="mb-2 text-sm text-muted-foreground">Upload product images (multiple allowed)</p>
             <Input
               type="file"
               accept="image/*"
+              multiple
               onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) uploadImage(file);
+                const files = event.target.files;
+                if (files && files.length > 0) uploadImages(files);
               }}
             />
             {uploading ? <p className="mt-2 text-xs text-muted-foreground">Uploading...</p> : null}
-            {currentImage ? <p className="mt-2 truncate text-xs text-muted-foreground">{currentImage}</p> : null}
+            {uploadError ? <p className="mt-2 text-xs text-destructive">{uploadError}</p> : null}
+            {previewImages.length > 0 ? (
+              <div className="mt-3 grid grid-cols-4 gap-2">
+                {previewImages.map((url, index) => (
+                  <div key={`${url}-${index}`} className="relative overflow-hidden rounded-lg border border-border bg-muted/30">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt={`Preview ${index + 1}`} className="h-16 w-full object-cover" />
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
           <div className="flex gap-2">
             <Button type="submit" disabled={isPending || uploading}>
@@ -143,7 +165,8 @@ export function ProductsManager({
                 variant="outline"
                 onClick={() => {
                   setEditing(null);
-                  setUploadedUrl("");
+                  setUploadedUrls([]);
+                  setUploadError(null);
                 }}
               >
                 Cancel
@@ -170,7 +193,16 @@ export function ProductsManager({
                 {formatGhs(Number(product.sale_price ?? product.regular_price))} • Stock {product.stock_qty}
               </p>
               <div className="mt-2 flex gap-2">
-                <Button type="button" size="sm" variant="outline" onClick={() => setEditing(product)}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setUploadedUrls([]);
+                    setUploadError(null);
+                    setEditing(product);
+                  }}
+                >
                   Edit
                 </Button>
                 <form

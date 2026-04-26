@@ -27,7 +27,7 @@ export async function upsertProductAction(formData: FormData) {
     .map((t) => t.trim())
     .filter(Boolean);
   const categoryId = String(formData.get("categoryId") || "");
-  const imageUrl = String(formData.get("imageUrl") || "");
+  const imageUrlsRaw = String(formData.get("imageUrls") || "[]");
 
   if (!name || !slug || !regularPrice) return;
 
@@ -47,13 +47,24 @@ export async function upsertProductAction(formData: FormData) {
   const { error, data } = await query.select("id").single();
   if (error) return;
 
-  if (imageUrl) {
-    await supabase.from("product_images").insert({
+  let imageUrls: string[] = [];
+  try {
+    const parsed = JSON.parse(imageUrlsRaw);
+    if (Array.isArray(parsed)) {
+      imageUrls = parsed.map((u) => String(u || "").trim()).filter(Boolean);
+    }
+  } catch {
+    imageUrls = [];
+  }
+
+  if (imageUrls.length > 0) {
+    const rows = imageUrls.map((imageUrl, index) => ({
       product_id: data.id,
       image_url: imageUrl,
       alt_text: name,
-      sort_order: 0
-    });
+      sort_order: index
+    }));
+    await supabase.from("product_images").insert(rows);
   }
 
   revalidatePath("/admin");

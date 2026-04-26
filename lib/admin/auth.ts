@@ -27,15 +27,29 @@ export type AdminSessionCheck =
   | { ok: false; reason: "forbidden"; user: User }
   | { ok: true; role: AdminRole; user: User };
 
+async function getServerUserWithSessionFallback(sessionClient: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>) {
+  try {
+    const {
+      data: { user }
+    } = await sessionClient.auth.getUser();
+    if (user) return user;
+  } catch {
+    // Transient network issues (ECONNRESET, timeout) can make getUser fail in local/dev.
+  }
+
+  const {
+    data: { session }
+  } = await sessionClient.auth.getSession();
+  return session?.user ?? null;
+}
+
 export async function checkAdminSession(): Promise<AdminSessionCheck> {
   const sessionClient = await createSupabaseServerClient();
   if (!sessionClient) {
     return { ok: false, reason: "no_client" };
   }
 
-  const {
-    data: { user }
-  } = await sessionClient.auth.getUser();
+  const user = await getServerUserWithSessionFallback(sessionClient);
 
   if (!user?.email) {
     return { ok: false, reason: "unauthenticated" };

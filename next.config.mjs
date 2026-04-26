@@ -11,8 +11,7 @@ const nextConfig = {
     return [
       { source: "/super-admin", destination: "/superadmin", permanent: false },
       { source: "/super-admin/:path*", destination: "/superadmin/:path*", permanent: false },
-      { source: "/superAdmin", destination: "/superadmin", permanent: false },
-      { source: "/superAdmin/:path*", destination: "/superadmin/:path*", permanent: false }
+      // Keep only dashed alias; mixed-case aliases can self-match on some hosts and cause loops.
     ];
   },
   images: {

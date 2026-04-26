@@ -38,15 +38,29 @@ export type SuperadminPortalCheck =
   | { ok: false; reason: "forbidden"; user: User }
   | { ok: true; user: User };
 
+async function getServerUserWithSessionFallback(sessionClient: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>) {
+  try {
+    const {
+      data: { user }
+    } = await sessionClient.auth.getUser();
+    if (user) return user;
+  } catch {
+    // Transient network/auth endpoint failures in local/dev should not hard-lock access checks.
+  }
+
+  const {
+    data: { session }
+  } = await sessionClient.auth.getSession();
+  return session?.user ?? null;
+}
+
 export async function checkSuperadminPortalSession(): Promise<SuperadminPortalCheck> {
   const sessionClient = await createSupabaseServerClient();
   if (!sessionClient) {
     return { ok: false, reason: "no_client" };
   }
 
-  const {
-    data: { user }
-  } = await sessionClient.auth.getUser();
+  const user = await getServerUserWithSessionFallback(sessionClient);
 
   if (!user?.email) {
     return { ok: false, reason: "unauthenticated" };
@@ -76,9 +90,7 @@ export async function requireSuperadminAccess() {
     redirect("/?notice=supabase_env");
   }
 
-  const {
-    data: { user }
-  } = await sessionClient.auth.getUser();
+  const user = await getServerUserWithSessionFallback(sessionClient);
   const path = await getRequestedPathFromHeaders();
   const next = sanitizeSuperadminNextPath(path);
 

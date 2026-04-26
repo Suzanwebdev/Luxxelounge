@@ -27,7 +27,7 @@ export function OrbitCategoryImageSlot({ imageSrc, imageAlt, heightPx }: OrbitCa
     <span
       className={cn(
         "relative z-[1] block w-full shrink-0 overflow-hidden",
-        "bg-[hsl(38,22%,93%)] ring-1 ring-inset ring-black/[0.06]"
+        "bg-neutral-950 ring-1 ring-inset ring-black/20"
       )}
       style={{
         height: heightPx,
