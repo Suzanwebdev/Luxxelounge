@@ -55,7 +55,7 @@ function dimsForContainerWidth(w: number): OrbitDims {
   }
   const scaledCard = Math.round(card * CARD_SIZE_SCALE);
   const rxScaledRaw = Math.max(rx, 72) * CARD_SIZE_SCALE;
-  const edgeGutter = width < 380 ? 16 : width < 640 ? 12 : 18;
+  const edgeGutter = width < 380 ? 22 : width < 640 ? 16 : 18;
   const maxRxToFitViewport = Math.max(scaledCard * 0.45, width / 2 - scaledCard / 2 - edgeGutter);
   // Keep the same visual style but guarantee full card visibility at far left/right.
   const rxScaled = Math.min(rxScaledRaw, maxRxToFitViewport);
@@ -437,7 +437,7 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
         className
       )}
     >
-      <div className="mx-auto max-w-7xl pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl pl-[max(1.25rem,env(safe-area-inset-left,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))] sm:px-6 lg:px-8">
         <p className="mb-2 text-center text-[0.65rem] font-medium uppercase tracking-[0.18em] text-muted-foreground sm:mb-2.5 sm:text-xs sm:tracking-[0.2em]">
           Browse by category
         </p>
@@ -447,7 +447,7 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
 
         <div
           ref={orbitContainerRef}
-          className="relative mx-auto flex min-h-[min(78vw,320px)] w-full max-w-5xl items-center justify-center px-2 py-5 sm:min-h-[min(68vw,420px)] sm:px-4 sm:py-8 md:min-h-[620px] md:py-12"
+          className="relative mx-auto flex min-h-[min(78vw,320px)] w-full max-w-5xl items-center justify-center px-3 py-5 sm:min-h-[min(68vw,420px)] sm:px-4 sm:py-8 md:min-h-[620px] md:py-12"
           style={{
             perspective: "1200px",
             perspectiveOrigin: "50% 46%"
