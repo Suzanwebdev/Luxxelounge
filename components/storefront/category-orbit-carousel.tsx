@@ -55,7 +55,7 @@ function dimsForContainerWidth(w: number): OrbitDims {
   }
   const scaledCard = Math.round(card * CARD_SIZE_SCALE);
   const rxScaledRaw = Math.max(rx, 72) * CARD_SIZE_SCALE;
-  const edgeGutter = width < 640 ? 10 : 18;
+  const edgeGutter = width < 380 ? 16 : width < 640 ? 12 : 18;
   const maxRxToFitViewport = Math.max(scaledCard * 0.45, width / 2 - scaledCard / 2 - edgeGutter);
   // Keep the same visual style but guarantee full card visibility at far left/right.
   const rxScaled = Math.min(rxScaledRaw, maxRxToFitViewport);
