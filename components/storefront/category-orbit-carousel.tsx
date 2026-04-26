@@ -53,11 +53,17 @@ function dimsForContainerWidth(w: number): OrbitDims {
     card = 108;
     rx = Math.min(width * 0.4, 288);
   }
-  const rz = rx * (width < 640 ? 0.5 : 0.44);
+  const scaledCard = Math.round(card * CARD_SIZE_SCALE);
+  const rxScaledRaw = Math.max(rx, 72) * CARD_SIZE_SCALE;
+  const edgeGutter = width < 640 ? 10 : 18;
+  const maxRxToFitViewport = Math.max(scaledCard * 0.45, width / 2 - scaledCard / 2 - edgeGutter);
+  // Keep the same visual style but guarantee full card visibility at far left/right.
+  const rxScaled = Math.min(rxScaledRaw, maxRxToFitViewport);
+  const rzScaled = Math.max(rxScaled * (width < 640 ? 0.5 : 0.44), 36 * CARD_SIZE_SCALE);
   return {
-    rx: Math.max(rx, 72) * CARD_SIZE_SCALE,
-    rz: Math.max(rz, 36) * CARD_SIZE_SCALE,
-    card: Math.round(card * CARD_SIZE_SCALE)
+    rx: rxScaled,
+    rz: rzScaled,
+    card: scaledCard
   };
 }
 
