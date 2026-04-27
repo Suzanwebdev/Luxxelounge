@@ -20,6 +20,7 @@ type ProductRow = {
   sale_price: number | null;
   stock_qty: number;
   tags: string[] | null;
+  metadata: { colors?: string[] } | null;
   categories: { name: string | null } | { name: string | null }[] | null;
   product_images: { image_url: string | null }[] | null;
 };
@@ -101,8 +102,22 @@ export function ProductsManager({
             <Input name="salePrice" type="number" min={0} placeholder="Sale price (optional)" defaultValue={editing?.sale_price ?? ""} />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Input name="stockQty" type="number" min={0} placeholder="Stock qty" defaultValue={editing?.stock_qty ?? 0} required />
-            <Input name="tags" placeholder="New, Best Seller, Sale" defaultValue={editing?.tags?.join(", ")} />
+            <Input
+              name="stockQty"
+              type="number"
+              min={0}
+              placeholder="Stock quantity (e.g. 25)"
+              defaultValue={editing?.stock_qty ?? 0}
+              required
+            />
+            <Input name="tags" placeholder="Tags: New, Best Seller, Sale" defaultValue={editing?.tags?.join(", ")} />
+          </div>
+          <div className="grid grid-cols-1 gap-3">
+            <Input
+              name="colors"
+              placeholder="Colors: Walnut, Matte Black, Champagne Beige"
+              defaultValue={editing?.metadata?.colors?.join(", ") ?? ""}
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <select

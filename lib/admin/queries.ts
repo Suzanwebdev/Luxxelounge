@@ -53,7 +53,7 @@ export async function getAdminProducts() {
   const { data } = await supabase
     .from("products")
     .select(
-      "id,name,slug,description,status,category_id,regular_price,sale_price,stock_qty,tags,categories(name),product_images(image_url)"
+      "id,name,slug,description,status,category_id,regular_price,sale_price,stock_qty,tags,metadata,categories(name),product_images(image_url)"
     )
     .order("created_at", { ascending: false });
 

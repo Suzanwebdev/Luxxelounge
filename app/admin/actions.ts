@@ -26,6 +26,10 @@ export async function upsertProductAction(formData: FormData) {
     .split(",")
     .map((t) => t.trim())
     .filter(Boolean);
+  const colors = String(formData.get("colors") || "")
+    .split(",")
+    .map((c) => c.trim())
+    .filter(Boolean);
   const categoryId = String(formData.get("categoryId") || "");
   const imageUrlsRaw = String(formData.get("imageUrls") || "[]");
 
@@ -40,7 +44,10 @@ export async function upsertProductAction(formData: FormData) {
     stock_qty: stockQty,
     status,
     tags,
-    category_id: categoryId || null
+    category_id: categoryId || null,
+    metadata: {
+      colors
+    }
   };
 
   const query = id ? supabase.from("products").update(payload).eq("id", id) : supabase.from("products").insert(payload);

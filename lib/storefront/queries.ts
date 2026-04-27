@@ -62,6 +62,7 @@ function mapRowToProduct(row: {
   total_reviews: number;
   stock_qty: number;
   tags: string[] | null;
+  metadata: { colors?: string[] } | null;
   description: string;
   categories: { name: string | null } | { name: string | null }[] | null;
   product_images: { image_url: string | null }[] | null;
@@ -77,7 +78,10 @@ function mapRowToProduct(row: {
     reviews: row.total_reviews || 0,
     image: row.product_images?.[0]?.image_url || fallbackProducts[0].image,
     category: cat?.name || STOREFRONT_CATEGORY_NAMES[0],
-    colors: ["Champagne Beige", "Walnut"],
+    colors:
+      Array.isArray(row.metadata?.colors) && row.metadata!.colors.length > 0
+        ? row.metadata!.colors.map((c) => String(c))
+        : ["Champagne Beige", "Walnut"],
     sizes: ["Standard", "Large"],
     stock: row.stock_qty || 0,
     tags: (row.tags || ["New"]).slice(0, 2) as Product["tags"],
@@ -114,7 +118,9 @@ export async function getHomeData(): Promise<HomeData> {
     supabase.from("collections").select("name,description,slug").eq("is_active", true).limit(4),
     supabase
       .from("products")
-      .select("id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,description,categories(name),product_images(image_url)")
+      .select(
+        "id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url)"
+      )
       .eq("status", "active")
       .order("created_at", { ascending: false })
       .limit(8)
@@ -154,7 +160,9 @@ export async function getShopProducts() {
 
   const { data } = await supabase
     .from("products")
-    .select("id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,description,categories(name),product_images(image_url)")
+    .select(
+      "id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url)"
+    )
     .eq("status", "active")
     .order("created_at", { ascending: false });
   return data?.map(mapRowToProduct) || fallbackProducts;
@@ -184,7 +192,9 @@ export async function getProductsByCollectionSlug(slug: string) {
 
   const { data } = await supabase
     .from("collection_products")
-    .select("products(id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,description,categories(name),product_images(image_url))")
+    .select(
+      "products(id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url))"
+    )
     .eq("collection_id", collection.id);
 
   const products =
@@ -203,7 +213,9 @@ export async function getProductBySlug(slug: string) {
 
   const { data } = await supabase
     .from("products")
-    .select("id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,description,categories(name),product_images(image_url)")
+    .select(
+      "id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url)"
+    )
     .eq("slug", slug)
     .eq("status", "active")
     .single();
