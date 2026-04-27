@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { upsertProductAction, deleteProductAction } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
@@ -39,26 +39,45 @@ export function ProductsManager({
 }) {
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState<ProductRow | null>(null);
-  const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [localPreviewUrls, setLocalPreviewUrls] = useState<string[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const defaultCategory = categories[0]?.id || "";
 
   const previewImages = useMemo(() => {
-    if (uploadedUrls.length > 0) return uploadedUrls;
+    if (localPreviewUrls.length > 0) return localPreviewUrls;
     return (editing?.product_images || [])
       .map((img) => img.image_url || "")
       .filter(Boolean);
-  }, [uploadedUrls, editing]);
+  }, [localPreviewUrls, editing]);
 
-  async function uploadImages(files: FileList) {
-    const supabase = createSupabaseBrowserClient();
-    if (!supabase) return;
+  useEffect(() => {
+    return () => {
+      localPreviewUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [localPreviewUrls]);
 
+  function handleFileSelection(files: FileList) {
+    const list = Array.from(files);
     setUploadError(null);
+    setSelectedFiles(list);
+    setLocalPreviewUrls((prev) => {
+      prev.forEach((url) => URL.revokeObjectURL(url));
+      return list.map((file) => URL.createObjectURL(file));
+    });
+  }
+
+  async function uploadSelectedFiles(files: File[]) {
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase) {
+      setUploadError("Supabase is not configured in this environment.");
+      return [] as string[];
+    }
+
     setUploading(true);
     const nextUrls: string[] = [];
-    for (const file of Array.from(files)) {
+    for (const file of files) {
       const path = `admin/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${file.name.replace(/\s+/g, "-")}`;
       const { error } = await supabase.storage.from("product-images").upload(path, file, {
         upsert: true
@@ -70,11 +89,8 @@ export function ProductsManager({
       const { data } = supabase.storage.from("product-images").getPublicUrl(path);
       nextUrls.push(data.publicUrl);
     }
-
-    if (nextUrls.length > 0) {
-      setUploadedUrls((prev) => [...prev, ...nextUrls]);
-    }
     setUploading(false);
+    return nextUrls;
   }
 
   return (
@@ -83,12 +99,17 @@ export function ProductsManager({
         <h2 className="font-heading text-2xl">{editing ? "Edit Product" : "Create Product"}</h2>
         <form
           action={(formData) => {
-            if (editing) formData.set("id", editing.id);
-            formData.set("imageUrls", JSON.stringify(uploadedUrls));
             startTransition(async () => {
+              if (editing) formData.set("id", editing.id);
+              const imageUrls = selectedFiles.length > 0 ? await uploadSelectedFiles(selectedFiles) : [];
+              formData.set("imageUrls", JSON.stringify(imageUrls));
               await upsertProductAction(formData);
               setEditing(null);
-              setUploadedUrls([]);
+              setSelectedFiles([]);
+              setLocalPreviewUrls((prev) => {
+                prev.forEach((url) => URL.revokeObjectURL(url));
+                return [];
+              });
               setUploadError(null);
             });
           }}
@@ -154,10 +175,13 @@ export function ProductsManager({
               multiple
               onChange={(event) => {
                 const files = event.target.files;
-                if (files && files.length > 0) uploadImages(files);
+                if (files && files.length > 0) handleFileSelection(files);
               }}
             />
-            {uploading ? <p className="mt-2 text-xs text-muted-foreground">Uploading...</p> : null}
+            <p className="mt-2 text-xs text-muted-foreground">
+              Selected images are previewed now and uploaded when you save the product.
+            </p>
+            {uploading ? <p className="mt-2 text-xs text-muted-foreground">Uploading selected images...</p> : null}
             {uploadError ? <p className="mt-2 text-xs text-destructive">{uploadError}</p> : null}
             {previewImages.length > 0 ? (
               <div className="mt-3 grid grid-cols-4 gap-2">
@@ -180,7 +204,11 @@ export function ProductsManager({
                 variant="outline"
                 onClick={() => {
                   setEditing(null);
-                  setUploadedUrls([]);
+                  setSelectedFiles([]);
+                  setLocalPreviewUrls((prev) => {
+                    prev.forEach((url) => URL.revokeObjectURL(url));
+                    return [];
+                  });
                   setUploadError(null);
                 }}
               >
@@ -213,7 +241,11 @@ export function ProductsManager({
                   size="sm"
                   variant="outline"
                   onClick={() => {
-                    setUploadedUrls([]);
+                    setSelectedFiles([]);
+                    setLocalPreviewUrls((prev) => {
+                      prev.forEach((url) => URL.revokeObjectURL(url));
+                      return [];
+                    });
                     setUploadError(null);
                     setEditing(product);
                   }}
