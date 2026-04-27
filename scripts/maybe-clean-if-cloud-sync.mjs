@@ -18,11 +18,20 @@ if (process.env.SKIP_CLOUD_SYNC_CLEAN === "1") {
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const n = root.replace(/\\/g, "/").toLowerCase();
-const cloud =
+/** OneDrive, Dropbox, iCloud, etc. */
+const inKnownCloudDir =
   n.includes("/onedrive/") ||
   n.includes("/dropbox/") ||
   n.includes("icloud") ||
   n.includes("google drive");
+/**
+ * OneDrive "Files On-Demand" / folder redirection often keeps the path as
+ * `C:\Users\...\Documents\...` (no "OneDrive" in the string) but still syncs and
+ * breaks Webpack's `.next` chunk files. Treat Windows user Documents the same.
+ */
+const inUserDocumentsOnWindows =
+  process.platform === "win32" && /[/\\]users[/\\][^/\\]+[/\\]documents[/\\]/.test(n);
+const cloud = inKnownCloudDir || inUserDocumentsOnWindows;
 
 if (!cloud) {
   process.exit(0);

@@ -5,8 +5,9 @@
   "scripts": {
     "clean": "node scripts/clean-next.mjs",
     "prebuild": "node scripts/maybe-clean-if-cloud-sync.mjs",
-    "dev": "next dev",
-    "dev:fresh": "npm run clean && next dev",
+    "dev": "next dev --turbopack",
+    "dev:webpack": "next dev",
+    "dev:fresh": "npm run clean && next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
