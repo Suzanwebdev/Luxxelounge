@@ -131,7 +131,7 @@ export async function getHomeData(): Promise<HomeData> {
         "id,slug,name,created_at,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url,sort_order)"
       )
       .eq("status", "active")
-      .order("created_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false })
       .order("id", { ascending: false })
       .limit(12)
   ]);
