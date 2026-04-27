@@ -69,12 +69,12 @@ function mapRowToProduct(row: {
   product_images: { image_url: string | null; sort_order?: number | null }[] | null;
 }): Product {
   const cat = Array.isArray(row.categories) ? row.categories[0] : row.categories;
-  const firstImage =
-    row.product_images
-      ?.slice()
-      .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0))
-      .find((img) => Boolean(img.image_url))
-      ?.image_url || null;
+  const sortedImages = (row.product_images || [])
+    .slice()
+    .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0))
+    .map((img) => String(img.image_url || "").trim())
+    .filter(Boolean);
+  const firstImage = sortedImages[0] || null;
   return {
     id: row.id,
     slug: row.slug,
@@ -84,6 +84,7 @@ function mapRowToProduct(row: {
     rating: Number(row.rating || 0),
     reviews: row.total_reviews || 0,
     image: firstImage || fallbackProducts[0].image,
+    images: sortedImages.length > 0 ? sortedImages : [firstImage || fallbackProducts[0].image],
     category: cat?.name || STOREFRONT_CATEGORY_NAMES[0],
     colors:
       Array.isArray(row.metadata?.colors) && row.metadata!.colors.length > 0
@@ -127,11 +128,12 @@ export async function getHomeData(): Promise<HomeData> {
     supabase
       .from("products")
       .select(
-        "id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url,sort_order)"
+        "id,slug,name,created_at,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url,sort_order)"
       )
       .eq("status", "active")
-      .order("created_at", { ascending: false })
-      .limit(8)
+      .order("created_at", { ascending: false, nullsFirst: false })
+      .order("id", { ascending: false })
+      .limit(12)
   ]);
 
   const sections = homeRes.data?.sections as HomeContentSections | undefined;
@@ -157,7 +159,9 @@ export async function getHomeData(): Promise<HomeData> {
         subtitle: collection.subtitle,
         slug: collection.title.toLowerCase().replaceAll(" ", "-")
       })),
-    bestSellers: productsRes.data?.map(mapRowToProduct) || fallbackProducts,
+    bestSellers: productsRes.error
+      ? []
+      : productsRes.data?.map(mapRowToProduct) || fallbackProducts,
     testimonials
   };
 }

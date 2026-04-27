@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { upsertProductAction, deleteProductAction } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,6 +49,49 @@ function getStockStatus(stockQty: number) {
   };
 }
 
+async function optimizeImageForUpload(file: File): Promise<File> {
+  if (!file.type.startsWith("image/")) return file;
+  if (file.size <= 900 * 1024) return file;
+
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error(`Could not load image "${file.name}" for optimization.`));
+      el.src = objectUrl;
+    });
+
+    const maxDim = 1800;
+    const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+    const outW = Math.max(1, Math.round(img.width * scale));
+    const outH = Math.max(1, Math.round(img.height * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = outW;
+    canvas.height = outH;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(img, 0, 0, outW, outH);
+
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob((b) => resolve(b), "image/webp", 0.82);
+    });
+    if (!blob) return file;
+    if (blob.size >= file.size) return file;
+
+    const nameWithoutExt = file.name.replace(/\.[^.]+$/, "");
+    return new File([blob], `${nameWithoutExt}.webp`, {
+      type: "image/webp",
+      lastModified: Date.now()
+    });
+  } catch {
+    return file;
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 export function ProductsManager({
   products,
   categories
@@ -64,10 +106,6 @@ export function ProductsManager({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [formMessage, setFormMessage] = useState<string | null>(null);
   const [formMessageType, setFormMessageType] = useState<"success" | "error" | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadedCount, setUploadedCount] = useState(0);
-  const [totalToUpload, setTotalToUpload] = useState(0);
-  const [uploadingFileNames, setUploadingFileNames] = useState<string[]>([]);
   const router = useRouter();
   const defaultCategory = categories[0]?.id || "";
 
@@ -84,62 +122,32 @@ export function ProductsManager({
     };
   }, [localPreviewUrls]);
 
+  useEffect(() => {
+    if (!formMessage) return;
+    const timer = window.setTimeout(() => {
+      setFormMessage(null);
+      setFormMessageType(null);
+    }, 3500);
+    return () => window.clearTimeout(timer);
+  }, [formMessage]);
+
   function handleFileSelection(files: FileList) {
-    const list = Array.from(files);
+    const incoming = Array.from(files);
     setUploadError(null);
     setFormMessage(null);
     setFormMessageType(null);
-    setUploadedCount(0);
-    setTotalToUpload(list.length);
-    setUploadingFileNames([]);
-    setSelectedFiles(list);
-    setLocalPreviewUrls((prev) => {
-      prev.forEach((url) => URL.revokeObjectURL(url));
-      return list.map((file) => URL.createObjectURL(file));
-    });
-  }
-
-  async function uploadSelectedFiles(files: File[]) {
-    const supabase = createSupabaseBrowserClient();
-    if (!supabase) {
-      setUploadError("Supabase is not configured in this environment.");
-      return [] as string[];
-    }
-
-    setUploading(true);
-    setUploadError(null);
-    setUploadedCount(0);
-    setTotalToUpload(files.length);
-    setUploadingFileNames(files.map((file) => file.name));
-
-    const nextUrls: string[] = [];
-    const uploadTasks = files.map(async (file) => {
-      const path = `admin/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${file.name.replace(/\s+/g, "-")}`;
-      const { error } = await supabase.storage.from("product-images").upload(path, file, {
-        upsert: true
+    setSelectedFiles((prev) => {
+      const map = new Map<string, File>();
+      [...prev, ...incoming].forEach((file) => {
+        const key = `${file.name}-${file.size}-${file.lastModified}`;
+        map.set(key, file);
       });
-      if (error) {
-        setUploadingFileNames((prev) => prev.filter((name) => name !== file.name));
-        return { ok: false as const, fileName: file.name };
-      }
-
-      const { data } = supabase.storage.from("product-images").getPublicUrl(path);
-      setUploadedCount((prev) => prev + 1);
-      setUploadingFileNames((prev) => prev.filter((name) => name !== file.name));
-      return { ok: true as const, fileName: file.name, url: data.publicUrl };
+      return Array.from(map.values());
     });
-
-    const results = await Promise.all(uploadTasks);
-    for (const result of results) {
-      if (result.ok) {
-        nextUrls.push(result.url);
-      } else {
-        setUploadError(`Some images failed to upload. Please retry failed files.`);
-      }
-    }
-
-    setUploading(false);
-    return nextUrls;
+    setLocalPreviewUrls((prev) => {
+      const next = [...prev, ...incoming.map((file) => URL.createObjectURL(file))];
+      return next;
+    });
   }
 
   return (
@@ -149,14 +157,15 @@ export function ProductsManager({
         <form
           action={(formData) => {
             startTransition(async () => {
+              setFormMessage(null);
+              setFormMessageType(null);
               if (editing) formData.set("id", editing.id);
-              const imageUrls = selectedFiles.length > 0 ? await uploadSelectedFiles(selectedFiles) : [];
-              if (selectedFiles.length > 0 && imageUrls.length !== selectedFiles.length) {
-                setFormMessage("Some selected images did not upload. Please retry before saving.");
-                setFormMessageType("error");
-                return;
-              }
-              formData.set("imageUrls", JSON.stringify(imageUrls));
+              formData.delete("images");
+              const optimizedFiles = await Promise.all(selectedFiles.map((file) => optimizeImageForUpload(file)));
+              optimizedFiles.forEach((file) => {
+                formData.append("images", file, file.name);
+              });
+              formData.set("imageUrls", JSON.stringify([]));
               const result = await upsertProductAction(formData);
               if (!result?.ok) {
                 setFormMessage(result?.message ?? "Could not save product. Please try again.");
@@ -165,9 +174,6 @@ export function ProductsManager({
               }
               setEditing(null);
               setSelectedFiles([]);
-              setUploadedCount(0);
-              setTotalToUpload(0);
-              setUploadingFileNames([]);
               setLocalPreviewUrls((prev) => {
                 prev.forEach((url) => URL.revokeObjectURL(url));
                 return [];
@@ -244,6 +250,7 @@ export function ProductsManager({
           <div className="rounded-2xl border border-border p-3">
             <p className="mb-2 text-sm text-muted-foreground">Upload product images (multiple allowed)</p>
             <Input
+              name="images"
               type="file"
               accept="image/*"
               multiple
@@ -253,20 +260,12 @@ export function ProductsManager({
               }}
             />
             <p className="mt-2 text-xs text-muted-foreground">
-              Selected images are previewed now and uploaded when you save the product.
+              You can select multiple images at once. Selected images are previewed now and uploaded on the server when
+              you save the product.
             </p>
-            {uploading ? (
+            {selectedFiles.length > 0 ? (
               <p className="mt-2 text-xs text-muted-foreground">
-                Uploading images... {uploadedCount}/{totalToUpload} completed
-              </p>
-            ) : null}
-            {!uploading && totalToUpload > 0 && uploadedCount === totalToUpload ? (
-              <p className="mt-2 text-xs text-emerald-700">All selected images uploaded successfully.</p>
-            ) : null}
-            {uploading && uploadingFileNames.length > 0 ? (
-              <p className="mt-2 text-xs text-muted-foreground">
-                In progress: {uploadingFileNames.slice(0, 2).join(", ")}
-                {uploadingFileNames.length > 2 ? ` +${uploadingFileNames.length - 2} more` : ""}
+                {selectedFiles.length} image{selectedFiles.length > 1 ? "s" : ""} selected
               </p>
             ) : null}
             {uploadError ? <p className="mt-2 text-xs text-destructive">{uploadError}</p> : null}
@@ -282,8 +281,8 @@ export function ProductsManager({
             ) : null}
           </div>
           <div className="flex gap-2">
-            <Button type="submit" disabled={isPending || uploading}>
-              {uploading ? "Uploading images..." : editing ? "Update Product" : "Create Product"}
+            <Button type="submit" disabled={isPending}>
+              {isPending ? "Saving..." : editing ? "Update Product" : "Create Product"}
             </Button>
             {editing ? (
               <Button
@@ -292,9 +291,6 @@ export function ProductsManager({
                 onClick={() => {
                   setEditing(null);
                   setSelectedFiles([]);
-                  setUploadedCount(0);
-                  setTotalToUpload(0);
-                  setUploadingFileNames([]);
                   setLocalPreviewUrls((prev) => {
                     prev.forEach((url) => URL.revokeObjectURL(url));
                     return [];
@@ -339,9 +335,6 @@ export function ProductsManager({
                     variant="outline"
                     onClick={() => {
                       setSelectedFiles([]);
-                      setUploadedCount(0);
-                      setTotalToUpload(0);
-                      setUploadingFileNames([]);
                       setLocalPreviewUrls((prev) => {
                         prev.forEach((url) => URL.revokeObjectURL(url));
                         return [];

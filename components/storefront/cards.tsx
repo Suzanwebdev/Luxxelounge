@@ -36,15 +36,17 @@ export function ProductCard({ product }: { product: Product }) {
       transition={{ duration: 0.2 }}
       className="luxury-panel overflow-hidden border border-border/60"
     >
-      <div className="relative aspect-[4/3] min-h-[10rem] bg-muted">
-        <Image
-          src={product.image}
-          alt={product.name}
-          fill
-          className="object-cover"
-          sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
-        />
-      </div>
+      <Link href={`/product/${product.slug}`} className="group block">
+        <div className="relative aspect-[4/3] min-h-[10rem] bg-muted/50 p-2">
+          <Image
+            src={product.image}
+            alt={product.name}
+            fill
+            className="object-contain transition-transform duration-200 group-hover:scale-[1.02]"
+            sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
+          />
+        </div>
+      </Link>
       <div className="space-y-3 p-4">
         <BadgeSet tags={product.tags} />
         <div className="space-y-1">
@@ -58,7 +60,11 @@ export function ProductCard({ product }: { product: Product }) {
           ) : (
             <p className="text-sm font-medium leading-tight text-muted-foreground">{product.category}</p>
           )}
-          <h3 className="font-heading text-xl">{product.name}</h3>
+          <h3 className="font-heading text-xl">
+            <Link href={`/product/${product.slug}`} className="transition-colors hover:text-primary">
+              {product.name}
+            </Link>
+          </h3>
         </div>
         <Price price={product.price} compareAt={product.compareAt} />
         <div className="flex gap-2">

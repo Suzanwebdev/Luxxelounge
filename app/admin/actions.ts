@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getAdminDataClient } from "@/lib/admin/db";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getMissingSupabasePublicEnvVars } from "@/lib/supabase/env";
 import { requireAdminAccess } from "@/lib/admin/auth";
 import { STOREFRONT_CATEGORY_NAMES } from "@/lib/storefront/categories";
@@ -21,7 +22,7 @@ export async function upsertProductAction(formData: FormData) {
   const salePriceValue = String(formData.get("salePrice") || "");
   const salePrice = salePriceValue ? Number(salePriceValue) : null;
   const stockQty = Number(formData.get("stockQty") || 0);
-  const status = String(formData.get("status") || "draft");
+  const status = String(formData.get("status") || "active");
   const tags = String(formData.get("tags") || "")
     .split(",")
     .map((t) => t.trim())
@@ -32,6 +33,9 @@ export async function upsertProductAction(formData: FormData) {
     .filter(Boolean);
   const categoryId = String(formData.get("categoryId") || "");
   const imageUrlsRaw = String(formData.get("imageUrls") || "[]");
+  const imageFiles = formData
+    .getAll("images")
+    .filter((v): v is File => v instanceof File && typeof v.size === "number" && v.size > 0);
 
   if (!name || !slug || !regularPrice) {
     return { ok: false, message: "Name, slug, and regular price are required." };
@@ -57,13 +61,59 @@ export async function upsertProductAction(formData: FormData) {
   if (error) return { ok: false, message: error.message };
 
   let imageUrls: string[] = [];
+  if (imageFiles.length > 0) {
+    // Prefer service-role storage writes for reliability; fallback to current client if unavailable.
+    const storageClient = createSupabaseAdminClient() ?? supabase;
+    const uploadedUrls = new Array<string>(imageFiles.length);
+    const concurrency = 5;
+
+    for (let i = 0; i < imageFiles.length; i += concurrency) {
+      const chunk = imageFiles.slice(i, i + concurrency);
+      const results = await Promise.all(
+        chunk.map(async (file, chunkIndex) => {
+          const safeName = file.name.replace(/\s+/g, "-");
+          const path = `admin/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
+          const { error: uploadError } = await storageClient.storage.from("product-images").upload(path, file, {
+            upsert: true,
+            contentType: file.type || "application/octet-stream"
+          });
+          if (uploadError) {
+            return { ok: false as const, message: `Image upload failed for "${file.name}": ${uploadError.message}` };
+          }
+          const { data: publicUrlData } = storageClient.storage.from("product-images").getPublicUrl(path);
+          if (!publicUrlData.publicUrl) {
+            return { ok: false as const, message: `Image upload succeeded but URL generation failed for "${file.name}".` };
+          }
+          return {
+            ok: true as const,
+            index: i + chunkIndex,
+            url: publicUrlData.publicUrl
+          };
+        })
+      );
+
+      for (const result of results) {
+        if (!result.ok) {
+          return { ok: false, message: result.message };
+        }
+        uploadedUrls[result.index] = result.url;
+      }
+    }
+    imageUrls = uploadedUrls;
+  }
+
   try {
     const parsed = JSON.parse(imageUrlsRaw);
     if (Array.isArray(parsed)) {
-      imageUrls = parsed.map((u) => String(u || "").trim()).filter(Boolean);
+      const parsedUrls = parsed.map((u) => String(u || "").trim()).filter(Boolean);
+      if (imageUrls.length === 0) {
+        imageUrls = parsedUrls;
+      }
     }
   } catch {
-    imageUrls = [];
+    if (imageUrls.length === 0) {
+      imageUrls = [];
+    }
   }
 
   if (imageUrls.length > 0) {

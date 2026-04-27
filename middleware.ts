@@ -7,8 +7,9 @@ import { getSupabaseEnv } from "@/lib/supabase/env";
  * consistent user, and sets `x-url-path` for safe `next=` redirects after sign-in.
  */
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-url-path", request.nextUrl.pathname + request.nextUrl.search);
+  requestHeaders.set("x-url-path", pathname + request.nextUrl.search);
 
   const env = getSupabaseEnv();
   if (!env) {
@@ -39,15 +40,23 @@ export async function middleware(request: NextRequest) {
     }
   });
 
+  const shouldRefreshSession =
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/superadmin") ||
+    pathname.startsWith("/account") ||
+    pathname.startsWith("/checkout");
+
   // Keep navigation fast even when auth endpoint is slow/unreachable.
-  // If session refresh stalls, continue rendering instead of blocking the whole page.
-  try {
-    await Promise.race([
-      supabase.auth.getUser(),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("auth refresh timeout")), 1800))
-    ]);
-  } catch {
-    // noop: response still carries pathname header; auth gates inside pages handle real access.
+  // Refresh auth only for routes that actually rely on session state.
+  if (shouldRefreshSession) {
+    try {
+      await Promise.race([
+        supabase.auth.getUser(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("auth refresh timeout")), 1800))
+      ]);
+    } catch {
+      // noop: response still carries pathname header; auth gates inside pages handle real access.
+    }
   }
 
   return response;

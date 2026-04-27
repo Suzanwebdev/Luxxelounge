@@ -54,6 +54,13 @@ export function Navbar() {
                 </div>
                 <nav className="flex flex-1 flex-col gap-1 overflow-y-auto text-sm">
                   <Link
+                    href="/"
+                    className="rounded-xl px-3 py-2.5 font-medium hover:bg-accent"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Home
+                  </Link>
+                  <Link
                     href="/shop"
                     className="rounded-xl px-3 py-2.5 font-medium hover:bg-accent"
                     onClick={() => setMobileOpen(false)}
@@ -91,12 +98,25 @@ export function Navbar() {
             </Dialog.Content>
           </Dialog.Portal>
         </Dialog.Root>
-        <Link href="/" className="flex shrink-0 items-center">
-          <div className="relative h-9 w-9 overflow-hidden rounded-lg border border-border bg-white md:h-11 md:w-11 md:rounded-xl">
-            <Image src="/brand/logo.png" alt="Luxxelounge logo" fill className="object-cover" />
-          </div>
-        </Link>
-        <nav className="hidden items-center gap-8 text-sm md:absolute md:left-1/2 md:flex md:-translate-x-1/2">
+        <div className="relative z-20 flex shrink-0 items-center">
+          <Link
+            href="/"
+            className="flex min-h-11 min-w-11 items-center"
+            aria-label="Luxxelounge home"
+            prefetch
+          >
+            <div className="relative h-9 w-9 overflow-hidden rounded-lg border border-border bg-white md:h-11 md:w-11 md:rounded-xl">
+              <Image src="/brand/logo.png" alt="" fill className="object-cover" />
+            </div>
+          </Link>
+        </div>
+        <nav
+          className="z-10 hidden items-center gap-6 text-sm md:absolute md:left-1/2 md:flex md:-translate-x-1/2 md:gap-8"
+          aria-label="Primary"
+        >
+          <Link href="/" className="whitespace-nowrap hover:text-primary">
+            Home
+          </Link>
           <Link href="/shop" className="hover:text-primary">Shop</Link>
           <div className="group relative">
             <button className="inline-flex items-center gap-1 hover:text-primary" type="button" aria-label="Open categories menu">

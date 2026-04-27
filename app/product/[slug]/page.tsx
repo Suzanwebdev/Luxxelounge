@@ -1,39 +1,56 @@
-import Image from "next/image";
 import { notFound } from "next/navigation";
+import { ProductCard } from "@/components/storefront/cards";
+import { ProductGallery } from "@/components/storefront/product-gallery";
 import { ProductPurchaseActions } from "@/components/storefront/product-purchase-actions";
 import { BadgeSet, Container, Heading, Price, Section } from "@/components/storefront/primitives";
-import { getProductBySlug } from "@/lib/storefront/queries";
+import { getProductBySlug, getShopProducts } from "@/lib/storefront/queries";
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const [product, shopProducts] = await Promise.all([getProductBySlug(slug), getShopProducts()]);
   if (!product) notFound();
+  const gallery = product.images && product.images.length > 0 ? product.images : [product.image];
+  const relatedProducts = shopProducts
+    .filter((item) => item.slug !== product.slug)
+    .sort((a, b) => {
+      const aScore = a.category === product.category ? 1 : 0;
+      const bScore = b.category === product.category ? 1 : 0;
+      return bScore - aScore;
+    })
+    .slice(0, 4);
 
   return (
-    <Section>
-      <Container className="grid gap-8 lg:grid-cols-2">
-        <div className="space-y-3">
-          <div className="relative aspect-[4/3] overflow-hidden rounded-3xl">
-            <Image src={product.image} alt={product.name} fill className="object-cover" />
+    <>
+      <Section>
+        <Container className="grid gap-8 lg:grid-cols-2">
+          <ProductGallery name={product.name} images={gallery} />
+          <div className="space-y-5">
+            <Heading eyebrow={product.category} title={product.name} description={product.description} />
+            <BadgeSet tags={product.tags} />
+            <Price price={product.price} compareAt={product.compareAt} />
+            <div className="rounded-2xl border border-border p-4 text-sm">
+              <p>Stock: {product.stock > 5 ? "In stock" : `Low stock (${product.stock} left)`}</p>
+              <p className="mt-1 text-muted-foreground">Delivery estimate: 1-3 business days</p>
+            </div>
+            <ProductPurchaseActions product={product} />
           </div>
-          <div className="grid grid-cols-4 gap-2">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="aspect-square rounded-2xl border border-border bg-accent" />
-            ))}
-          </div>
-        </div>
-        <div className="space-y-5">
-          <Heading eyebrow={product.category} title={product.name} description={product.description} />
-          <BadgeSet tags={product.tags} />
-          <Price price={product.price} compareAt={product.compareAt} />
-          <div className="rounded-2xl border border-border p-4 text-sm">
-            <p>Stock: {product.stock > 5 ? "In stock" : `Low stock (${product.stock} left)`}</p>
-            <p className="mt-1 text-muted-foreground">Delivery estimate: 2-4 business days</p>
-            <p className="mt-1 text-muted-foreground">Easy returns within 7 days</p>
-          </div>
-          <ProductPurchaseActions product={product} />
-        </div>
-      </Container>
-    </Section>
+        </Container>
+      </Section>
+      {relatedProducts.length > 0 ? (
+        <Section>
+          <Container>
+            <h2 className="font-heading text-3xl">You may also like</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Handpicked alternatives and complementary pieces from our catalog.
+            </p>
+            <div className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+              {relatedProducts.map((item) => (
+                <ProductCard key={item.id} product={item} />
+              ))}
+            </div>
+          </Container>
+        </Section>
+      ) : null}
+    </>
   );
 }

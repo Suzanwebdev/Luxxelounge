@@ -10,12 +10,14 @@ export function Footer() {
       <Container className="py-10 md:py-12">
         <div className="grid gap-10 md:grid-cols-4">
           <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="relative h-12 w-12 overflow-hidden rounded-xl border border-border bg-white md:h-14 md:w-14">
-              <Image src="/brand/logo.png" alt="Luxxelounge logo" fill className="object-cover" />
-            </div>
-            <p className="font-heading text-2xl text-primary md:text-3xl">Luxxelounge</p>
-          </div>
+            <Link href="/" className="group flex items-center gap-3 w-fit">
+              <div className="relative h-12 w-12 overflow-hidden rounded-xl border border-border bg-white md:h-14 md:w-14">
+                <Image src="/brand/logo.png" alt="" fill className="object-cover" />
+              </div>
+              <span className="font-heading text-2xl text-primary transition-colors group-hover:text-primary/90 md:text-3xl">
+                Luxxelounge
+              </span>
+            </Link>
           <p className="max-w-md text-muted-foreground">
             Quiet luxury for contemporary interiors. Furniture and decor designed for elegant everyday living.
           </p>

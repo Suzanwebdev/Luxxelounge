@@ -325,7 +325,7 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
 
     rafRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [applyTransforms, reducedMotion]);
+  }, [applyTransforms, reducedMotion, n]);
 
   React.useEffect(() => {
     applyTransforms();

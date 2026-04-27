@@ -13,6 +13,7 @@ export function ProductPurchaseActions({ product }: { product: Product }) {
   const router = useRouter();
   const { addItem } = useCart();
   const [justAdded, setJustAdded] = React.useState(false);
+  const [selectedColor, setSelectedColor] = React.useState(product.colors[0] ?? "");
 
   const onAdd = () => {
     addItem(product, 1);
@@ -27,6 +28,32 @@ export function ProductPurchaseActions({ product }: { product: Product }) {
 
   return (
     <>
+      {product.colors.length > 0 ? (
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Select color</p>
+          <div className="flex flex-wrap gap-2">
+            {product.colors.map((color) => {
+              const active = color === selectedColor;
+              return (
+                <button
+                  key={color}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setSelectedColor(color)}
+                  className={`rounded-full border px-3 py-1 text-xs transition ${
+                    active
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-background text-foreground hover:border-primary/40"
+                  }`}
+                >
+                  {color}
+                </button>
+              );
+            })}
+          </div>
+          {selectedColor ? <p className="text-xs text-muted-foreground">Selected: {selectedColor}</p> : null}
+        </div>
+      ) : null}
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <Button type="button" size="lg" onClick={onAdd}>
           <ShoppingBag className="mr-2 h-4 w-4" />

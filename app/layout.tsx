@@ -4,6 +4,7 @@ import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { AnnouncementBarClient } from "@/components/layout/announcement-bar-client";
 import { Navbar } from "@/components/layout/header";
+import { ScrollToTopOnRoute } from "@/components/layout/scroll-to-top-on-route";
 import { Footer } from "@/components/layout/footer";
 import { StoreRealtimeSync } from "@/components/storefront/realtime-sync";
 import { CartProvider } from "@/components/storefront/cart-provider";
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <CartProvider>
           <div className="flex min-h-screen flex-col">
             <AnnouncementBarClient />
+            <ScrollToTopOnRoute />
             <Navbar />
             <StoreRealtimeSync />
             <main className="min-w-0 flex-1">{children}</main>

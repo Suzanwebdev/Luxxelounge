@@ -13,6 +13,8 @@ type HomePageProps = {
   searchParams?: Promise<{ notice?: string }>;
 };
 
+export const dynamic = "force-dynamic";
+
 const HERO_SLIDES: HeroSlide[] = [
   { src: "/brand/hero-banner.png", alt: "Luxxelounge curated living room interior" },
   {
@@ -111,9 +113,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
       <Section>
         <Container>
-          <Heading eyebrow="Best Sellers" title="Most Loved Pieces" />
+          <Heading eyebrow="New arrivals" title="Latest in store" />
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-            {homeData.bestSellers.slice(0, 8).map((product) => (
+            {homeData.bestSellers.slice(0, 12).map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
