@@ -11,7 +11,7 @@ import { toSlug } from "@/lib/slug";
 export async function upsertProductAction(formData: FormData) {
   await requireAdminAccess();
   const supabase = await getAdminDataClient();
-  if (!supabase) return;
+  if (!supabase) return { ok: false, message: "Database client unavailable." };
 
   const id = String(formData.get("id") || "");
   const name = String(formData.get("name") || "").trim();
@@ -33,7 +33,9 @@ export async function upsertProductAction(formData: FormData) {
   const categoryId = String(formData.get("categoryId") || "");
   const imageUrlsRaw = String(formData.get("imageUrls") || "[]");
 
-  if (!name || !slug || !regularPrice) return;
+  if (!name || !slug || !regularPrice) {
+    return { ok: false, message: "Name, slug, and regular price are required." };
+  }
 
   const payload = {
     name,
@@ -52,7 +54,7 @@ export async function upsertProductAction(formData: FormData) {
 
   const query = id ? supabase.from("products").update(payload).eq("id", id) : supabase.from("products").insert(payload);
   const { error, data } = await query.select("id").single();
-  if (error) return;
+  if (error) return { ok: false, message: error.message };
 
   let imageUrls: string[] = [];
   try {
@@ -65,31 +67,45 @@ export async function upsertProductAction(formData: FormData) {
   }
 
   if (imageUrls.length > 0) {
+    if (id) {
+      // Replace existing gallery rows when editing to avoid duplicate sort_order/constraint conflicts.
+      const { error: deleteImagesError } = await supabase.from("product_images").delete().eq("product_id", data.id);
+      if (deleteImagesError) return { ok: false, message: deleteImagesError.message };
+    }
     const rows = imageUrls.map((imageUrl, index) => ({
       product_id: data.id,
       image_url: imageUrl,
       alt_text: name,
       sort_order: index
     }));
-    await supabase.from("product_images").insert(rows);
+    const { error: insertImagesError } = await supabase.from("product_images").insert(rows);
+    if (insertImagesError) return { ok: false, message: insertImagesError.message };
   }
 
   revalidatePath("/admin");
   revalidatePath("/admin/products");
   revalidatePath("/shop");
   revalidatePath("/");
+  return { ok: true, message: id ? "Product updated successfully." : "Product created successfully." };
 }
 
 export async function deleteProductAction(formData: FormData) {
   await requireAdminAccess();
   const supabase = await getAdminDataClient();
-  if (!supabase) return;
+  if (!supabase) return { ok: false, message: "Database client unavailable." };
   const id = String(formData.get("id") || "");
-  if (!id) return;
+  if (!id) return { ok: false, message: "Missing product id." };
+
+  // Delete dependent image rows first so product deletion is not blocked by FK constraints.
+  await supabase.from("product_images").delete().eq("product_id", id);
+
   const { error } = await supabase.from("products").delete().eq("id", id);
-  if (error) return;
+  if (error) return { ok: false, message: error.message };
+  revalidatePath("/admin");
   revalidatePath("/admin/products");
   revalidatePath("/shop");
+  revalidatePath("/");
+  return { ok: true, message: "Product deleted successfully." };
 }
 
 export async function createCategoryAction(formData: FormData) {

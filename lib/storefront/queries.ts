@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 import { STOREFRONT_CATEGORY_NAMES } from "@/lib/storefront/categories";
+import { unstable_noStore as noStore } from "next/cache";
 import {
   categoryChips as fallbackCategoryChips,
   homeCollections as fallbackCollections,
@@ -65,9 +66,15 @@ function mapRowToProduct(row: {
   metadata: { colors?: string[] } | null;
   description: string;
   categories: { name: string | null } | { name: string | null }[] | null;
-  product_images: { image_url: string | null }[] | null;
+  product_images: { image_url: string | null; sort_order?: number | null }[] | null;
 }): Product {
   const cat = Array.isArray(row.categories) ? row.categories[0] : row.categories;
+  const firstImage =
+    row.product_images
+      ?.slice()
+      .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0))
+      .find((img) => Boolean(img.image_url))
+      ?.image_url || null;
   return {
     id: row.id,
     slug: row.slug,
@@ -76,7 +83,7 @@ function mapRowToProduct(row: {
     compareAt: row.sale_price ? Number(row.regular_price) : undefined,
     rating: Number(row.rating || 0),
     reviews: row.total_reviews || 0,
-    image: row.product_images?.[0]?.image_url || fallbackProducts[0].image,
+    image: firstImage || fallbackProducts[0].image,
     category: cat?.name || STOREFRONT_CATEGORY_NAMES[0],
     colors:
       Array.isArray(row.metadata?.colors) && row.metadata!.colors.length > 0
@@ -90,6 +97,7 @@ function mapRowToProduct(row: {
 }
 
 export async function getHomeData(): Promise<HomeData> {
+  noStore();
   const supabase = await createSupabaseServerClient();
   if (!supabase) {
     return {
@@ -119,7 +127,7 @@ export async function getHomeData(): Promise<HomeData> {
     supabase
       .from("products")
       .select(
-        "id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url)"
+        "id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url,sort_order)"
       )
       .eq("status", "active")
       .order("created_at", { ascending: false })
@@ -161,7 +169,7 @@ export async function getShopProducts() {
   const { data } = await supabase
     .from("products")
     .select(
-      "id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url)"
+      "id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url,sort_order)"
     )
     .eq("status", "active")
     .order("created_at", { ascending: false });
@@ -193,7 +201,7 @@ export async function getProductsByCollectionSlug(slug: string) {
   const { data } = await supabase
     .from("collection_products")
     .select(
-      "products(id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url))"
+      "products(id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url,sort_order))"
     )
     .eq("collection_id", collection.id);
 
@@ -214,7 +222,7 @@ export async function getProductBySlug(slug: string) {
   const { data } = await supabase
     .from("products")
     .select(
-      "id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url)"
+      "id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url,sort_order)"
     )
     .eq("slug", slug)
     .eq("status", "active")
