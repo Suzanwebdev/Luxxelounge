@@ -1,7 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { clearCategoryCardImageAction, createCategoryAction, updateCategoryCardAction } from "@/app/admin/actions";
+import { useActionState } from "react";
+import {
+  clearCategoryCardImageAction,
+  createCategoryAction,
+  type CategoryActionState,
+  updateCategoryCardAction
+} from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -90,9 +96,15 @@ export function CategoryCardUpdateForm({
 
 export function CategoryQuickAddForm() {
   const { previewUrl, onFileChange } = useImagePreview(null);
+  const [state, formAction, isPending] = useActionState(createCategoryAction, null as CategoryActionState);
 
   return (
-    <form action={createCategoryAction} className="mt-4 flex max-w-xl flex-col gap-3">
+    <form action={formAction} className="mt-4 flex max-w-xl flex-col gap-3">
+      {state?.message ? (
+        <p className={`rounded-xl border px-3 py-2 text-sm ${state.ok ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "border-red-300 bg-red-50 text-red-700"}`}>
+          {state.message}
+        </p>
+      ) : null}
       <Input name="name" placeholder="Category name" required className="flex-1" />
       <div className="flex flex-wrap items-center gap-3">
         <Input name="slug" placeholder="slug (optional)" className="flex-1 sm:max-w-[12rem]" />
@@ -107,7 +119,9 @@ export function CategoryQuickAddForm() {
           onChange={onFileChange}
           className="block text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-muted file:px-3 file:py-2"
         />
-        <Button type="submit">Add</Button>
+        <Button type="submit" disabled={isPending}>
+          {isPending ? "Saving..." : "Add"}
+        </Button>
       </div>
       {previewUrl ? (
         <div className="relative h-20 w-32 overflow-hidden rounded-lg border border-border">

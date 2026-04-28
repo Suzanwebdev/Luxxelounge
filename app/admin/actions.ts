@@ -158,16 +158,21 @@ export async function deleteProductAction(formData: FormData) {
   return { ok: true, message: "Product deleted successfully." };
 }
 
-export async function createCategoryAction(formData: FormData) {
+export type CategoryActionState = { ok: boolean; message: string } | null;
+
+export async function createCategoryAction(
+  _prev: CategoryActionState,
+  formData: FormData
+): Promise<CategoryActionState> {
   await requireAdminAccess();
   const supabase = await getAdminDataClient();
-  if (!supabase) return;
+  if (!supabase) return { ok: false, message: "Database client unavailable." };
   const name = String(formData.get("name") || "").trim();
   const slug = toSlug(String(formData.get("slug") || name));
   const status = String(formData.get("status") || "active").trim().toLowerCase();
   const isActive = status !== "draft";
   const imageFile = formData.get("image");
-  if (!name) return;
+  if (!name) return { ok: false, message: "Category name is required." };
   let imageUrl: string | null = null;
   if (imageFile instanceof File && imageFile.size > 0) {
     const storageClient = createSupabaseAdminClient() ?? supabase;
@@ -177,18 +182,31 @@ export async function createCategoryAction(formData: FormData) {
       upsert: true,
       contentType: imageFile.type || "application/octet-stream"
     });
-    if (!uploadError) {
-      const { data } = storageClient.storage.from("product-images").getPublicUrl(path);
-      imageUrl = data.publicUrl || null;
-    }
+    if (uploadError) return { ok: false, message: uploadError.message };
+    const { data } = storageClient.storage.from("product-images").getPublicUrl(path);
+    imageUrl = data.publicUrl || null;
   }
+
+  const payload = { name, slug, is_active: isActive, ...(imageUrl ? { image_url: imageUrl } : {}) };
   const { error } = await supabase
     .from("categories")
-    .upsert({ name, slug, is_active: isActive, ...(imageUrl ? { image_url: imageUrl } : {}) }, { onConflict: "slug" });
-  if (error) return;
+    .upsert(payload, { onConflict: "slug" });
+  if (error) {
+    // If same name exists with a different slug, update that row instead of failing silently.
+    if (error.code === "23505" && String(error.message || "").toLowerCase().includes("categories_name_key")) {
+      const { error: byNameError } = await supabase.from("categories").update(payload).eq("name", name);
+      if (byNameError) return { ok: false, message: byNameError.message };
+      revalidatePath("/admin/categories");
+      revalidatePath("/shop");
+      revalidatePath("/");
+      return { ok: true, message: "Category already existed by name; updated it successfully." };
+    }
+    return { ok: false, message: error.message };
+  }
   revalidatePath("/admin/categories");
   revalidatePath("/shop");
   revalidatePath("/");
+  return { ok: true, message: "Category saved successfully." };
 }
 
 export async function updateCategoryCardAction(formData: FormData) {
