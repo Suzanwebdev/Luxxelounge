@@ -33,7 +33,7 @@ export function CartDrawer({
                 <X className="h-5 w-5" />
               </Dialog.Close>
             </div>
-            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+            <div className="scrollbar-hidden min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
               {lines.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground">
                   Your cart is empty. Add a few pieces to continue.

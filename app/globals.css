@@ -40,3 +40,13 @@ a {
 .luxury-panel {
   @apply rounded-xl3 bg-card shadow-card;
 }
+
+/* Keep scrolling behavior while hiding scrollbar chrome. */
+.scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
