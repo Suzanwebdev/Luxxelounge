@@ -26,14 +26,14 @@ export function CartDrawer({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
         <Dialog.Content className="fixed right-0 top-0 z-50 h-full w-full max-w-md border-l border-border bg-background p-5">
-          <motion.div initial={{ x: 24, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+          <motion.div initial={{ x: 24, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="flex h-full min-h-0 flex-col">
             <div className="mb-6 flex items-center justify-between">
               <Dialog.Title className="font-heading text-2xl">Your Cart</Dialog.Title>
               <Dialog.Close className="rounded-xl p-2 hover:bg-accent">
                 <X className="h-5 w-5" />
               </Dialog.Close>
             </div>
-            <div className="space-y-4">
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
               {lines.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground">
                   Your cart is empty. Add a few pieces to continue.
@@ -82,7 +82,7 @@ export function CartDrawer({
                 ))
               )}
             </div>
-            <div className="mt-6 space-y-3 border-t border-border pt-4">
+            <div className="mt-4 space-y-3 border-t border-border pt-4">
               <div className="flex justify-between text-sm">
                 <span>Subtotal</span>
                 <span>{formatGhs(subtotal)}</span>
