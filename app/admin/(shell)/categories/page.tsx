@@ -1,6 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
-import { createCategoryAction, toggleCategoryActiveAction, updateCategoryCardAction } from "@/app/admin/actions";
+import {
+  clearCategoryCardImageAction,
+  createCategoryAction,
+  toggleCategoryActiveAction,
+  updateCategoryCardAction
+} from "@/app/admin/actions";
 import { SyncStorefrontCategoriesForm } from "@/components/admin/sync-storefront-categories-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,6 +80,14 @@ export default async function AdminCategoriesPage() {
                       Save card
                     </Button>
                   </form>
+                  {row.image_url ? (
+                    <form action={clearCategoryCardImageAction}>
+                      <input type="hidden" name="id" value={row.id} />
+                      <Button type="submit" size="sm" variant="ghost">
+                        Remove image
+                      </Button>
+                    </form>
+                  ) : null}
                 </div>
               ) : null}
             </li>

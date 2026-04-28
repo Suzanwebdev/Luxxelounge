@@ -223,6 +223,21 @@ export async function updateCategoryCardAction(formData: FormData) {
   revalidatePath("/");
 }
 
+export async function clearCategoryCardImageAction(formData: FormData) {
+  await requireAdminAccess();
+  const supabase = await getAdminDataClient();
+  if (!supabase) return;
+  const id = String(formData.get("id") || "").trim();
+  if (!id) return;
+
+  const { error } = await supabase.from("categories").update({ image_url: null }).eq("id", id);
+  if (error) return;
+
+  revalidatePath("/admin/categories");
+  revalidatePath("/shop");
+  revalidatePath("/");
+}
+
 export type SyncCategoriesState = {
   ok: boolean | null;
   message: string;
