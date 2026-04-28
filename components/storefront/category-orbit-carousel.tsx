@@ -425,8 +425,6 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
   }
 
   /** Fixed px height so `next/image` `fill` always has a box (iOS Safari collapses `flex-1` + `min-h-0` here). */
-  const orbitImageSlotPx = Math.max(56, Math.round(dims.card * 0.62));
-
   return (
     <section
       ref={sectionRef}
@@ -518,8 +516,8 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
                       data-orbit-card
                       onClick={(e) => onCardClick(e, i)}
                       className={cn(
-                        "relative flex min-h-[44px] min-w-[44px] size-full flex-col overflow-hidden rounded-[1.35rem] border border-[hsl(38,16%,86%)] bg-gradient-to-b from-white to-[hsl(38,28%,97%)] p-0 text-center sm:rounded-[1.5rem]",
-                        "font-body text-[0.7rem] font-medium leading-tight tracking-[-0.01em] text-foreground sm:text-[0.8125rem]",
+                        "relative flex min-h-[44px] min-w-[44px] size-full overflow-hidden rounded-[1.35rem] border border-[hsl(38,16%,86%)] bg-black p-0 text-center sm:rounded-[1.5rem]",
+                        "font-body text-[0.7rem] font-medium leading-tight tracking-[-0.01em] text-white sm:text-[0.8125rem]",
                         "shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition-[box-shadow,border-color,transform] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
                         "[transform:translate3d(0,0,0.1px)] hover:[transform:translate3d(0,-5px,2px)] hover:border-[hsl(38,14%,74%)] hover:shadow-[0_18px_44px_rgba(0,0,0,0.12),0_10px_30px_rgba(0,0,0,0.06)]",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(38,25%,45%)] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(38,22%,96%)]",
@@ -530,9 +528,8 @@ export function CategoryOrbitCarousel({ items, className }: CategoryOrbitCarouse
                       <OrbitCategoryImageSlot
                         imageSrc={item.imageSrc}
                         imageAlt={item.imageAlt}
-                        heightPx={orbitImageSlotPx}
                       />
-                      <span className="relative z-[1] flex min-h-0 flex-1 items-center justify-center border-t border-[hsl(38,16%,90%)] bg-gradient-to-b from-[hsl(38,28%,98%)] to-white px-1 py-1 text-balance sm:py-2 sm:text-[0.8125rem]">
+                      <span className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] bg-gradient-to-t from-black/75 via-black/45 to-transparent px-2 py-2 text-balance text-white sm:py-2.5 sm:text-[0.8125rem]">
                         {item.label}
                       </span>
                     </Link>

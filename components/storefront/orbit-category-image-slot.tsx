@@ -8,7 +8,6 @@ const FALLBACK_SRC = "/brand/logo.png";
 type OrbitCategoryImageSlotProps = {
   imageSrc: string;
   imageAlt: string;
-  heightPx: number;
 };
 
 /**
@@ -16,7 +15,7 @@ type OrbitCategoryImageSlotProps = {
  * (e.g. missing on disk or deploy), the hero read as “broken” black slabs. Soft surface +
  * logo fallback keeps the layout on-brand.
  */
-export function OrbitCategoryImageSlot({ imageSrc, imageAlt, heightPx }: OrbitCategoryImageSlotProps) {
+export function OrbitCategoryImageSlot({ imageSrc, imageAlt }: OrbitCategoryImageSlotProps) {
   const [src, setSrc] = React.useState(imageSrc);
 
   React.useEffect(() => {
@@ -26,14 +25,10 @@ export function OrbitCategoryImageSlot({ imageSrc, imageAlt, heightPx }: OrbitCa
   return (
     <span
       className={cn(
-        "relative z-[1] block w-full shrink-0 overflow-hidden",
-        "bg-neutral-950 ring-1 ring-inset ring-black/20"
+        "absolute inset-0 z-[1] block overflow-hidden rounded-inherit",
+        "bg-neutral-900"
       )}
-      style={{
-        height: heightPx,
-        WebkitTransform: "translateZ(0.1px)",
-        transform: "translateZ(0.1px)"
-      }}
+      style={{ WebkitTransform: "translateZ(0.1px)", transform: "translateZ(0.1px)" }}
       role="img"
       aria-label={imageAlt}
     >
@@ -42,7 +37,7 @@ export function OrbitCategoryImageSlot({ imageSrc, imageAlt, heightPx }: OrbitCa
         src={src}
         alt=""
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 h-full w-full object-contain p-0.5 sm:p-1"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
         style={{ WebkitTransform: "translateZ(0)", transform: "translateZ(0)" }}
         loading="eager"
         decoding="async"
