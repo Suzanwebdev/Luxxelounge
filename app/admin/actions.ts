@@ -164,6 +164,8 @@ export async function createCategoryAction(formData: FormData) {
   if (!supabase) return;
   const name = String(formData.get("name") || "").trim();
   const slug = toSlug(String(formData.get("slug") || name));
+  const status = String(formData.get("status") || "active").trim().toLowerCase();
+  const isActive = status !== "draft";
   const imageFile = formData.get("image");
   if (!name) return;
   let imageUrl: string | null = null;
@@ -182,7 +184,7 @@ export async function createCategoryAction(formData: FormData) {
   }
   const { error } = await supabase
     .from("categories")
-    .upsert({ name, slug, is_active: true, ...(imageUrl ? { image_url: imageUrl } : {}) }, { onConflict: "slug" });
+    .upsert({ name, slug, is_active: isActive, ...(imageUrl ? { image_url: imageUrl } : {}) }, { onConflict: "slug" });
   if (error) return;
   revalidatePath("/admin/categories");
   revalidatePath("/shop");
@@ -196,6 +198,8 @@ export async function updateCategoryCardAction(formData: FormData) {
   const id = String(formData.get("id") || "").trim();
   const name = String(formData.get("name") || "").trim();
   const slug = toSlug(String(formData.get("slug") || name));
+  const status = String(formData.get("status") || "active").trim().toLowerCase();
+  const isActive = status !== "draft";
   const imageFile = formData.get("image");
   if (!id || !name || !slug) return;
 
@@ -214,7 +218,7 @@ export async function updateCategoryCardAction(formData: FormData) {
     imageUrl = data.publicUrl;
   }
 
-  const payload: { name: string; slug: string; image_url?: string } = { name, slug };
+  const payload: { name: string; slug: string; is_active: boolean; image_url?: string } = { name, slug, is_active: isActive };
   if (imageUrl) payload.image_url = imageUrl;
   const { error } = await supabase.from("categories").update(payload).eq("id", id);
   if (error) return;

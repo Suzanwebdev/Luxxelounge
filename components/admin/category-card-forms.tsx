@@ -34,11 +34,13 @@ export function CategoryCardUpdateForm({
   id,
   defaultName,
   defaultSlug,
+  isActive,
   currentImageUrl
 }: {
   id: string;
   defaultName: string;
   defaultSlug: string;
+  isActive: boolean;
   currentImageUrl?: string | null;
 }) {
   const { previewUrl, onFileChange } = useImagePreview(currentImageUrl);
@@ -49,6 +51,14 @@ export function CategoryCardUpdateForm({
         <input type="hidden" name="id" value={id} />
         <Input name="name" defaultValue={defaultName} className="h-8 w-36 text-xs" />
         <Input name="slug" defaultValue={defaultSlug} className="h-8 w-28 text-xs" />
+        <select
+          name="status"
+          defaultValue={isActive ? "active" : "draft"}
+          className="h-8 rounded-lg border border-border bg-background px-2 text-xs"
+        >
+          <option value="active">Active</option>
+          <option value="draft">Draft</option>
+        </select>
         <input
           name="image"
           type="file"
@@ -86,6 +96,10 @@ export function CategoryQuickAddForm() {
       <Input name="name" placeholder="Category name" required className="flex-1" />
       <div className="flex flex-wrap items-center gap-3">
         <Input name="slug" placeholder="slug (optional)" className="flex-1 sm:max-w-[12rem]" />
+        <select name="status" defaultValue="active" className="h-11 rounded-lg border border-border bg-background px-3 text-sm">
+          <option value="active">Active</option>
+          <option value="draft">Draft</option>
+        </select>
         <input
           name="image"
           type="file"

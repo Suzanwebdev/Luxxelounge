@@ -67,6 +67,7 @@ export default async function AdminCategoriesPage() {
                     id={row.id}
                     defaultName={row.displayName}
                     defaultSlug={row.slug}
+                    isActive={Boolean(row.is_active)}
                     currentImageUrl={row.image_url}
                   />
                 </div>
