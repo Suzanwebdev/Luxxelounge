@@ -23,6 +23,7 @@ const links = [
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/discounts", label: "Discounts", icon: TicketPercent },
   { href: "/admin/content", label: "Content", icon: FileText },
+  { href: "/admin/cms", label: "CMS", icon: FileText },
   { href: "/admin/settings", label: "Settings", icon: Settings }
 ];
 

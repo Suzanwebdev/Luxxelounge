@@ -6,6 +6,7 @@ import { ProductCard, PromoBanner } from "@/components/storefront/cards";
 import { CategoryOrbitCarousel } from "@/components/storefront/category-orbit-carousel";
 import { HeroSlider, type HeroSlide } from "@/components/storefront/hero-slider";
 import { Container, Heading, Section } from "@/components/storefront/primitives";
+import { getPublishedCmsPage } from "@/lib/storefront/cms";
 import { getHomeData } from "@/lib/storefront/queries";
 
 type HomePageProps = {
@@ -31,7 +32,34 @@ const HERO_SLIDES: HeroSlide[] = [
 export default async function HomePage({ searchParams }: HomePageProps) {
   const params = searchParams ? await searchParams : undefined;
   const homeData = await getHomeData();
+  const homepageCms = await getPublishedCmsPage<Record<string, unknown>>("homepage", {});
   const showSupabaseEnvNotice = params?.notice === "supabase_env";
+
+  const heroCms = homepageCms.hero && typeof homepageCms.hero === "object" ? (homepageCms.hero as Record<string, unknown>) : {};
+  const promoCms = homepageCms.promo && typeof homepageCms.promo === "object" ? (homepageCms.promo as Record<string, unknown>) : {};
+  const cmsSliderImages = Array.isArray(homepageCms.sliderImages) ? homepageCms.sliderImages : [];
+  const heroSlides = cmsSliderImages
+    .map((item, index) => {
+      const src =
+        typeof item === "string"
+          ? item
+          : item && typeof item === "object" && "src" in item
+            ? String((item as { src?: string }).src || "")
+            : "";
+      if (!src) return null;
+      return {
+        src,
+        alt: `Homepage hero slide ${index + 1}`
+      } as HeroSlide;
+    })
+    .filter((slide): slide is HeroSlide => Boolean(slide?.src));
+  const heroTitle = String(heroCms.title || homeData.heroTitle || "").trim() || homeData.heroTitle;
+  const heroTagline = String(heroCms.tagline || homeData.heroTagline || "").trim() || homeData.heroTagline;
+  const heroCtaPrimary = String(heroCms.ctaPrimary || homeData.heroCtaPrimary || "").trim() || homeData.heroCtaPrimary;
+  const heroCtaSecondary = String(heroCms.ctaSecondary || homeData.heroCtaSecondary || "").trim() || homeData.heroCtaSecondary;
+  const promoTitle = String(promoCms.title || homeData.promoTitle || "").trim() || homeData.promoTitle;
+  const promoSubtitle = String(promoCms.subtitle || homeData.promoSubtitle || "").trim() || homeData.promoSubtitle;
+  const promoEnabled = typeof promoCms.enabled === "boolean" ? promoCms.enabled : homeData.promoEnabled;
 
   return (
     <>
@@ -58,7 +86,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       ) : null}
       <Section className="pb-6 pt-0">
         <div className="relative w-full overflow-hidden">
-          <HeroSlider slides={[...HERO_SLIDES]} />
+          <HeroSlider slides={heroSlides.length > 0 ? heroSlides : [...HERO_SLIDES]} />
           <div className="absolute inset-0 z-10 bg-gradient-to-r from-black/50 via-black/25 to-black/5" />
           <div className="absolute inset-0 z-20 flex items-end">
             <Container className="p-2 sm:p-3 md:p-6">
@@ -67,14 +95,14 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                   Luxury Interiors
                 </p>
                 <h1 className="font-heading text-[1.05rem] leading-[1.08] sm:text-[1.2rem] md:text-[2.1rem]">
-                  {homeData.heroTitle}
+                  {heroTitle}
                 </h1>
                 <p className="max-w-xl text-xs leading-snug text-white/85 sm:text-[0.8125rem]">
-                  {homeData.heroTagline}
+                  {heroTagline}
                 </p>
                 <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
                   <Button size="sm" className="h-8 px-3.5 text-xs sm:w-auto" asChild>
-                    <Link href="/shop">{homeData.heroCtaPrimary}</Link>
+                    <Link href="/shop">{heroCtaPrimary}</Link>
                   </Button>
                   <Button
                     size="sm"
@@ -82,7 +110,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                     className="h-8 border-white/40 bg-white/10 px-3.5 text-xs text-white hover:bg-white/20 sm:w-auto"
                     asChild
                   >
-                    <Link href="/collections">{homeData.heroCtaSecondary}</Link>
+                    <Link href="/collections">{heroCtaSecondary}</Link>
                   </Button>
                 </div>
               </div>
@@ -124,9 +152,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       <Section>
         <Container>
           <PromoBanner
-            title={homeData.promoTitle}
-            subtitle={homeData.promoSubtitle}
-            enabled={homeData.promoEnabled}
+            title={promoTitle}
+            subtitle={promoSubtitle}
+            enabled={promoEnabled}
           />
         </Container>
       </Section>

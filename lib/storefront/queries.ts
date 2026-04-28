@@ -191,21 +191,70 @@ export async function getProductsByCollectionSlug(slug: string) {
       products: fallbackProducts
     };
   }
+  const client = supabase;
 
-  const { data: collection } = await supabase
+  const specialCollectionTitleBySlug: Record<string, string> = {
+    "best-sellers": "Best Sellers",
+    "new-arrivals": "New Arrivals",
+    sale: "Sale"
+  };
+
+  const resolveTitle = (value: string) => value.split("-").map((x) => x[0].toUpperCase() + x.slice(1)).join(" ");
+  const specialTitle = specialCollectionTitleBySlug[slug];
+  const collectionTitle = specialTitle ?? resolveTitle(slug);
+
+  async function getSpecialProducts() {
+    if (!specialTitle) return null;
+    const { data } = await client
+      .from("products")
+      .select(
+        "id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url,sort_order)"
+      )
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(24);
+
+    const rows = data || [];
+    const normalizedSlug = slug.toLowerCase();
+    const filtered = rows.filter((row) => {
+      const tags = (row.tags || []).map((tag: string) => String(tag || "").toLowerCase().trim());
+      if (normalizedSlug === "best-sellers") {
+        return tags.some((tag: string) => tag === "best seller" || tag === "best sellers");
+      }
+      if (normalizedSlug === "new-arrivals") {
+        return tags.includes("new");
+      }
+      if (normalizedSlug === "sale") {
+        const hasDiscountPrice =
+          row.sale_price !== null &&
+          row.sale_price !== undefined &&
+          Number(row.sale_price) > 0 &&
+          Number(row.sale_price) < Number(row.regular_price || 0);
+        return tags.includes("sale") || hasDiscountPrice;
+      }
+      return false;
+    });
+    return filtered.map(mapRowToProduct);
+  }
+
+  const { data: collection } = await client
     .from("collections")
     .select("id,name")
     .eq("slug", slug)
     .single();
 
   if (!collection) {
+    const specialProducts = await getSpecialProducts();
+    if (specialProducts) {
+      return { title: collectionTitle, products: specialProducts };
+    }
     return {
-      title: slug.split("-").map((x) => x[0].toUpperCase() + x.slice(1)).join(" "),
+      title: collectionTitle,
       products: []
     };
   }
 
-  const { data } = await supabase
+  const { data } = await client
     .from("collection_products")
     .select(
       "products(id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url,sort_order))"
@@ -218,6 +267,13 @@ export async function getProductsByCollectionSlug(slug: string) {
       .flat()
       .filter(Boolean)
       .map((row) => mapRowToProduct(row as Parameters<typeof mapRowToProduct>[0])) || [];
+
+  if (products.length === 0) {
+    const specialProducts = await getSpecialProducts();
+    if (specialProducts && specialProducts.length > 0) {
+      return { title: collection.name || collectionTitle, products: specialProducts };
+    }
+  }
 
   return { title: collection.name, products };
 }

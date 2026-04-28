@@ -1,4 +1,5 @@
 import { getAdminDataClient } from "@/lib/admin/db";
+import { cache } from "react";
 import { STOREFRONT_CATEGORY_NAMES, categoryShopHref } from "@/lib/storefront/categories";
 import { toSlug } from "@/lib/slug";
 
@@ -15,20 +16,20 @@ export async function getAdminDashboardData() {
     };
   }
 
-  const [{ data: orders }, { data: topProducts }, { data: categoryRows }] = await Promise.all([
-    supabase.from("orders").select("total_amount,status"),
+  const [{ data: topProducts }, { data: categoryRows }, { data: metricsRows }] = await Promise.all([
     supabase
       .from("products")
       .select("name,total_reviews,rating")
       .eq("status", "active")
       .order("total_reviews", { ascending: false })
       .limit(5),
-    supabase.from("categories").select("id,name,slug,is_active")
+    supabase.from("categories").select("id,name,slug,is_active"),
+    supabase.rpc("admin_paid_order_metrics")
   ]);
 
-  const paidOrders = (orders || []).filter((o) => o.status === "paid" || o.status === "delivered");
-  const revenue = paidOrders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
-  const orderCount = paidOrders.length;
+  const metrics = Array.isArray(metricsRows) ? metricsRows[0] : null;
+  const revenue = Number(metrics?.revenue || 0);
+  const orderCount = Number(metrics?.orders_count || 0);
 
   const categories = categoryRows || [];
   const storefrontCategoriesLinked = STOREFRONT_CATEGORY_NAMES.filter((name) => {
@@ -60,13 +61,13 @@ export async function getAdminProducts() {
   return data || [];
 }
 
-export async function getAdminCategories() {
+export const getAdminCategories = cache(async function getAdminCategories() {
   const supabase = await getAdminDataClient();
   if (!supabase) return [];
 
   const { data } = await supabase.from("categories").select("id,name,slug,is_active,image_url").order("name");
   return data || [];
-}
+});
 
 export type AdminStorefrontCategoryRow = {
   displayName: string;
@@ -154,4 +155,35 @@ export async function getSiteSettings() {
   if (!supabase) return null;
   const { data } = await supabase.from("site_settings").select("*").eq("id", 1).single();
   return data;
+}
+
+export type CmsPageRow = {
+  id: string;
+  page_key: string;
+  title: string;
+  status: "draft" | "published";
+  content: Record<string, unknown>;
+  published_at: string | null;
+  updated_at: string;
+};
+
+export async function getAdminCmsPages(): Promise<CmsPageRow[]> {
+  const supabase = await getAdminDataClient();
+  if (!supabase) return [];
+  const { data } = await supabase
+    .from("cms_pages")
+    .select("id,page_key,title,status,content,published_at,updated_at")
+    .order("title", { ascending: true });
+  return (data || []) as CmsPageRow[];
+}
+
+export async function getAdminCmsPage(pageKey: string): Promise<CmsPageRow | null> {
+  const supabase = await getAdminDataClient();
+  if (!supabase) return null;
+  const { data } = await supabase
+    .from("cms_pages")
+    .select("id,page_key,title,status,content,published_at,updated_at")
+    .eq("page_key", pageKey)
+    .maybeSingle();
+  return (data as CmsPageRow | null) ?? null;
 }

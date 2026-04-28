@@ -584,3 +584,127 @@ export async function updateHomeContentAction(
 
   return { ok: true, message: "Homepage content saved. The storefront updates immediately." };
 }
+
+export type CmsPageActionState = { ok: boolean; message: string } | null;
+
+export async function upsertCmsPageAction(
+  _prev: CmsPageActionState,
+  formData: FormData
+): Promise<CmsPageActionState> {
+  const session = await requireAdminAccess();
+  const supabase = await getAdminDataClient();
+  if (!supabase) return { ok: false, message: "Database client unavailable." };
+
+  const pageKey = toSlug(String(formData.get("pageKey") || "").trim());
+  const title = String(formData.get("title") || "").trim();
+  const status = String(formData.get("status") || "draft").trim().toLowerCase();
+  const contentRaw = String(formData.get("content") || "{}");
+  if (!pageKey || !title) return { ok: false, message: "Page key and title are required." };
+  if (!["draft", "published"].includes(status)) return { ok: false, message: "Invalid page status." };
+
+  let content: Record<string, unknown>;
+  try {
+    const parsed = JSON.parse(contentRaw);
+    if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
+      return { ok: false, message: "Content must be a JSON object." };
+    }
+    content = parsed as Record<string, unknown>;
+  } catch {
+    return { ok: false, message: "Content JSON is invalid." };
+  }
+
+  const payload = {
+    page_key: pageKey,
+    title,
+    status,
+    content,
+    updated_by: session.user.id,
+    published_at: status === "published" ? new Date().toISOString() : null
+  };
+
+  const { error } = await supabase.from("cms_pages").upsert(payload, { onConflict: "page_key" });
+  if (error) return { ok: false, message: error.message };
+
+  revalidatePath("/admin/cms");
+  revalidatePath("/");
+  revalidatePath("/about");
+  revalidatePath("/contact");
+  return { ok: true, message: `${title} saved as ${status}.` };
+}
+
+export async function updateHomepageCmsSimpleAction(
+  _prev: CmsPageActionState,
+  formData: FormData
+): Promise<CmsPageActionState> {
+  const session = await requireAdminAccess();
+  const supabase = await getAdminDataClient();
+  if (!supabase) return { ok: false, message: "Database client unavailable." };
+
+  const status = String(formData.get("status") || "draft").trim().toLowerCase();
+  if (!["draft", "published"].includes(status)) return { ok: false, message: "Invalid status." };
+
+  const heroTitle = String(formData.get("heroTitle") || "").trim();
+  const heroTagline = String(formData.get("heroTagline") || "").trim();
+  const heroCtaPrimary = String(formData.get("heroCtaPrimary") || "Shop New Arrivals").trim();
+  const heroCtaSecondary = String(formData.get("heroCtaSecondary") || "Explore Collections").trim();
+  if (!heroTitle) return { ok: false, message: "Hero title is required." };
+
+  const storageClient = createSupabaseAdminClient() ?? supabase;
+  const slideUrls: string[] = [];
+
+  for (let i = 1; i <= 3; i += 1) {
+    const file = formData.get(`slide${i}File`);
+    let url = String(formData.get(`slide${i}Url`) || "").trim();
+    if (file instanceof File && file.size > 0) {
+      const safeName = file.name.replace(/\s+/g, "-");
+      const path = `cms/hero-slides/${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
+      const { error: uploadError } = await storageClient.storage.from("product-images").upload(path, file, {
+        upsert: true,
+        contentType: file.type || "application/octet-stream"
+      });
+      if (uploadError) return { ok: false, message: `Slide ${i} upload failed: ${uploadError.message}` };
+      const { data } = storageClient.storage.from("product-images").getPublicUrl(path);
+      url = data.publicUrl || url;
+    }
+    if (url) slideUrls.push(url);
+  }
+
+  const { data: row } = await supabase.from("cms_pages").select("content").eq("page_key", "homepage").maybeSingle();
+  const prev = row?.content && typeof row.content === "object" ? (row.content as Record<string, unknown>) : {};
+  const prevPromo = prev.promo && typeof prev.promo === "object" ? (prev.promo as Record<string, unknown>) : {};
+  const prevAnnouncement = typeof prev.announcement === "string" ? prev.announcement : "";
+
+  const content = {
+    ...prev,
+    announcement: prevAnnouncement,
+    hero: {
+      title: heroTitle,
+      tagline: heroTagline,
+      ctaPrimary: heroCtaPrimary,
+      ctaSecondary: heroCtaSecondary
+    },
+    sliderImages: slideUrls,
+    promo: {
+      title: String(prevPromo.title || ""),
+      subtitle: String(prevPromo.subtitle || ""),
+      enabled: typeof prevPromo.enabled === "boolean" ? prevPromo.enabled : true
+    }
+  };
+
+  const { error } = await supabase.from("cms_pages").upsert(
+    {
+      page_key: "homepage",
+      title: "Homepage",
+      status,
+      content,
+      updated_by: session.user.id,
+      published_at: status === "published" ? new Date().toISOString() : null
+    },
+    { onConflict: "page_key" }
+  );
+  if (error) return { ok: false, message: error.message };
+
+  revalidatePath("/admin/cms");
+  revalidatePath("/");
+  return { ok: true, message: "Homepage CMS updated successfully." };
+}

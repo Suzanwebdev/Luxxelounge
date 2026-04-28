@@ -15,9 +15,9 @@ export async function getSuperadminOverview() {
   const [{ data: settings }, { count: usersCount }, { count: failedPayments }, { count: webhookFailures }] =
     await Promise.all([
       supabase.from("site_settings").select("maintenance_mode,feature_flags").eq("id", 1).single(),
-      supabase.from("profiles").select("*", { count: "exact", head: true }),
-      supabase.from("payments").select("*", { count: "exact", head: true }).eq("status", "failed"),
-      supabase.from("webhook_logs").select("*", { count: "exact", head: true }).eq("status", "invalid_signature")
+      supabase.from("profiles").select("id", { count: "planned", head: true }),
+      supabase.from("payments").select("id", { count: "planned", head: true }).eq("status", "failed"),
+      supabase.from("webhook_logs").select("id", { count: "planned", head: true }).eq("status", "invalid_signature")
     ]);
 
   return {

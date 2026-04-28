@@ -10,9 +10,10 @@ export async function fetchAllowlistEmailRow(
   table: "superadmins" | "admins",
   emailPattern: string
 ): Promise<{ email: string } | null> {
-  const [fromDb, fromSession] = await Promise.all([
-    db.from(table).select("email").ilike("email", emailPattern).maybeSingle(),
-    sessionClient.from(table).select("email").ilike("email", emailPattern).maybeSingle()
-  ]);
-  return fromDb.data ?? fromSession.data ?? null;
+  const fromDb = await db.from(table).select("email").ilike("email", emailPattern).maybeSingle();
+  if (fromDb.data) return fromDb.data;
+
+  // Fallback for projects where service-role access is misconfigured.
+  const fromSession = await sessionClient.from(table).select("email").ilike("email", emailPattern).maybeSingle();
+  return fromSession.data ?? null;
 }
