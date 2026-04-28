@@ -90,7 +90,18 @@ export default async function AdminCategoriesPage() {
           <ul className="mt-3 space-y-2 text-sm">
             {extra.map((c) => (
               <li key={c.id} className="flex items-center justify-between rounded-xl border border-border px-3 py-2">
-                <span>{c.name}</span>
+                <div className="flex items-center gap-3">
+                  {c.image_url ? (
+                    <div className="relative h-10 w-14 overflow-hidden rounded-md border border-border">
+                      <Image src={c.image_url} alt={`${c.name} category`} fill className="object-cover" />
+                    </div>
+                  ) : (
+                    <div className="flex h-10 w-14 items-center justify-center rounded-md border border-dashed border-border text-[10px] text-muted-foreground">
+                      No image
+                    </div>
+                  )}
+                  <span>{c.name}</span>
+                </div>
                 <form action={toggleCategoryActiveAction}>
                   <input type="hidden" name="id" value={c.id} />
                   <input type="hidden" name="active" value={c.is_active ? "false" : "true"} />
