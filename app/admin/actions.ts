@@ -204,7 +204,6 @@ export async function createCategoryAction(
     return { ok: false, message: error.message };
   }
   revalidatePath("/admin/categories");
-  revalidatePath("/shop");
   revalidatePath("/");
   return { ok: true, message: "Category saved successfully." };
 }
@@ -241,7 +240,6 @@ export async function updateCategoryCardAction(formData: FormData) {
   const { error } = await supabase.from("categories").update(payload).eq("id", id);
   if (error) return;
   revalidatePath("/admin/categories");
-  revalidatePath("/shop");
   revalidatePath("/");
 }
 
@@ -256,7 +254,6 @@ export async function clearCategoryCardImageAction(formData: FormData) {
   if (error) return;
 
   revalidatePath("/admin/categories");
-  revalidatePath("/shop");
   revalidatePath("/");
 }
 
@@ -324,7 +321,7 @@ export async function toggleCategoryActiveAction(formData: FormData) {
   const { error } = await supabase.from("categories").update({ is_active: next }).eq("id", id);
   if (error) return;
   revalidatePath("/admin/categories");
-  revalidatePath("/shop");
+  revalidatePath("/");
 }
 
 export async function createDiscountAction(formData: FormData) {

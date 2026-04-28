@@ -7,6 +7,7 @@ import { CategoryCardUpdateForm, CategoryQuickAddForm } from "@/components/admin
 import { SyncStorefrontCategoriesForm } from "@/components/admin/sync-storefront-categories-form";
 import { Button } from "@/components/ui/button";
 import { getAdminExtraCategories, getAdminStorefrontCategoryRows } from "@/lib/admin/queries";
+import { getDefaultCategoryCardImage } from "@/lib/storefront/categories";
 
 export default async function AdminCategoriesPage() {
   const [rows, extra] = await Promise.all([getAdminStorefrontCategoryRows(), getAdminExtraCategories()]);
@@ -48,9 +49,14 @@ export default async function AdminCategoriesPage() {
                     " · Not in database"
                   )}
                 </p>
-                {row.image_url ? (
+                {(row.image_url || getDefaultCategoryCardImage(row.slug) || getDefaultCategoryCardImage(row.displayName)) ? (
                   <div className="mt-2 relative h-14 w-24 overflow-hidden rounded-lg border border-border">
-                    <Image src={row.image_url} alt={`${row.displayName} category`} fill className="object-cover" />
+                    <Image
+                      src={row.image_url || getDefaultCategoryCardImage(row.slug) || getDefaultCategoryCardImage(row.displayName) || ""}
+                      alt={`${row.displayName} category`}
+                      fill
+                      className="object-cover"
+                    />
                   </div>
                 ) : null}
               </div>

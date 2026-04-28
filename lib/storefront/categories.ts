@@ -117,3 +117,11 @@ export function withCategoryImageOverrides(
     return { ...item, imageSrc: image };
   });
 }
+
+export function getDefaultCategoryCardImage(labelOrSlug: string): string | null {
+  const value = String(labelOrSlug || "").trim().toLowerCase();
+  const byLabel = HOMEPAGE_CATEGORY_CARDS.find((item) => item.label.toLowerCase() === value);
+  if (byLabel) return byLabel.imageSrc;
+  const bySlug = HOMEPAGE_CATEGORY_CARDS.find((item) => toSlug(item.label).toLowerCase() === value);
+  return bySlug?.imageSrc || null;
+}
