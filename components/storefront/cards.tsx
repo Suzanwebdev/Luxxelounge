@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Heart, ShoppingBag } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BadgeSet, Price } from "@/components/storefront/primitives";
 import { WhatsAppAssistCta } from "@/components/storefront/whatsapp-assist-cta";
@@ -76,11 +76,12 @@ export function ProductCard({ product }: { product: Product }) {
             type="button"
             variant="outline"
             size="default"
-            aria-label="Quick add to cart"
-            title="Quick add to cart"
+            className="px-3"
+            aria-label="Add to cart"
+            title="Add to cart"
             onClick={onAddToCart}
           >
-            <Heart className="h-4 w-4" />
+            {justAdded ? "Added" : "Add to Cart"}
           </Button>
         </div>
         {justAdded ? (
