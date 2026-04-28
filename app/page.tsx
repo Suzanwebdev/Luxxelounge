@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ProductCard, PromoBanner } from "@/components/storefront/cards";
 import { CategoryOrbitCarousel } from "@/components/storefront/category-orbit-carousel";
-import { HOMEPAGE_CATEGORY_CARDS } from "@/lib/storefront/categories";
 import { HeroSlider, type HeroSlide } from "@/components/storefront/hero-slider";
 import { Container, Heading, Section } from "@/components/storefront/primitives";
 import { getHomeData } from "@/lib/storefront/queries";
@@ -92,7 +91,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </div>
       </Section>
 
-      <CategoryOrbitCarousel items={HOMEPAGE_CATEGORY_CARDS} />
+      <CategoryOrbitCarousel items={homeData.categoryCards} />
 
       <Section>
         <Container>

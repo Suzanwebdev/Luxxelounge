@@ -64,7 +64,7 @@ export async function getAdminCategories() {
   const supabase = await getAdminDataClient();
   if (!supabase) return [];
 
-  const { data } = await supabase.from("categories").select("id,name,slug,is_active").order("name");
+  const { data } = await supabase.from("categories").select("id,name,slug,is_active,image_url").order("name");
   return data || [];
 }
 
@@ -75,6 +75,7 @@ export type AdminStorefrontCategoryRow = {
   inDatabase: boolean;
   id: string | null;
   is_active: boolean | null;
+  image_url: string | null;
 };
 
 /** Aligns the homepage / nav category list with the database rows admins manage. */
@@ -92,7 +93,8 @@ export async function getAdminStorefrontCategoryRows(): Promise<AdminStorefrontC
       shopHref: categoryShopHref(displayName),
       inDatabase: Boolean(row),
       id: row?.id ?? null,
-      is_active: row?.is_active ?? null
+      is_active: row?.is_active ?? null,
+      image_url: row?.image_url ?? null
     };
   });
 }

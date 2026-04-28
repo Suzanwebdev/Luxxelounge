@@ -17,7 +17,7 @@ export function Navbar() {
   const { itemCount } = useCart();
 
   return (
-    <header className="z-40 border-b border-border bg-background/90 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
       <Container className="relative flex h-16 items-center gap-2 md:h-20 md:gap-3">
         <Dialog.Root open={mobileOpen} onOpenChange={setMobileOpen}>
           <Dialog.Trigger asChild>

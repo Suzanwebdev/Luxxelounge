@@ -1,4 +1,5 @@
 /** Single source for storefront category labels — matches navbar / mobile drawer order. */
+import { toSlug } from "@/lib/slug";
 
 export function categoryShopHref(name: string) {
   return `/shop?category=${encodeURIComponent(name)}`;
@@ -95,3 +96,24 @@ export const HOMEPAGE_CATEGORY_CARDS: readonly HomepageCategoryCardItem[] = [
     imageAlt: "Wood and cane chair"
   }
 ];
+
+export function withCategoryImageOverrides(
+  overrides: Array<{ slug?: string | null; name?: string | null; image_url?: string | null }>
+): HomepageCategoryCardItem[] {
+  const bySlug = new Map(
+    (overrides || [])
+      .filter((o) => o?.image_url)
+      .map((o) => [String(o.slug || "").toLowerCase(), String(o.image_url)])
+  );
+  const byName = new Map(
+    (overrides || [])
+      .filter((o) => o?.image_url)
+      .map((o) => [String(o.name || "").toLowerCase(), String(o.image_url)])
+  );
+
+  return HOMEPAGE_CATEGORY_CARDS.map((item) => {
+    const slug = toSlug(item.label).toLowerCase();
+    const image = bySlug.get(slug) || byName.get(item.label.toLowerCase()) || item.imageSrc;
+    return { ...item, imageSrc: image };
+  });
+}

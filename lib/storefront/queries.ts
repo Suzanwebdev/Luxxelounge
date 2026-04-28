@@ -1,6 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getSupabaseEnv } from "@/lib/supabase/env";
-import { STOREFRONT_CATEGORY_NAMES } from "@/lib/storefront/categories";
+import { STOREFRONT_CATEGORY_NAMES, withCategoryImageOverrides, type HomepageCategoryCardItem } from "@/lib/storefront/categories";
 import { unstable_noStore as noStore } from "next/cache";
 import {
   categoryChips as fallbackCategoryChips,
@@ -48,6 +48,7 @@ type HomeData = {
   promoSubtitle: string;
   promoEnabled: boolean;
   categoryChips: string[];
+  categoryCards: HomepageCategoryCardItem[];
   featuredCollections: { title: string; subtitle: string; slug: string }[];
   bestSellers: Product[];
   testimonials: { name: string; quote: string }[];
@@ -111,6 +112,7 @@ export async function getHomeData(): Promise<HomeData> {
       promoSubtitle: HOME_CONTENT_DEFAULTS.promoSubtitle,
       promoEnabled: HOME_CONTENT_DEFAULTS.promoEnabled,
       categoryChips: fallbackCategoryChips,
+      categoryCards: withCategoryImageOverrides([]),
       featuredCollections: fallbackCollections.map((collection) => ({
         title: collection.title,
         subtitle: collection.subtitle,
@@ -123,7 +125,7 @@ export async function getHomeData(): Promise<HomeData> {
 
   const [homeRes, categoriesRes, collectionsRes, productsRes] = await Promise.all([
     supabase.from("home_content").select("sections").eq("id", 1).single(),
-    supabase.from("categories").select("name").eq("is_active", true).order("name"),
+    supabase.from("categories").select("name,slug,image_url").eq("is_active", true).order("name"),
     supabase.from("collections").select("name,description,slug").eq("is_active", true).limit(4),
     supabase
       .from("products")
@@ -148,6 +150,7 @@ export async function getHomeData(): Promise<HomeData> {
     promoSubtitle: sections?.promo?.subtitle || HOME_CONTENT_DEFAULTS.promoSubtitle,
     promoEnabled: sections?.promo?.enabled !== false,
     categoryChips: categoriesRes.data?.map((c) => c.name).filter(Boolean) as string[] || fallbackCategoryChips,
+    categoryCards: withCategoryImageOverrides(categoriesRes.data || []),
     featuredCollections:
       collectionsRes.data?.map((c) => ({
         title: c.name,

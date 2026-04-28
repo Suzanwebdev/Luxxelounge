@@ -164,11 +164,63 @@ export async function createCategoryAction(formData: FormData) {
   if (!supabase) return;
   const name = String(formData.get("name") || "").trim();
   const slug = toSlug(String(formData.get("slug") || name));
+  const imageFile = formData.get("image");
   if (!name) return;
-  const { error } = await supabase.from("categories").upsert({ name, slug, is_active: true }, { onConflict: "slug" });
+  let imageUrl: string | null = null;
+  if (imageFile instanceof File && imageFile.size > 0) {
+    const storageClient = createSupabaseAdminClient() ?? supabase;
+    const safeName = imageFile.name.replace(/\s+/g, "-");
+    const path = `categories/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
+    const { error: uploadError } = await storageClient.storage.from("product-images").upload(path, imageFile, {
+      upsert: true,
+      contentType: imageFile.type || "application/octet-stream"
+    });
+    if (!uploadError) {
+      const { data } = storageClient.storage.from("product-images").getPublicUrl(path);
+      imageUrl = data.publicUrl || null;
+    }
+  }
+  const { error } = await supabase
+    .from("categories")
+    .upsert({ name, slug, is_active: true, ...(imageUrl ? { image_url: imageUrl } : {}) }, { onConflict: "slug" });
   if (error) return;
   revalidatePath("/admin/categories");
   revalidatePath("/shop");
+  revalidatePath("/");
+}
+
+export async function updateCategoryCardAction(formData: FormData) {
+  await requireAdminAccess();
+  const supabase = await getAdminDataClient();
+  if (!supabase) return;
+  const id = String(formData.get("id") || "").trim();
+  const name = String(formData.get("name") || "").trim();
+  const slug = toSlug(String(formData.get("slug") || name));
+  const imageFile = formData.get("image");
+  if (!id || !name || !slug) return;
+
+  let imageUrl: string | undefined;
+  if (imageFile instanceof File && imageFile.size > 0) {
+    const storageClient = createSupabaseAdminClient() ?? supabase;
+    const safeName = imageFile.name.replace(/\s+/g, "-");
+    const path = `categories/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
+    const { error: uploadError } = await storageClient.storage.from("product-images").upload(path, imageFile, {
+      upsert: true,
+      contentType: imageFile.type || "application/octet-stream"
+    });
+    if (uploadError) return;
+    const { data } = storageClient.storage.from("product-images").getPublicUrl(path);
+    if (!data.publicUrl) return;
+    imageUrl = data.publicUrl;
+  }
+
+  const payload: { name: string; slug: string; image_url?: string } = { name, slug };
+  if (imageUrl) payload.image_url = imageUrl;
+  const { error } = await supabase.from("categories").update(payload).eq("id", id);
+  if (error) return;
+  revalidatePath("/admin/categories");
+  revalidatePath("/shop");
+  revalidatePath("/");
 }
 
 export type SyncCategoriesState = {

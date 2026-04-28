@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { createCategoryAction, toggleCategoryActiveAction } from "@/app/admin/actions";
+import Image from "next/image";
+import { createCategoryAction, toggleCategoryActiveAction, updateCategoryCardAction } from "@/app/admin/actions";
 import { SyncStorefrontCategoriesForm } from "@/components/admin/sync-storefront-categories-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,15 +46,36 @@ export default async function AdminCategoriesPage() {
                     " · Not in database"
                   )}
                 </p>
+                {row.image_url ? (
+                  <div className="mt-2 relative h-14 w-24 overflow-hidden rounded-lg border border-border">
+                    <Image src={row.image_url} alt={`${row.displayName} category`} fill className="object-cover" />
+                  </div>
+                ) : null}
               </div>
               {row.id ? (
-                <form action={toggleCategoryActiveAction} className="flex shrink-0 gap-2">
-                  <input type="hidden" name="id" value={row.id} />
-                  <input type="hidden" name="active" value={row.is_active ? "false" : "true"} />
-                  <Button type="submit" size="sm" variant="outline">
-                    {row.is_active ? "Deactivate" : "Activate"}
-                  </Button>
-                </form>
+                <div className="flex shrink-0 flex-col gap-2">
+                  <form action={toggleCategoryActiveAction} className="flex gap-2">
+                    <input type="hidden" name="id" value={row.id} />
+                    <input type="hidden" name="active" value={row.is_active ? "false" : "true"} />
+                    <Button type="submit" size="sm" variant="outline">
+                      {row.is_active ? "Deactivate" : "Activate"}
+                    </Button>
+                  </form>
+                  <form action={updateCategoryCardAction} className="flex flex-wrap items-center gap-2">
+                    <input type="hidden" name="id" value={row.id} />
+                    <Input name="name" defaultValue={row.displayName} className="h-8 w-36 text-xs" />
+                    <Input name="slug" defaultValue={row.slug} className="h-8 w-28 text-xs" />
+                    <input
+                      name="image"
+                      type="file"
+                      accept="image/*"
+                      className="block text-xs file:mr-2 file:rounded-md file:border-0 file:bg-muted file:px-2 file:py-1"
+                    />
+                    <Button type="submit" size="sm" variant="outline">
+                      Save card
+                    </Button>
+                  </form>
+                </div>
               ) : null}
             </li>
           ))}
@@ -83,10 +105,18 @@ export default async function AdminCategoriesPage() {
 
       <section className="rounded-3xl border border-border bg-card p-5">
         <h2 className="font-heading text-xl">Quick add category</h2>
-        <form action={createCategoryAction} className="mt-4 flex max-w-xl flex-col gap-3 sm:flex-row">
+        <form action={createCategoryAction} className="mt-4 flex max-w-xl flex-col gap-3">
           <Input name="name" placeholder="Category name" required className="flex-1" />
-          <Input name="slug" placeholder="slug (optional)" className="flex-1 sm:max-w-[12rem]" />
-          <Button type="submit">Add</Button>
+          <div className="flex gap-3">
+            <Input name="slug" placeholder="slug (optional)" className="flex-1 sm:max-w-[12rem]" />
+            <input
+              name="image"
+              type="file"
+              accept="image/*"
+              className="block text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-muted file:px-3 file:py-2"
+            />
+            <Button type="submit">Add</Button>
+          </div>
         </form>
       </section>
     </div>
