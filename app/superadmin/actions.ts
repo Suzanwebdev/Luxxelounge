@@ -6,6 +6,13 @@ import { syncAllowlistsForProfileRole } from "@/lib/admin/allowlist-ops";
 import { getAdminDataClient } from "@/lib/admin/db";
 import { requireSuperadminAccess } from "@/lib/superadmin/auth";
 
+export type RoleAssignByEmailActionState =
+  | null
+  | {
+      ok: boolean;
+      message: string;
+    };
+
 export async function setMaintenanceModeAction(formData: FormData) {
   await requireSuperadminAccess();
   const supabase = await getAdminDataClient();
@@ -31,17 +38,46 @@ export async function setFeatureFlagAction(formData: FormData) {
   revalidatePath("/admin/settings");
 }
 
-export async function createStaffAccountAction(formData: FormData) {
+export async function createStaffAccountAction(
+  _prevState: RoleAssignByEmailActionState,
+  formData: FormData
+): Promise<RoleAssignByEmailActionState> {
   await requireSuperadminAccess();
   const supabase = await getAdminDataClient();
-  if (!supabase) return;
+  if (!supabase) return { ok: false, message: "Database client unavailable." };
 
   const email = String(formData.get("email") || "").toLowerCase().trim();
   const fullName = String(formData.get("fullName") || "");
-  const role = String(formData.get("role") || "staff");
-  if (!email || !["staff", "admin"].includes(role)) return;
+  const roleRaw = String(formData.get("role") || "staff");
+  const allowed: AssignableAppRole[] = ["superadmin", "admin", "staff", "customer"];
+  if (!email || !allowed.includes(roleRaw as AssignableAppRole)) {
+    return { ok: false, message: "Provide a valid email and role." };
+  }
+  const role = roleRaw as AssignableAppRole;
 
-  await supabase.from("admins").upsert({ email }, { onConflict: "email" });
+  if (role === "admin" || role === "staff") {
+    const { error } = await supabase.from("admins").upsert({ email }, { onConflict: "email" });
+    if (error) return { ok: false, message: error.message };
+  } else {
+    const { error } = await supabase.from("admins").delete().ilike("email", email);
+    if (error) return { ok: false, message: error.message };
+  }
+
+  if (role === "superadmin") {
+    const { error } = await supabase.from("superadmins").upsert({ email }, { onConflict: "email" });
+    if (error) return { ok: false, message: error.message };
+  } else {
+    const { error } = await supabase.from("superadmins").delete().ilike("email", email);
+    if (error) return { ok: false, message: error.message };
+  }
+
+  // If a profile already exists for this email, keep profile role aligned with allowlists.
+  const { data: profile } = await supabase.from("profiles").select("id").ilike("email", email).maybeSingle();
+  if (profile?.id) {
+    const { error } = await supabase.from("profiles").update({ role }).eq("id", profile.id);
+    if (error) return { ok: false, message: error.message };
+  }
+
   // TODO: Create auth users via Supabase Admin API in production and then link profile by auth user id.
   await supabase.from("login_audit_logs").insert({
     email,
@@ -50,6 +86,12 @@ export async function createStaffAccountAction(formData: FormData) {
     ip_address: "system"
   });
   revalidatePath("/superadmin/users");
+  return {
+    ok: true,
+    message: profile?.id
+      ? `Updated ${email} to ${role}. Existing profile role was synced.`
+      : `Assigned ${role} access for ${email}.`
+  };
 }
 
 export async function assignProfileRoleAction(formData: FormData) {

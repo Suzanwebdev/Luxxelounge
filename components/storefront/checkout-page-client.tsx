@@ -13,17 +13,23 @@ import type { Product } from "@/lib/storefront/mock-data";
 import {
   clearExpressCheckout,
   readExpressCheckout,
+  writeExpressCheckout,
   type ExpressCheckoutPayload
 } from "@/lib/storefront/express-checkout";
 
-type Line = { product: Product; qty: number };
+type Line = { key: string; product: Product; qty: number; color?: string };
+type CheckoutLine = { id: string; key: string; product: Product; qty: number; color?: string };
+
+function lineKey(slug: string, color?: string) {
+  return `${slug}::${String(color || "").toLowerCase()}`;
+}
 
 function payloadToLines(payload: ExpressCheckoutPayload): Line[] | null {
   const lines: Line[] = [];
   for (const row of payload.items) {
     const product = products.find((p) => p.slug === row.slug);
     if (!product) return null;
-    lines.push({ product, qty: row.quantity });
+    lines.push({ key: lineKey(row.slug, row.color), product, qty: row.quantity, color: row.color });
   }
   return lines;
 }
@@ -31,7 +37,7 @@ function payloadToLines(payload: ExpressCheckoutPayload): Line[] | null {
 export function CheckoutPageClient() {
   const searchParams = useSearchParams();
   const expressMode = searchParams.get("express") === "1";
-  const { lines: cartLines, subtotal: cartSubtotal, clear } = useCart();
+  const { lines: cartLines, subtotal: cartSubtotal, clear, updateQty, removeItem } = useCart();
 
   const [expressLines, setExpressLines] = React.useState<Line[] | null>(null);
   const [expressError, setExpressError] = React.useState<string | null>(null);
@@ -58,7 +64,21 @@ export function CheckoutPageClient() {
     setExpressLines(resolved);
   }, [expressMode]);
 
-  const lines = expressMode ? expressLines ?? [] : cartLines;
+  const lines: CheckoutLine[] = expressMode
+    ? (expressLines ?? []).map((line) => ({
+        id: line.key,
+        key: line.key,
+        product: line.product,
+        qty: line.qty,
+        color: line.color
+      }))
+    : cartLines.map((line) => ({
+        id: line.id,
+        key: line.id,
+        product: line.product,
+        qty: line.qty,
+        color: line.selection?.color
+      }));
   const subtotal = expressMode
     ? (expressLines ?? []).reduce((acc, l) => acc + l.product.price * l.qty, 0)
     : cartSubtotal;
@@ -71,6 +91,38 @@ export function CheckoutPageClient() {
   const [provider, setProvider] = React.useState("moolre");
   const [payLoading, setPayLoading] = React.useState(false);
   const [payError, setPayError] = React.useState("");
+
+  const clampQty = React.useCallback((value: number) => Math.max(1, Math.min(99, Math.round(value))), []);
+
+  const updateExpressQty = React.useCallback(
+    (key: string, nextQty: number) => {
+      const safeQty = clampQty(nextQty);
+      setExpressLines((prev) => {
+        if (!prev) return prev;
+        const next = prev.map((line) => (line.key === key ? { ...line, qty: safeQty } : line));
+        writeExpressCheckout({
+          items: next.map((line) => ({ slug: line.product.slug, quantity: line.qty, color: line.color }))
+        });
+        return next;
+      });
+    },
+    [clampQty]
+  );
+
+  const removeExpressLine = React.useCallback((key: string) => {
+    setExpressLines((prev) => {
+      if (!prev) return prev;
+      const next = prev.filter((line) => line.key !== key);
+      if (next.length === 0) {
+        clearExpressCheckout();
+      } else {
+        writeExpressCheckout({
+          items: next.map((line) => ({ slug: line.product.slug, quantity: line.qty, color: line.color }))
+        });
+      }
+      return next;
+    });
+  }, []);
 
   const emptyMessage = expressMode
     ? expressError
@@ -89,7 +141,7 @@ export function CheckoutPageClient() {
     setPayLoading(true);
     setPayError("");
 
-    const items = lines.map((l) => ({ slug: l.product.slug, quantity: l.qty }));
+    const items = lines.map((l) => ({ slug: l.product.slug, quantity: l.qty, color: l.color }));
 
     const orderRes = await fetch("/api/orders/guest-express", {
       method: "POST",
@@ -166,10 +218,46 @@ export function CheckoutPageClient() {
             ) : (
               <ul className="mt-3 space-y-3">
                 {lines.map((line) => (
-                  <li key={line.product.id} className="flex justify-between gap-3 text-sm">
-                    <span>
-                      {line.product.name}
-                      <span className="text-muted-foreground"> × {line.qty}</span>
+                  <li key={line.key} className="flex justify-between gap-3 text-sm">
+                    <span className="space-y-2">
+                      <span className="block">
+                        {line.product.name}
+                        <span className="text-muted-foreground"> × {line.qty}</span>
+                      </span>
+                      {line.color ? <span className="block text-xs text-muted-foreground">Color: {line.color}</span> : null}
+                      <span className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2"
+                          onClick={() =>
+                            expressMode ? updateExpressQty(line.key, line.qty - 1) : updateQty(line.id, line.qty - 1)
+                          }
+                        >
+                          -
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2"
+                          onClick={() =>
+                            expressMode ? updateExpressQty(line.key, line.qty + 1) : updateQty(line.id, line.qty + 1)
+                          }
+                        >
+                          +
+                        </Button>
+                        <button
+                          type="button"
+                          className="ml-2 text-xs text-muted-foreground underline-offset-2 hover:underline"
+                          onClick={() =>
+                            expressMode ? removeExpressLine(line.key) : removeItem(line.id)
+                          }
+                        >
+                          Remove
+                        </button>
+                      </span>
                     </span>
                     <span>{formatGhs(line.product.price * line.qty)}</span>
                   </li>

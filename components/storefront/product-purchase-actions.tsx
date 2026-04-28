@@ -14,15 +14,19 @@ export function ProductPurchaseActions({ product }: { product: Product }) {
   const { addItem } = useCart();
   const [justAdded, setJustAdded] = React.useState(false);
   const [selectedColor, setSelectedColor] = React.useState(product.colors[0] ?? "");
+  const [qty, setQty] = React.useState(1);
+
+  const clampedQty = Math.max(1, Math.min(99, Math.round(qty)));
+  const setSafeQty = (next: number) => setQty(Math.max(1, Math.min(99, Math.round(next))));
 
   const onAdd = () => {
-    addItem(product, 1);
+    addItem(product, clampedQty, { color: selectedColor || undefined });
     setJustAdded(true);
     window.setTimeout(() => setJustAdded(false), 1400);
   };
 
   const onBuyNow = () => {
-    writeExpressCheckout({ items: [{ slug: product.slug, quantity: 1 }] });
+    writeExpressCheckout({ items: [{ slug: product.slug, quantity: clampedQty, color: selectedColor || undefined }] });
     router.push("/checkout?express=1");
   };
 
@@ -54,6 +58,26 @@ export function ProductPurchaseActions({ product }: { product: Product }) {
           {selectedColor ? <p className="text-xs text-muted-foreground">Selected: {selectedColor}</p> : null}
         </div>
       ) : null}
+      <div className="space-y-2">
+        <p className="text-sm font-medium">Quantity</p>
+        <div className="flex w-fit items-center gap-2 rounded-2xl border border-border bg-card p-1">
+          <Button type="button" variant="outline" size="sm" className="h-8 px-2" onClick={() => setSafeQty(clampedQty - 1)}>
+            -
+          </Button>
+          <input
+            type="number"
+            min={1}
+            max={99}
+            value={clampedQty}
+            onChange={(e) => setSafeQty(Number(e.target.value || 1))}
+            className="h-8 w-16 rounded-lg border border-border bg-background px-2 text-center text-sm"
+            aria-label="Quantity"
+          />
+          <Button type="button" variant="outline" size="sm" className="h-8 px-2" onClick={() => setSafeQty(clampedQty + 1)}>
+            +
+          </Button>
+        </div>
+      </div>
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <Button type="button" size="lg" onClick={onAdd}>
           <ShoppingBag className="mr-2 h-4 w-4" />

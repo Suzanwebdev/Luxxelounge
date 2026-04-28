@@ -21,7 +21,7 @@ function bySort(sort: string, a: { price: number; reviews: number }, b: { price:
 }
 
 export default async function ShopPage({ searchParams }: ShopPageProps) {
-  const params = searchParams ? await searchParams : undefined;
+  const params = await searchParams;
   const products = await getShopProducts();
   const q = (params?.q || "").trim().toLowerCase();
   const category = (params?.category || "").trim().toLowerCase();

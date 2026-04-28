@@ -1,7 +1,7 @@
 export const EXPRESS_CHECKOUT_STORAGE_KEY = "luxxelounge_express_checkout_v1";
 
 export type ExpressCheckoutPayload = {
-  items: { slug: string; quantity: number }[];
+  items: { slug: string; quantity: number; color?: string }[];
 };
 
 export function writeExpressCheckout(payload: ExpressCheckoutPayload) {

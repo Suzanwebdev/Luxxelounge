@@ -40,8 +40,11 @@ export function CartDrawer({
                 </div>
               ) : (
                 lines.map((line) => (
-                  <div key={line.product.id} className="rounded-2xl border border-border p-4">
+                  <div key={line.id} className="rounded-2xl border border-border p-4">
                     <p className="font-medium">{line.product.name}</p>
+                    {line.selection?.color ? (
+                      <p className="text-xs text-muted-foreground">Color: {line.selection.color}</p>
+                    ) : null}
                     <div className="mt-1 flex items-center justify-between">
                       <p className="text-sm text-muted-foreground">Qty {line.qty}</p>
                       <div className="flex items-center gap-1">
@@ -50,7 +53,7 @@ export function CartDrawer({
                           variant="outline"
                           size="sm"
                           className="h-7 px-2"
-                          onClick={() => updateQty(line.product.id, Math.max(1, line.qty - 1))}
+                          onClick={() => updateQty(line.id, Math.max(1, line.qty - 1))}
                         >
                           -
                         </Button>
@@ -59,7 +62,7 @@ export function CartDrawer({
                           variant="outline"
                           size="sm"
                           className="h-7 px-2"
-                          onClick={() => updateQty(line.product.id, line.qty + 1)}
+                          onClick={() => updateQty(line.id, line.qty + 1)}
                         >
                           +
                         </Button>
@@ -70,7 +73,7 @@ export function CartDrawer({
                       <button
                         type="button"
                         className="text-xs text-muted-foreground underline-offset-2 hover:underline"
-                        onClick={() => removeItem(line.product.id)}
+                        onClick={() => removeItem(line.id)}
                       >
                         Remove
                       </button>

@@ -20,9 +20,12 @@ export default function CartPage() {
             </div>
           ) : (
             lines.map((line) => (
-              <div key={line.product.id} className="rounded-3xl border border-border bg-card p-5">
+              <div key={line.id} className="rounded-3xl border border-border bg-card p-5">
                 <p className="font-medium">{line.product.name}</p>
                 <p className="text-sm text-muted-foreground">{line.product.category}</p>
+                {line.selection?.color ? (
+                  <p className="text-xs text-muted-foreground">Color: {line.selection.color}</p>
+                ) : null}
                 <div className="mt-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Button
@@ -30,7 +33,7 @@ export default function CartPage() {
                       variant="outline"
                       size="sm"
                       className="h-8 px-2"
-                      onClick={() => updateQty(line.product.id, Math.max(1, line.qty - 1))}
+                      onClick={() => updateQty(line.id, Math.max(1, line.qty - 1))}
                     >
                       -
                     </Button>
@@ -40,14 +43,14 @@ export default function CartPage() {
                       variant="outline"
                       size="sm"
                       className="h-8 px-2"
-                      onClick={() => updateQty(line.product.id, line.qty + 1)}
+                      onClick={() => updateQty(line.id, line.qty + 1)}
                     >
                       +
                     </Button>
                   </div>
                   <button
                     type="button"
-                    onClick={() => removeItem(line.product.id)}
+                    onClick={() => removeItem(line.id)}
                     className="text-sm text-muted-foreground underline-offset-2 hover:underline"
                   >
                     Remove

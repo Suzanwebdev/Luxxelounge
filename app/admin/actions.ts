@@ -287,6 +287,115 @@ export async function updateOrderStatusAction(formData: FormData) {
   revalidatePath("/admin/orders");
 }
 
+export type OrderItemQuantityActionState = { ok: boolean; message: string } | null;
+
+export async function updateOrderItemQuantityAction(formData: FormData) {
+  await requireAdminAccess();
+  const supabase = await getAdminDataClient();
+  if (!supabase) return;
+
+  const orderId = String(formData.get("orderId") || "").trim();
+  const itemId = String(formData.get("itemId") || "").trim();
+  const qtyRaw = Number(formData.get("quantity") || 1);
+  const quantity = Math.max(1, Math.min(99, Math.round(Number.isFinite(qtyRaw) ? qtyRaw : 1)));
+  if (!orderId || !itemId) return;
+
+  const { data: currentItem, error: itemFetchError } = await supabase
+    .from("order_items")
+    .select("id,order_id,unit_price")
+    .eq("id", itemId)
+    .eq("order_id", orderId)
+    .maybeSingle();
+  if (itemFetchError || !currentItem) return;
+
+  const unitPrice = Number(currentItem.unit_price || 0);
+  const nextTotalPrice = unitPrice * quantity;
+  const { error: itemUpdateError } = await supabase
+    .from("order_items")
+    .update({ quantity, total_price: nextTotalPrice })
+    .eq("id", itemId)
+    .eq("order_id", orderId);
+  if (itemUpdateError) return;
+
+  const [{ data: items }, { data: order }] = await Promise.all([
+    supabase.from("order_items").select("total_price").eq("order_id", orderId),
+    supabase.from("orders").select("shipping_amount,discount_amount").eq("id", orderId).maybeSingle()
+  ]);
+
+  const subtotalAmount = (items || []).reduce((sum, row) => sum + Number(row.total_price || 0), 0);
+  const shippingAmount = Number(order?.shipping_amount || 0);
+  const discountAmount = Number(order?.discount_amount || 0);
+  const totalAmount = Math.max(0, subtotalAmount + shippingAmount - discountAmount);
+
+  await supabase
+    .from("orders")
+    .update({
+      subtotal_amount: subtotalAmount,
+      total_amount: totalAmount
+    })
+    .eq("id", orderId);
+
+  revalidatePath("/admin/orders");
+}
+
+export async function updateOrderItemQuantityWithStateAction(
+  _prev: OrderItemQuantityActionState,
+  formData: FormData
+): Promise<OrderItemQuantityActionState> {
+  await requireAdminAccess();
+  const supabase = await getAdminDataClient();
+  if (!supabase) return { ok: false, message: "Database client unavailable." };
+
+  const orderId = String(formData.get("orderId") || "").trim();
+  const itemId = String(formData.get("itemId") || "").trim();
+  const qtyRaw = Number(formData.get("quantity") || 1);
+  const quantity = Math.max(1, Math.min(99, Math.round(Number.isFinite(qtyRaw) ? qtyRaw : 1)));
+  if (!orderId || !itemId) return { ok: false, message: "Missing order or item id." };
+
+  const { data: currentItem, error: itemFetchError } = await supabase
+    .from("order_items")
+    .select("id,order_id,unit_price,product_name")
+    .eq("id", itemId)
+    .eq("order_id", orderId)
+    .maybeSingle();
+  if (itemFetchError || !currentItem) return { ok: false, message: "Order item not found." };
+
+  const unitPrice = Number(currentItem.unit_price || 0);
+  const nextTotalPrice = unitPrice * quantity;
+  const { error: itemUpdateError } = await supabase
+    .from("order_items")
+    .update({ quantity, total_price: nextTotalPrice })
+    .eq("id", itemId)
+    .eq("order_id", orderId);
+  if (itemUpdateError) return { ok: false, message: itemUpdateError.message };
+
+  const [{ data: items }, { data: order }] = await Promise.all([
+    supabase.from("order_items").select("total_price").eq("order_id", orderId),
+    supabase.from("orders").select("shipping_amount,discount_amount").eq("id", orderId).maybeSingle()
+  ]);
+
+  const subtotalAmount = (items || []).reduce((sum, row) => sum + Number(row.total_price || 0), 0);
+  const shippingAmount = Number(order?.shipping_amount || 0);
+  const discountAmount = Number(order?.discount_amount || 0);
+  const totalAmount = Math.max(0, subtotalAmount + shippingAmount - discountAmount);
+
+  const { error: orderUpdateError } = await supabase
+    .from("orders")
+    .update({
+      subtotal_amount: subtotalAmount,
+      total_amount: totalAmount
+    })
+    .eq("id", orderId);
+
+  if (orderUpdateError) return { ok: false, message: orderUpdateError.message };
+
+  revalidatePath("/admin/orders");
+  return {
+    ok: true,
+    message: `${currentItem.product_name ?? "Item"} quantity updated to ${quantity}.`
+  };
+}
+
 export async function updateSiteSettingsAction(formData: FormData) {
   await requireAdminAccess();
   const supabase = await getAdminDataClient();

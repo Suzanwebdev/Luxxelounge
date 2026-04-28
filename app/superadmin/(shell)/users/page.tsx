@@ -1,7 +1,5 @@
-import { createStaffAccountAction } from "@/app/superadmin/actions";
 import { ProfileRoleAssignForm } from "@/components/superadmin/profile-role-assign-form";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { RoleAssignEmailForm } from "@/components/superadmin/role-assign-email-form";
 import { getSuperadminUsers } from "@/lib/superadmin/queries";
 
 export default async function SuperadminUsersPage() {
@@ -15,19 +13,11 @@ export default async function SuperadminUsersPage() {
       </div>
 
       <section className="rounded-3xl border border-border bg-card p-5">
-        <h2 className="font-heading text-xl">Invite staff / admin (allowlist)</h2>
+        <h2 className="font-heading text-xl">Assign role by email (allowlist)</h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          Adds email to public.admins. Create the Auth user separately in Supabase.
+          Sets role access for an email. Create the Auth user separately in Supabase if needed.
         </p>
-        <form action={createStaffAccountAction} className="mt-4 flex max-w-2xl flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-          <Input name="email" type="email" placeholder="email@example.com" required className="min-w-[200px] flex-1" />
-          <Input name="fullName" placeholder="Full name" className="min-w-[160px] flex-1" />
-          <select name="role" className="h-11 rounded-2xl border border-border bg-card px-3 text-sm sm:w-40">
-            <option value="staff">Staff</option>
-            <option value="admin">Store admin</option>
-          </select>
-          <Button type="submit">Add to allowlist</Button>
-        </form>
+        <RoleAssignEmailForm />
       </section>
 
       <div className="overflow-x-auto rounded-3xl border border-border bg-card">

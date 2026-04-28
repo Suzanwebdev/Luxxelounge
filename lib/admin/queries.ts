@@ -139,7 +139,9 @@ export async function getAdminOrders() {
 
   const { data } = await supabase
     .from("orders")
-    .select("id,order_number,status,total_amount,currency,created_at,guest_email")
+    .select(
+      "id,order_number,status,total_amount,currency,created_at,guest_email,order_items(id,product_name,quantity,unit_price,total_price)"
+    )
     .order("created_at", { ascending: false })
     .limit(50);
   return data || [];

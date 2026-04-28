@@ -20,13 +20,13 @@ export function ProductCard({ product }: { product: Product }) {
   const [justAdded, setJustAdded] = React.useState(false);
 
   const onAddToCart = () => {
-    addItem(product, 1);
+    addItem(product, 1, { color: product.colors[0] });
     setJustAdded(true);
     window.setTimeout(() => setJustAdded(false), 1400);
   };
 
   const onBuyNow = () => {
-    writeExpressCheckout({ items: [{ slug: product.slug, quantity: 1 }] });
+    writeExpressCheckout({ items: [{ slug: product.slug, quantity: 1, color: product.colors[0] }] });
     router.push("/checkout?express=1");
   };
 

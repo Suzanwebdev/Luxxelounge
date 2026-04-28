@@ -4,8 +4,12 @@ import * as React from "react";
 import type { Product } from "@/lib/storefront/mock-data";
 
 type CartLine = {
+  id: string;
   product: Product;
   qty: number;
+  selection?: {
+    color?: string;
+  };
 };
 
 type CartState = {
@@ -15,9 +19,9 @@ type CartState = {
   /** Sum of all line quantities. */
   totalQuantity: number;
   subtotal: number;
-  addItem: (product: Product, qty?: number) => void;
-  removeItem: (productId: string) => void;
-  updateQty: (productId: string, qty: number) => void;
+  addItem: (product: Product, qty?: number, selection?: CartLine["selection"]) => void;
+  removeItem: (lineId: string) => void;
+  updateQty: (lineId: string, qty: number) => void;
   clear: () => void;
 };
 
@@ -27,6 +31,16 @@ const CartContext = React.createContext<CartState | null>(null);
 
 function clampQty(value: number): number {
   return Math.max(1, Math.min(99, Math.round(value)));
+}
+
+function normalizeSelection(selection?: CartLine["selection"]): NonNullable<CartLine["selection"]> {
+  const color = String(selection?.color || "").trim();
+  return color ? { color } : {};
+}
+
+function makeLineId(product: Product, selection?: CartLine["selection"]): string {
+  const sel = normalizeSelection(selection);
+  return `${product.id}::${String(sel.color || "").toLowerCase()}`;
 }
 
 function sumCount(lines: CartLine[]): number {
@@ -50,7 +64,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           setLines(
             parsed
               .filter((x) => x?.product?.id && typeof x.qty === "number")
-              .map((x) => ({ product: x.product, qty: clampQty(x.qty) }))
+              .map((x) => {
+                const selection = normalizeSelection(x.selection);
+                return {
+                  id: x.id || makeLineId(x.product, selection),
+                  product: x.product,
+                  qty: clampQty(x.qty),
+                  selection
+                };
+              })
           );
         }
       }
@@ -66,24 +88,26 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(lines));
   }, [lines, hydrated]);
 
-  const addItem = React.useCallback((product: Product, qty = 1) => {
+  const addItem = React.useCallback((product: Product, qty = 1, selection?: CartLine["selection"]) => {
     const add = clampQty(qty);
+    const normalizedSelection = normalizeSelection(selection);
+    const lineId = makeLineId(product, normalizedSelection);
     setLines((prev) => {
-      const idx = prev.findIndex((x) => x.product.id === product.id);
-      if (idx < 0) return [...prev, { product, qty: add }];
+      const idx = prev.findIndex((x) => x.id === lineId);
+      if (idx < 0) return [...prev, { id: lineId, product, qty: add, selection: normalizedSelection }];
       const next = [...prev];
       next[idx] = { ...next[idx], qty: clampQty(next[idx].qty + add) };
       return next;
     });
   }, []);
 
-  const removeItem = React.useCallback((productId: string) => {
-    setLines((prev) => prev.filter((x) => x.product.id !== productId));
+  const removeItem = React.useCallback((lineId: string) => {
+    setLines((prev) => prev.filter((x) => x.id !== lineId));
   }, []);
 
-  const updateQty = React.useCallback((productId: string, qty: number) => {
+  const updateQty = React.useCallback((lineId: string, qty: number) => {
     const nextQty = clampQty(qty);
-    setLines((prev) => prev.map((x) => (x.product.id === productId ? { ...x, qty: nextQty } : x)));
+    setLines((prev) => prev.map((x) => (x.id === lineId ? { ...x, qty: nextQty } : x)));
   }, []);
 
   const clear = React.useCallback(() => setLines([]), []);

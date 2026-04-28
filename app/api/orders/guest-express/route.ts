@@ -9,7 +9,8 @@ const bodySchema = z.object({
     .array(
       z.object({
         slug: z.string().min(1),
-        quantity: z.number().int().min(1).max(99)
+        quantity: z.number().int().min(1).max(99),
+        color: z.string().max(80).optional()
       })
     )
     .min(1)
@@ -43,25 +44,33 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid checkout payload" }, { status: 400 });
   }
 
-  const merged = new Map<string, number>();
+  const merged = new Map<string, { slug: string; color?: string; quantity: number }>();
   for (const line of parsed.data.items) {
-    merged.set(line.slug, (merged.get(line.slug) ?? 0) + line.quantity);
+    const color = String(line.color || "").trim() || undefined;
+    const key = `${line.slug}::${String(color || "").toLowerCase()}`;
+    const prev = merged.get(key);
+    merged.set(key, {
+      slug: line.slug,
+      color,
+      quantity: (prev?.quantity ?? 0) + line.quantity
+    });
   }
 
-  const resolved: { name: string; sku: string; qty: number; unit: number; total: number }[] = [];
-  for (const [slug, qtyRaw] of merged) {
-    const product = products.find((p) => p.slug === slug);
+  const resolved: { name: string; sku: string; qty: number; unit: number; total: number; color?: string }[] = [];
+  for (const row of merged.values()) {
+    const product = products.find((p) => p.slug === row.slug);
     if (!product) {
-      return NextResponse.json({ error: `Unknown product: ${slug}` }, { status: 400 });
+      return NextResponse.json({ error: `Unknown product: ${row.slug}` }, { status: 400 });
     }
     const unit = Number(product.price);
-    const qty = Math.min(99, Math.max(1, Math.round(qtyRaw)));
+    const qty = Math.min(99, Math.max(1, Math.round(row.quantity)));
     resolved.push({
       name: product.name,
-      sku: product.id,
+      sku: row.color ? `${product.id}::${row.color}` : product.id,
       qty,
       unit,
-      total: unit * qty
+      total: unit * qty,
+      color: row.color
     });
   }
 
@@ -105,7 +114,7 @@ export async function POST(request: NextRequest) {
     order_id: order.id,
     product_id: null as string | null,
     variant_id: null as string | null,
-    product_name: r.name,
+    product_name: r.color ? `${r.name} (Color: ${r.color})` : r.name,
     sku: r.sku,
     quantity: r.qty,
     unit_price: r.unit,

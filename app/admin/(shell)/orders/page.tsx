@@ -1,4 +1,5 @@
 import { updateOrderStatusAction } from "@/app/admin/actions";
+import { OrderItemQtyForm } from "@/components/admin/order-item-qty-form";
 import { Button } from "@/components/ui/button";
 import { getAdminOrders } from "@/lib/admin/queries";
 import { formatGhs } from "@/lib/utils";
@@ -43,23 +44,39 @@ export default async function AdminOrdersPage() {
                   <td className="px-4 py-3">{formatGhs(Number(o.total_amount || 0))}</td>
                   <td className="px-4 py-3 text-muted-foreground">{o.guest_email ?? "—"}</td>
                   <td className="px-4 py-3">
-                    <form action={updateOrderStatusAction} className="flex flex-wrap items-center gap-2">
-                      <input type="hidden" name="id" value={o.id} />
-                      <select
-                        name="status"
-                        defaultValue={o.status}
-                        className="h-9 max-w-[11rem] rounded-xl border border-border bg-background px-2 text-xs"
-                      >
-                        {STATUSES.map((s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                        ))}
-                      </select>
-                      <Button type="submit" size="sm" variant="outline">
-                        Update
-                      </Button>
-                    </form>
+                    <div className="space-y-3">
+                      <form action={updateOrderStatusAction} className="flex flex-wrap items-center gap-2">
+                        <input type="hidden" name="id" value={o.id} />
+                        <select
+                          name="status"
+                          defaultValue={o.status}
+                          className="h-9 max-w-[11rem] rounded-xl border border-border bg-background px-2 text-xs"
+                        >
+                          {STATUSES.map((s) => (
+                            <option key={s} value={s}>
+                              {s}
+                            </option>
+                          ))}
+                        </select>
+                        <Button type="submit" size="sm" variant="outline">
+                          Update
+                        </Button>
+                      </form>
+
+                      {Array.isArray(o.order_items) && o.order_items.length > 0 ? (
+                        <div className="space-y-2 rounded-xl border border-border bg-muted/20 p-2">
+                          {o.order_items.map((item) => (
+                            <OrderItemQtyForm
+                              key={item.id}
+                              orderId={o.id}
+                              itemId={item.id}
+                              productName={item.product_name ?? "Order item"}
+                              quantity={Number(item.quantity || 1)}
+                            />
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
                   </td>
                 </tr>
               ))
