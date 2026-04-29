@@ -34,7 +34,9 @@ export async function POST(request: NextRequest) {
     process.env.APP_BASE_URL ||
     process.env.NEXT_PUBLIC_APP_BASE_URL ||
     request.nextUrl.origin;
-  const callbackUrl = `${appBase.replace(/\/$/, "")}/checkout/return`;
+  const base = appBase.replace(/\/$/, "");
+  const callbackUrl = `${base}/checkout/return`;
+  const webhookUrl = `${base}/api/payments/webhook/${provider}`;
   const result = await initiatePayment(provider, {
     orderId: order.id,
     orderNumber: order.order_number,
@@ -43,6 +45,7 @@ export async function POST(request: NextRequest) {
     customerEmail: parsed.data.customerEmail || order.guest_email || "customer@luxxelounge.com",
     customerName: parsed.data.customerName,
     callbackUrl,
+    webhookUrl,
     metadata: { order_id: order.id }
   });
 

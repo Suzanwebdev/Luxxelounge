@@ -8,6 +8,7 @@ export type InitiatePaymentInput = {
   customerEmail: string;
   customerName?: string;
   callbackUrl: string;
+  webhookUrl?: string;
   metadata?: Record<string, unknown>;
 };
 

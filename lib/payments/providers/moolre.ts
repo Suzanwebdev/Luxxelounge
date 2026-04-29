@@ -7,73 +7,104 @@ export const moolreProvider: PaymentProvider = {
   name: "moolre",
 
   async initiatePayment(input: InitiatePaymentInput): Promise<InitiatePaymentResult> {
-    const secret = process.env.MOOLRE_SECRET;
-    const apiKey = process.env.MOOLRE_API_KEY;
+    const apiUser = process.env.MOOLRE_API_USER;
+    const publicKey = process.env.MOOLRE_API_PUBKEY;
+    const accountNumber = process.env.MOOLRE_ACCOUNT_NUMBER;
+    const businessEmail = process.env.MOOLRE_BUSINESS_EMAIL || input.customerEmail;
+    const reusable = process.env.MOOLRE_REUSABLE === "1" ? "1" : "0";
+    const reference = `moolre_${input.orderNumber}_${Date.now()}`;
+    const redirectUrl = `${input.callbackUrl}?provider=moolre&reference=${encodeURIComponent(reference)}`;
 
-    if (!secret || !apiKey) {
+    if (!apiUser || !publicKey || !accountNumber) {
       return {
         provider: "moolre",
-        reference: `moolre_${input.orderNumber}_${Date.now()}`,
-        checkoutUrl: `${input.callbackUrl}?provider=moolre&status=mock&order=${input.orderId}`,
-        raw: { mode: "mock", reason: "Missing MOOLRE_API_KEY or MOOLRE_SECRET" }
+        reference,
+        checkoutUrl: `${redirectUrl}&status=mock`,
+        raw: {
+          mode: "mock",
+          reason: "Missing MOOLRE_API_USER / MOOLRE_API_PUBKEY / MOOLRE_ACCOUNT_NUMBER"
+        }
       };
     }
 
-    // TODO: Replace with official Moolre payload/headers once exact docs are finalized.
-    const response = await fetch(`${API_URL}/payments/initiate`, {
+    // Moolre docs: POST /embed/link
+    const response = await fetch(`${API_URL}/embed/link`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`
+        "X-API-USER": apiUser,
+        "X-API-PUBKEY": publicKey
       },
       body: JSON.stringify({
+        type: 1,
         amount: input.amount,
+        email: businessEmail,
+        externalref: reference,
+        callback: input.webhookUrl || input.callbackUrl,
+        redirect: redirectUrl,
+        reusable,
         currency: input.currency,
-        reference: `moolre_${input.orderNumber}_${Date.now()}`,
-        customer: {
-          email: input.customerEmail,
-          name: input.customerName
-        },
-        callback_url: input.callbackUrl,
+        accountnumber: accountNumber,
         metadata: {
           order_id: input.orderId,
+          customer_email: input.customerEmail,
+          customer_name: input.customerName,
           ...input.metadata
         }
       })
     });
 
-    const json = await response.json();
+    const json = await response.json().catch(() => ({}));
+    const authUrl = json?.data?.authorization_url;
+    const providerRef = json?.data?.reference || reference;
     return {
       provider: "moolre",
-      reference: json.reference || `moolre_${input.orderNumber}_${Date.now()}`,
-      checkoutUrl: json.checkout_url || input.callbackUrl,
+      reference: providerRef,
+      checkoutUrl: authUrl || redirectUrl,
       raw: json
     };
   },
 
   async verifyPayment(reference: string): Promise<VerifyPaymentResult> {
-    const apiKey = process.env.MOOLRE_API_KEY;
-    if (!apiKey) {
-      return { isPaid: true, reference, raw: { mode: "mock" } };
+    const apiUser = process.env.MOOLRE_API_USER;
+    const publicKey = process.env.MOOLRE_API_PUBKEY;
+    if (!apiUser || !publicKey) {
+      return { isPaid: true, reference, raw: { mode: "mock", reason: "Missing moolre credentials" } };
     }
 
-    // TODO: Replace endpoint/response shape with exact Moolre verification docs.
-    const response = await fetch(`${API_URL}/payments/verify/${reference}`, {
-      headers: { Authorization: `Bearer ${apiKey}` }
+    // Moolre docs list "Payment Status" as POST endpoint.
+    const response = await fetch(`${API_URL}/payment/status`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-USER": apiUser,
+        "X-API-PUBKEY": publicKey
+      },
+      body: JSON.stringify({
+        type: 1,
+        externalref: reference
+      })
     });
-    const json = await response.json();
+    const json = await response.json().catch(() => ({}));
+    const statusRaw = String(json?.data?.status || json?.status || json?.message || "").toLowerCase();
+    const isPaid =
+      statusRaw.includes("paid") ||
+      statusRaw.includes("success") ||
+      statusRaw.includes("completed") ||
+      statusRaw === "1";
     return {
-      isPaid: Boolean(json.status === "successful" || json.paid === true),
-      reference: json.reference || reference,
-      amount: json.amount,
-      currency: json.currency,
+      isPaid,
+      reference: json?.data?.reference || json?.data?.externalref || reference,
+      amount: Number(json?.data?.amount || json?.amount || 0) || undefined,
+      currency: json?.data?.currency || json?.currency,
       raw: json
     };
   },
 
   verifyWebhookSignature(payload: string, signature?: string) {
-    const secret = process.env.MOOLRE_SECRET;
-    if (!secret || !signature) return false;
+    const secret = process.env.MOOLRE_WEBHOOK_SECRET;
+    if (!secret) return true;
+    if (!signature) return false;
     const hash = crypto.createHmac("sha256", secret).update(payload).digest("hex");
     return hash === signature;
   }

@@ -493,6 +493,7 @@ export async function updateSiteSettingsAction(formData: FormData) {
   const maintenanceMode = String(formData.get("maintenanceMode")) === "on";
   const taxesEnabled = String(formData.get("taxesEnabled")) === "on";
   const reviewsEnabled = String(formData.get("reviewsEnabled")) === "on";
+  const moolreEnabled = String(formData.get("moolreEnabled")) === "on";
   const paystackEnabled = String(formData.get("paystackEnabled")) === "on";
   const flutterwaveEnabled = String(formData.get("flutterwaveEnabled")) === "on";
 
@@ -505,7 +506,7 @@ export async function updateSiteSettingsAction(formData: FormData) {
       maintenance_mode: maintenanceMode,
       taxes_enabled: taxesEnabled,
       payment_config: {
-        moolre: { enabled: true },
+        moolre: { enabled: moolreEnabled },
         paystack: { enabled: paystackEnabled },
         flutterwave: { enabled: flutterwaveEnabled }
       },

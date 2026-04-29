@@ -5,6 +5,7 @@ import { getSiteSettings } from "@/lib/admin/queries";
 
 export default async function AdminSettingsPage() {
   const settings = await getSiteSettings();
+  const moolre = (settings?.payment_config as { moolre?: { enabled?: boolean } } | null)?.moolre?.enabled ?? true;
   const paystack = (settings?.payment_config as { paystack?: { enabled?: boolean } } | null)?.paystack?.enabled ?? false;
   const flutterwave =
     (settings?.payment_config as { flutterwave?: { enabled?: boolean } } | null)?.flutterwave?.enabled ?? false;
@@ -55,6 +56,10 @@ export default async function AdminSettingsPage() {
 
         <div className="space-y-3 rounded-2xl border border-border p-4">
           <p className="text-sm font-medium">Payment providers</p>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="moolreEnabled" defaultChecked={moolre} />
+            Moolre
+          </label>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="paystackEnabled" defaultChecked={paystack} />
             Paystack

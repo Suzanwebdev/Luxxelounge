@@ -125,7 +125,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <Container>
           <Heading eyebrow="Collections" title="Featured Collections" />
           <div className="grid gap-4 md:grid-cols-2">
-            {homeData.featuredCollections.map((collection) => (
+            {homeData.featuredCollections
+              .filter((collection) => collection.title.trim().toLowerCase() !== "living room icons")
+              .map((collection) => (
               <article key={collection.title} className="luxury-panel border border-border p-6">
                 <h3 className="font-heading text-3xl">{collection.title}</h3>
                 <p className="mt-2 text-muted-foreground">{collection.subtitle}</p>
