@@ -4,6 +4,7 @@ import { paystackProvider } from "@/lib/payments/providers/paystack";
 import { flutterwaveProvider } from "@/lib/payments/providers/flutterwave";
 import type { InitiatePaymentInput, PaymentProvider, PaymentProviderName, VerifyPaymentResult } from "@/lib/payments/types";
 import { sendOrderPaidEmail } from "@/lib/email/resend";
+import { isMoolreSmsConfigured, sendOrderPaidSms } from "@/lib/sms/moolre";
 
 const providers: Record<PaymentProviderName, PaymentProvider> = {
   moolre: moolreProvider,
@@ -104,7 +105,7 @@ export async function verifyAndFinalizePayment(providerName: PaymentProviderName
 
   const { data: order } = await supabase
     .from("orders")
-    .select("order_number,guest_email,total_amount,currency")
+    .select("order_number,guest_email,guest_phone,total_amount,currency")
     .eq("id", payment.order_id)
     .single();
 
@@ -114,6 +115,23 @@ export async function verifyAndFinalizePayment(providerName: PaymentProviderName
     amount: Number(order?.total_amount || payment.amount || 0),
     currency: order?.currency || "GHS"
   });
+
+  const phone = order?.guest_phone?.trim();
+  if (phone && isMoolreSmsConfigured()) {
+    try {
+      const sms = await sendOrderPaidSms({
+        phone,
+        orderNumber: order?.order_number || "",
+        amount: Number(order?.total_amount || payment.amount || 0),
+        currency: order?.currency || "GHS"
+      });
+      if (!sms.ok) {
+        console.warn("[moolre-sms] order paid SMS failed:", sms.error);
+      }
+    } catch (e) {
+      console.warn("[moolre-sms] order paid SMS error:", e);
+    }
+  }
 
   return verification;
 }

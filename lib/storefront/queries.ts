@@ -4,7 +4,6 @@ import { STOREFRONT_CATEGORY_NAMES, withCategoryImageOverrides, type HomepageCat
 import { unstable_noStore as noStore } from "next/cache";
 import {
   categoryChips as fallbackCategoryChips,
-  homeCollections as fallbackCollections,
   products as fallbackProducts,
   testimonials,
   type Product
@@ -49,7 +48,6 @@ type HomeData = {
   promoEnabled: boolean;
   categoryChips: string[];
   categoryCards: HomepageCategoryCardItem[];
-  featuredCollections: { title: string; subtitle: string; slug: string }[];
   bestSellers: Product[];
   testimonials: { name: string; quote: string }[];
 };
@@ -113,20 +111,14 @@ export async function getHomeData(): Promise<HomeData> {
       promoEnabled: HOME_CONTENT_DEFAULTS.promoEnabled,
       categoryChips: fallbackCategoryChips,
       categoryCards: withCategoryImageOverrides([]),
-      featuredCollections: fallbackCollections.map((collection) => ({
-        title: collection.title,
-        subtitle: collection.subtitle,
-        slug: collection.title.toLowerCase().replaceAll(" ", "-")
-      })),
       bestSellers: fallbackProducts,
       testimonials
     };
   }
 
-  const [homeRes, categoriesRes, collectionsRes, productsRes] = await Promise.all([
+  const [homeRes, categoriesRes, productsRes] = await Promise.all([
     supabase.from("home_content").select("sections").eq("id", 1).single(),
     supabase.from("categories").select("name,slug,image_url").eq("is_active", true).order("name"),
-    supabase.from("collections").select("name,description,slug").eq("is_active", true).limit(4),
     supabase
       .from("products")
       .select(
@@ -151,17 +143,6 @@ export async function getHomeData(): Promise<HomeData> {
     promoEnabled: sections?.promo?.enabled !== false,
     categoryChips: categoriesRes.data?.map((c) => c.name).filter(Boolean) as string[] || fallbackCategoryChips,
     categoryCards: withCategoryImageOverrides(categoriesRes.data || []),
-    featuredCollections:
-      collectionsRes.data?.map((c) => ({
-        title: c.name,
-        subtitle: c.description || "Curated pieces for modern luxury homes.",
-        slug: c.slug
-      })) ||
-      fallbackCollections.map((collection) => ({
-        title: collection.title,
-        subtitle: collection.subtitle,
-        slug: collection.title.toLowerCase().replaceAll(" ", "-")
-      })),
     bestSellers: productsRes.error
       ? []
       : productsRes.data?.map(mapRowToProduct) || fallbackProducts,

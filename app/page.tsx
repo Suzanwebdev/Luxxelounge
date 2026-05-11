@@ -123,25 +123,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
       <Section>
         <Container>
-          <Heading eyebrow="Collections" title="Featured Collections" />
-          <div className="grid gap-4 md:grid-cols-2">
-            {homeData.featuredCollections
-              .filter((collection) => collection.title.trim().toLowerCase() !== "living room icons")
-              .map((collection) => (
-              <article key={collection.title} className="luxury-panel border border-border p-6">
-                <h3 className="font-heading text-3xl">{collection.title}</h3>
-                <p className="mt-2 text-muted-foreground">{collection.subtitle}</p>
-                <Button variant="outline" className="mt-4" asChild>
-                  <Link href={`/collections/${collection.slug}`}>Shop Collection</Link>
-                </Button>
-              </article>
-            ))}
-          </div>
-        </Container>
-      </Section>
-
-      <Section>
-        <Container>
           <Heading eyebrow="New arrivals" title="Latest in store" />
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
             {homeData.bestSellers.slice(0, 12).map((product) => (
