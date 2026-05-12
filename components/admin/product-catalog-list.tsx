@@ -1,10 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { deleteProductAction, setProductStatusAction } from "@/app/admin/actions";
+import { bulkDeleteProductsAction, deleteProductAction, setProductStatusAction } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatGhs } from "@/lib/utils";
@@ -26,19 +26,32 @@ function firstProductImageUrl(product: AdminProductRow): string | null {
   return null;
 }
 
+function catalogFlashNotice(created?: boolean, updated?: boolean): { text: string; variant: "success" } | null {
+  if (created) return { text: "Product created successfully.", variant: "success" };
+  if (updated) return { text: "Product updated successfully.", variant: "success" };
+  return null;
+}
+
 export function ProductCatalogList({
   products,
-  showCreatedToast
+  showCreatedToast,
+  showUpdatedToast
 }: {
   products: AdminProductRow[];
   showCreatedToast?: boolean;
+  showUpdatedToast?: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
   const [query, setQuery] = useState("");
   const [notice, setNotice] = useState<{ text: string; variant: "success" | "error" } | null>(
-    showCreatedToast ? { text: "Product created successfully.", variant: "success" } : null
+    catalogFlashNotice(showCreatedToast, showUpdatedToast)
   );
   const router = useRouter();
+  const [selected, setSelected] = useState<string[]>([]);
+
+  useEffect(() => {
+    setSelected((prev) => prev.filter((id) => products.some((p) => p.id === id)));
+  }, [products]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -50,6 +63,59 @@ export function ProductCatalogList({
       return name.includes(q) || slug.includes(q) || cat.includes(q);
     });
   }, [products, query]);
+
+  const filteredIds = useMemo(() => filtered.map((p) => p.id), [filtered]);
+  const allFilteredSelected =
+    filteredIds.length > 0 && filteredIds.every((id) => selected.includes(id));
+  const validSelected = useMemo(
+    () => [...new Set(selected)].filter((id) => products.some((p) => p.id === id)),
+    [selected, products]
+  );
+  const selectedVisibleCount = useMemo(
+    () => validSelected.filter((id) => filteredIds.includes(id)).length,
+    [validSelected, filteredIds]
+  );
+
+  function toggleSelectAllFiltered() {
+    setSelected((prev) => {
+      if (filteredIds.length === 0) return prev;
+      const every = filteredIds.every((id) => prev.includes(id));
+      if (every) {
+        return prev.filter((id) => !filteredIds.includes(id));
+      }
+      return [...new Set([...prev, ...filteredIds])];
+    });
+  }
+
+  function toggleRow(id: string) {
+    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+
+  function runBulkDelete() {
+    const ids = [...new Set(selected)].filter((id) => products.some((p) => p.id === id));
+    if (ids.length === 0) return;
+    const preview = products
+      .filter((p) => ids.includes(p.id))
+      .slice(0, 5)
+      .map((p) => p.name);
+    const extra = ids.length > preview.length ? ` and ${ids.length - preview.length} more` : "";
+    const label = preview.length ? `${preview.join(", ")}${extra}` : `${ids.length} product(s)`;
+    if (!window.confirm(`Permanently delete ${ids.length} product(s)?\n\n${label}\n\nThis cannot be undone.`)) {
+      return;
+    }
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set("ids", JSON.stringify(ids));
+      const result = await bulkDeleteProductsAction(fd);
+      if (!result?.ok) {
+        setNotice({ text: result?.message ?? "Bulk delete failed.", variant: "error" });
+        return;
+      }
+      setNotice({ text: result.message, variant: "success" });
+      setSelected((prev) => prev.filter((id) => !ids.includes(id)));
+      router.refresh();
+    });
+  }
 
   return (
     <div className="space-y-5">
@@ -81,6 +147,53 @@ export function ProductCatalogList({
         </Button>
       </div>
 
+      {products.length > 0 ? (
+        <div className="flex flex-col gap-3 rounded-2xl border border-border bg-muted/20 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          {filtered.length > 0 ? (
+            <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border border-border accent-primary"
+                checked={allFilteredSelected}
+                onChange={toggleSelectAllFiltered}
+                aria-label={allFilteredSelected ? "Deselect all products in this view" : "Select all products in this view"}
+              />
+              <span>
+                Select all in view ({filtered.length})
+                {query.trim() ? " — matches search" : ""}
+              </span>
+            </label>
+          ) : (
+            <p className="text-sm text-muted-foreground">No products match this search.</p>
+          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {validSelected.length > 0 ? (
+              <>
+                <span className="text-sm text-muted-foreground">
+                  {validSelected.length} selected
+                  {query.trim() && selectedVisibleCount < validSelected.length
+                    ? ` (${selectedVisibleCount} shown in list)`
+                    : null}
+                </span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="border-destructive/40 text-destructive hover:bg-destructive/10"
+                  disabled={isPending}
+                  onClick={runBulkDelete}
+                >
+                  Delete selected
+                </Button>
+                <Button type="button" size="sm" variant="ghost" disabled={isPending} onClick={() => setSelected([])}>
+                  Clear selection
+                </Button>
+              </>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
       <div className="space-y-3">
         {products.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
@@ -103,8 +216,17 @@ export function ProductCatalogList({
           return (
             <article
               key={product.id}
-              className="flex gap-4 rounded-2xl border border-border bg-card p-4 md:items-start md:justify-between"
+              className="flex gap-3 rounded-2xl border border-border bg-card p-4 md:items-start md:justify-between md:gap-4"
             >
+              <label className="flex shrink-0 cursor-pointer items-start pt-1 md:pt-2">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border border-border accent-primary"
+                  checked={selected.includes(product.id)}
+                  onChange={() => toggleRow(product.id)}
+                  aria-label={`Select ${product.name}`}
+                />
+              </label>
               <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-border bg-muted md:h-[5.5rem] md:w-[5.5rem]">
                 {thumb ? (
                   <Image
@@ -178,6 +300,7 @@ export function ProductCatalogList({
                         return;
                       }
                       setNotice({ text: result.message, variant: "success" });
+                      setSelected((prev) => prev.filter((x) => x !== product.id));
                       router.refresh();
                     })
                   }

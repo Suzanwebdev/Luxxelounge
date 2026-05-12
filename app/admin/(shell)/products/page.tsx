@@ -1,15 +1,16 @@
 import Link from "next/link";
 import { ProductCatalogList } from "@/components/admin/product-catalog-list";
-import { getAdminCategories, getAdminProducts } from "@/lib/admin/queries";
+import { getAdminProducts } from "@/lib/admin/queries";
 
 type Props = {
-  searchParams?: Promise<{ created?: string }>;
+  searchParams?: Promise<{ created?: string; updated?: string }>;
 };
 
 export default async function AdminProductsPage({ searchParams }: Props) {
   const params = searchParams ? await searchParams : undefined;
-  const [products, categories] = await Promise.all([getAdminProducts(), getAdminCategories()]);
+  const products = await getAdminProducts();
   const showCreatedToast = params?.created === "1";
+  const showUpdatedToast = params?.updated === "1";
 
   return (
     <div className="space-y-6">
@@ -25,7 +26,11 @@ export default async function AdminProductsPage({ searchParams }: Props) {
           </p>
         </div>
       </div>
-      <ProductCatalogList products={products} showCreatedToast={showCreatedToast} />
+      <ProductCatalogList
+        products={products}
+        showCreatedToast={showCreatedToast}
+        showUpdatedToast={showUpdatedToast}
+      />
     </div>
   );
 }

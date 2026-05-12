@@ -125,7 +125,9 @@ export function ProductEditorForm({ categories, product }: ProductEditorFormProp
   }
 
   const title = isEdit ? "Edit product" : "Create product";
-  const subtitle = isEdit ? "Update details and save changes." : "Add a new catalog item. You will return to the product list when creation succeeds.";
+  const subtitle = isEdit
+    ? "Update details and save. After a successful save you return to the product list with a confirmation."
+    : "Add a new catalog item. You will return to the product list when creation succeeds.";
 
   return (
     <div className="space-y-6">
@@ -170,9 +172,7 @@ export function ProductEditorForm({ categories, product }: ProductEditorFormProp
                 router.push("/admin/products?created=1");
                 return;
               }
-              setFormMessage(result.message);
-              setFormMessageType("success");
-              router.refresh();
+              router.push("/admin/products?updated=1");
             });
           }}
           className="space-y-3"

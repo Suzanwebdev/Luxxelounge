@@ -9,6 +9,8 @@ import { STOREFRONT_CATEGORY_NAMES } from "@/lib/storefront/categories";
 import type { HomeContentSections } from "@/lib/storefront/queries";
 import { toSlug } from "@/lib/slug";
 
+const PRODUCT_ID_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export async function upsertProductAction(formData: FormData) {
   await requireAdminAccess();
   const supabase = await getAdminDataClient();
@@ -157,6 +159,38 @@ export async function deleteProductAction(formData: FormData) {
   revalidatePath("/shop");
   revalidatePath("/");
   return { ok: true, message: "Product deleted successfully." };
+}
+
+export async function bulkDeleteProductsAction(formData: FormData) {
+  await requireAdminAccess();
+  const supabase = await getAdminDataClient();
+  if (!supabase) return { ok: false, message: "Database client unavailable." };
+
+  let ids: string[] = [];
+  try {
+    const parsed = JSON.parse(String(formData.get("ids") || "[]"));
+    if (Array.isArray(parsed)) {
+      ids = parsed.map((id) => String(id || "").trim()).filter((id) => PRODUCT_ID_UUID_RE.test(id));
+    }
+  } catch {
+    return { ok: false, message: "Invalid product id list." };
+  }
+
+  if (ids.length === 0) return { ok: false, message: "No valid products selected." };
+  ids = [...new Set(ids)];
+  if (ids.length > 200) return { ok: false, message: "You can delete at most 200 products at once." };
+
+  const { error: imgError } = await supabase.from("product_images").delete().in("product_id", ids);
+  if (imgError) return { ok: false, message: imgError.message };
+
+  const { error } = await supabase.from("products").delete().in("id", ids);
+  if (error) return { ok: false, message: error.message };
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/products");
+  revalidatePath("/shop");
+  revalidatePath("/");
+  return { ok: true, message: `Deleted ${ids.length} product${ids.length === 1 ? "" : "s"}.` };
 }
 
 export async function setProductStatusAction(formData: FormData) {
