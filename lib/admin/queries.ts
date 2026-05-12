@@ -47,18 +47,24 @@ export async function getAdminDashboardData() {
   };
 }
 
+const ADMIN_PRODUCT_SELECT =
+  "id,name,slug,description,status,category_id,regular_price,sale_price,stock_qty,tags,metadata,categories(name),product_images(image_url)";
+
 export async function getAdminProducts() {
   const supabase = await getAdminDataClient();
   if (!supabase) return [];
 
-  const { data } = await supabase
-    .from("products")
-    .select(
-      "id,name,slug,description,status,category_id,regular_price,sale_price,stock_qty,tags,metadata,categories(name),product_images(image_url)"
-    )
-    .order("created_at", { ascending: false });
+  const { data } = await supabase.from("products").select(ADMIN_PRODUCT_SELECT).order("created_at", { ascending: false });
 
   return data || [];
+}
+
+export async function getAdminProductById(id: string) {
+  const supabase = await getAdminDataClient();
+  if (!supabase) return null;
+  const { data, error } = await supabase.from("products").select(ADMIN_PRODUCT_SELECT).eq("id", id).maybeSingle();
+  if (error || !data) return null;
+  return data;
 }
 
 export const getAdminCategories = cache(async function getAdminCategories() {

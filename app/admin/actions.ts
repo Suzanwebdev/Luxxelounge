@@ -134,6 +134,7 @@ export async function upsertProductAction(formData: FormData) {
 
   revalidatePath("/admin");
   revalidatePath("/admin/products");
+  revalidatePath(`/admin/products/${data.id}/edit`);
   revalidatePath("/shop");
   revalidatePath("/");
   return { ok: true, message: id ? "Product updated successfully." : "Product created successfully." };
@@ -156,6 +157,27 @@ export async function deleteProductAction(formData: FormData) {
   revalidatePath("/shop");
   revalidatePath("/");
   return { ok: true, message: "Product deleted successfully." };
+}
+
+export async function setProductStatusAction(formData: FormData) {
+  await requireAdminAccess();
+  const supabase = await getAdminDataClient();
+  if (!supabase) return { ok: false, message: "Database client unavailable." };
+  const id = String(formData.get("id") || "");
+  const status = String(formData.get("status") || "draft").trim();
+  if (!id) return { ok: false, message: "Missing product id." };
+  if (!["draft", "active", "archived"].includes(status)) {
+    return { ok: false, message: "Invalid status." };
+  }
+
+  const { error } = await supabase.from("products").update({ status }).eq("id", id);
+  if (error) return { ok: false, message: error.message };
+  revalidatePath("/admin");
+  revalidatePath("/admin/products");
+  revalidatePath(`/admin/products/${id}/edit`);
+  revalidatePath("/shop");
+  revalidatePath("/");
+  return { ok: true, message: "Product status updated." };
 }
 
 export type CategoryActionState = { ok: boolean; message: string } | null;
