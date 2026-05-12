@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -14,6 +15,15 @@ function statusBadgeClass(status: string) {
   if (s === "active") return "border-emerald-300 bg-emerald-50 text-emerald-800";
   if (s === "draft") return "border-amber-300 bg-amber-50 text-amber-900";
   return "border-border bg-muted text-muted-foreground";
+}
+
+function firstProductImageUrl(product: AdminProductRow): string | null {
+  const imgs = product.product_images || [];
+  for (const img of imgs) {
+    const u = String(img?.image_url || "").trim();
+    if (u) return u;
+  }
+  return null;
 }
 
 export function ProductCatalogList({
@@ -89,28 +99,50 @@ export function ProductCatalogList({
         {filtered.map((product) => {
           const stockStatus = getStockStatus(product.stock_qty);
           const isDraft = product.status.toLowerCase() === "draft";
+          const thumb = firstProductImageUrl(product);
           return (
-            <article key={product.id} className="rounded-2xl border border-border bg-card p-4 md:flex md:items-start md:justify-between md:gap-4">
-              <div className="min-w-0 flex-1 space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span
-                    className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize ${statusBadgeClass(product.status)}`}
-                  >
-                    {product.status}
-                  </span>
-                  <span className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium ${stockStatus.className}`}>
-                    {stockStatus.label}
-                  </span>
-                </div>
-                <p className="font-medium leading-snug">{product.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {pickCategoryName(product.categories)} • {product.slug}
-                </p>
-                <p className="text-sm">
-                  {formatGhs(Number(product.sale_price ?? product.regular_price))} • Stock {product.stock_qty}
-                </p>
+            <article
+              key={product.id}
+              className="flex gap-4 rounded-2xl border border-border bg-card p-4 md:items-start md:justify-between"
+            >
+              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-border bg-muted md:h-[5.5rem] md:w-[5.5rem]">
+                {thumb ? (
+                  <Image
+                    src={thumb}
+                    alt={product.name}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 80px, 88px"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center p-1 text-center text-[10px] leading-tight text-muted-foreground">
+                    No image
+                  </div>
+                )}
               </div>
-              <div className="mt-3 flex flex-wrap gap-2 md:mt-0 md:shrink-0 md:flex-col md:items-stretch">
+              <div className="flex min-w-0 flex-1 flex-col gap-2 md:flex-row md:items-start md:justify-between md:gap-4">
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize ${statusBadgeClass(product.status)}`}
+                    >
+                      {product.status}
+                    </span>
+                    <span
+                      className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium ${stockStatus.className}`}
+                    >
+                      {stockStatus.label}
+                    </span>
+                  </div>
+                  <p className="font-medium leading-snug">{product.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {pickCategoryName(product.categories)} • {product.slug}
+                  </p>
+                  <p className="text-sm">
+                    {formatGhs(Number(product.sale_price ?? product.regular_price))} • Stock {product.stock_qty}
+                  </p>
+                </div>
+              <div className="flex shrink-0 flex-wrap gap-2 md:flex-col md:items-stretch">
                 <Button size="sm" variant="outline" asChild>
                   <Link href={`/admin/products/${product.id}/edit`}>Edit</Link>
                 </Button>
@@ -156,6 +188,7 @@ export function ProductCatalogList({
                   </Button>
                 </form>
               </div>
+            </div>
             </article>
           );
         })}
