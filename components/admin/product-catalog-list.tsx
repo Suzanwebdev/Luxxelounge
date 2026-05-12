@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { bulkDeleteProductsAction, deleteProductAction, setProductStatusAction } from "@/app/admin/actions";
@@ -48,6 +48,33 @@ export function ProductCatalogList({
   );
   const router = useRouter();
   const [selected, setSelected] = useState<string[]>([]);
+  const hadQueryFlash = Boolean(showCreatedToast || showUpdatedToast);
+
+  const stripCreatedUpdatedFromUrl = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const u = new URL(window.location.href);
+    if (!u.searchParams.has("created") && !u.searchParams.has("updated")) return;
+    u.searchParams.delete("created");
+    u.searchParams.delete("updated");
+    const qs = u.searchParams.toString();
+    router.replace(`${u.pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
+  }, [router]);
+
+  const dismissNotice = useCallback(() => {
+    setNotice(null);
+    if (hadQueryFlash) {
+      stripCreatedUpdatedFromUrl();
+    }
+  }, [hadQueryFlash, stripCreatedUpdatedFromUrl]);
+
+  useEffect(() => {
+    if (!hadQueryFlash) return;
+    const t = window.setTimeout(() => {
+      setNotice(null);
+      stripCreatedUpdatedFromUrl();
+    }, 5500);
+    return () => window.clearTimeout(t);
+  }, [hadQueryFlash, stripCreatedUpdatedFromUrl]);
 
   useEffect(() => {
     setSelected((prev) => prev.filter((id) => products.some((p) => p.id === id)));
@@ -120,15 +147,19 @@ export function ProductCatalogList({
   return (
     <div className="space-y-5">
       {notice ? (
-        <p
-          className={`rounded-2xl border px-4 py-3 text-sm ${
+        <div
+          className={`flex flex-col gap-2 rounded-2xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${
             notice.variant === "error"
               ? "border-red-300 bg-red-50 text-red-900"
               : "border-emerald-300 bg-emerald-50 text-emerald-900"
           }`}
+          role="status"
         >
-          {notice.text}
-        </p>
+          <p className="text-sm">{notice.text}</p>
+          <Button type="button" variant="outline" size="sm" className="shrink-0 self-start sm:self-auto" onClick={dismissNotice}>
+            Dismiss
+          </Button>
+        </div>
       ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
