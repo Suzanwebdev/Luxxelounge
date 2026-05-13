@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { RequestPasswordResetInline } from "@/components/auth/request-password-reset-inline";
+import { RequestPasswordResetForm } from "@/components/auth/request-password-reset-form";
+import { cn } from "@/lib/utils";
 
 function SignOutRow() {
   const router = useRouter();
@@ -39,6 +40,7 @@ type AdminLoginFormProps = {
 };
 
 export function AdminLoginForm({ nextPath, reason, error: initialError, notice }: AdminLoginFormProps) {
+  const [panel, setPanel] = React.useState<"signin" | "reset">("signin");
   const [error, setError] = React.useState<string | null>(initialError ?? null);
   const [pending, setPending] = React.useState(false);
 
@@ -72,7 +74,6 @@ export function AdminLoginForm({ nextPath, reason, error: initialError, notice }
       return;
     }
 
-    // Full navigation so the server runs `resolvePostLoginRedirect` (prevents /superadmin ↔ login loops for store admins).
     window.location.assign(`/admin/login?next=${encodeURIComponent(nextPath)}`);
   }
 
@@ -80,7 +81,7 @@ export function AdminLoginForm({ nextPath, reason, error: initialError, notice }
     <div className="mx-auto w-full max-w-md space-y-6 rounded-3xl border border-border bg-card p-6 md:p-8">
       <div>
         <p className="text-sm uppercase tracking-[0.18em] text-muted-foreground">Store access</p>
-        <h1 className="font-heading text-3xl">Admin sign in</h1>
+        <h1 className="font-heading text-3xl">Admin</h1>
         {reason === "forbidden" ? (
           <p className="mt-2 text-sm text-muted-foreground">
             You’re signed in, but this account doesn’t have access to the admin area. Sign out below and use an
@@ -88,15 +89,13 @@ export function AdminLoginForm({ nextPath, reason, error: initialError, notice }
           </p>
         ) : (
           <p className="mt-2 text-sm text-muted-foreground">
-            Invited accounts do not get a password until you open the setup email or use{" "}
-            <strong className="font-medium text-foreground">First time or forgot password?</strong> below. Then sign in
-            here with that password.
+            Sign in with your work email, or reset your password if you were just invited.
           </p>
         )}
 
         <details className="mt-3 rounded-xl border border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
           <summary className="cursor-pointer font-medium text-foreground outline-none [&::-webkit-details-marker]:hidden">
-            {reason === "forbidden" ? "How to grant admin access (store owner)" : "Having trouble signing in?"}
+            {reason === "forbidden" ? "How to grant admin access (store owner)" : "Having trouble?"}
           </summary>
           <div className="mt-2 space-y-2 border-t border-border pt-2">
             {reason === "forbidden" ? (
@@ -116,23 +115,12 @@ export function AdminLoginForm({ nextPath, reason, error: initialError, notice }
             ) : (
               <>
                 <p>
-                  Password reset uses <code className="rounded bg-muted px-1">/api/auth/confirm</code> (for links with{" "}
-                  <code className="rounded bg-muted px-1">?code=</code>) and <code className="rounded bg-muted px-1">/auth/exchange</code>{" "}
-                  (for hash links). Add <code className="rounded bg-muted px-1">https://www.luxxelounge.shop/**</code> under
-                  Supabase → Authentication → Redirect URLs.
+                  New accounts start with email only—you set the password from the <strong>Reset password</strong> tab or
+                  the invite email. “Invalid login credentials” usually means no password has been set yet.
                 </p>
                 <p>
-                  The account must exist in Supabase <strong>Authentication → Users</strong>. Until you set a password
-                  (invite or reset link), sign-in will say invalid credentials—that is normal.
-                </p>
-                <p>
-                  It also needs to be allowlisted: your email in <code className="rounded bg-muted px-1">public.admins</code> or{" "}
-                  <code className="rounded bg-muted px-1">public.superadmins</code>, or <code className="rounded bg-muted px-1">profiles.role</code>{" "}
-                  set to <code className="rounded bg-muted px-1">admin</code> or <code className="rounded bg-muted px-1">staff</code>.
-                </p>
-                <p>
-                  On the server, set <code className="rounded bg-muted px-1">SUPABASE_SERVICE_ROLE_KEY</code> (e.g. in
-                  Vercel environment variables) and apply the latest database migrations if access still fails.
+                  Allowlist: <code className="rounded bg-muted px-1">public.admins</code> or{" "}
+                  <code className="rounded bg-muted px-1">profiles.role</code> admin/staff.
                 </p>
               </>
             )}
@@ -145,34 +133,68 @@ export function AdminLoginForm({ nextPath, reason, error: initialError, notice }
           role="status"
           className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
         >
-          Password updated. Sign in with your new password below.
+          Password saved. Sign in below.
         </p>
       ) : null}
 
-      <form className="space-y-4" onSubmit={onSubmit}>
-        <div className="space-y-2">
-          <label className="text-sm font-medium" htmlFor="admin-email">
-            Email
-          </label>
-          <Input id="admin-email" name="email" type="email" autoComplete="email" required />
+      {reason === "forbidden" ? null : (
+        <div className="flex rounded-2xl border border-border bg-muted/25 p-1">
+          <button
+            type="button"
+            onClick={() => {
+              setPanel("signin");
+              setError(null);
+            }}
+            className={cn(
+              "flex-1 rounded-xl py-2.5 text-sm font-medium transition-colors",
+              panel === "signin" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Sign in
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setPanel("reset");
+              setError(null);
+            }}
+            className={cn(
+              "flex-1 rounded-xl py-2.5 text-sm font-medium transition-colors",
+              panel === "reset" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Reset password
+          </button>
         </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium" htmlFor="admin-password">
-            Password
-          </label>
-          <Input id="admin-password" name="password" type="password" autoComplete="current-password" required />
-        </div>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        <Button type="submit" className="w-full" disabled={pending}>
-          {pending ? "Signing in…" : "Sign in"}
-        </Button>
-      </form>
+      )}
 
-      {reason === "forbidden" ? null : <RequestPasswordResetInline />}
+      {reason === "forbidden" || panel === "signin" ? (
+        <form className="space-y-4" onSubmit={onSubmit}>
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="admin-email">
+              Email
+            </label>
+            <Input id="admin-email" name="email" type="email" autoComplete="email" required />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="admin-password">
+              Password
+            </label>
+            <Input id="admin-password" name="password" type="password" autoComplete="current-password" required />
+          </div>
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          <Button type="submit" className="w-full" disabled={pending}>
+            {pending ? "Signing in…" : "Sign in"}
+          </Button>
+        </form>
+      ) : (
+        <RequestPasswordResetForm
+          postPasswordRedirect="/admin"
+          description="We’ll email you a secure link. Open it on this device to choose a password—you’ll go straight into the store admin after."
+        />
+      )}
 
-      {reason === "forbidden" ? (
-        <SignOutRow />
-      ) : null}
+      {reason === "forbidden" ? <SignOutRow /> : null}
 
       <p className="text-center text-sm text-muted-foreground">
         <Link href="/" className="text-primary underline-offset-2 hover:underline">

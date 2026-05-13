@@ -9,7 +9,7 @@ export function StoreRealtimeSync() {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (pathname?.startsWith("/auth")) return;
+    if (pathname?.startsWith("/auth") || pathname === "/superadmin/login" || pathname === "/admin/login") return;
 
     if (typeof window !== "undefined") {
       const h = window.location.hash;

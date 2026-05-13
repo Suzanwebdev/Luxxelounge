@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { consumePostPasswordRedirectPath } from "@/lib/auth/post-password-redirect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-export default function AuthUpdatePasswordPage() {
+function UpdatePasswordInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -27,7 +29,7 @@ export default function AuthUpdatePasswordPage() {
       if (cancelled) return;
       if (!user) {
         router.replace(
-          `/admin/login?error=${encodeURIComponent("Session expired. Open the reset link again or request a new one.")}`
+          `/admin/login?error=${encodeURIComponent("Session expired. Open the reset link again or send a new one from the login page.")}`
         );
         return;
       }
@@ -63,12 +65,22 @@ export default function AuthUpdatePasswordPage() {
       setError(upErr.message);
       return;
     }
-    router.replace("/admin/login?notice=password_reset");
+
+    const fromQuery = searchParams.get("next");
+    const fromStorage = consumePostPasswordRedirectPath();
+    const target =
+      (fromQuery && fromQuery.startsWith("/") ? fromQuery : null) ||
+      fromStorage ||
+      "/admin";
+
+    window.location.assign(target);
   }
 
   if (checking) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center px-4 text-sm text-muted-foreground">Loading…</div>
+      <div className="flex min-h-[50vh] items-center justify-center px-4 text-sm text-muted-foreground">
+        Preparing password form…
+      </div>
     );
   }
 
@@ -77,8 +89,10 @@ export default function AuthUpdatePasswordPage() {
       <div className="mx-auto w-full max-w-md space-y-6 rounded-3xl border border-border bg-card p-6 md:p-8">
         <div>
           <p className="text-sm uppercase tracking-[0.18em] text-muted-foreground">Account</p>
-          <h1 className="font-heading text-3xl">Set your password</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Choose a new password for your Luxxelounge account.</p>
+          <h1 className="font-heading text-3xl">Create your password</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Choose a strong password. You’ll be signed in and taken to your dashboard next.
+          </p>
         </div>
 
         <form className="space-y-4" onSubmit={onSubmit}>
@@ -112,16 +126,28 @@ export default function AuthUpdatePasswordPage() {
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <Button type="submit" className="w-full" disabled={pending}>
-            {pending ? "Saving…" : "Save password"}
+            {pending ? "Saving…" : "Save and continue"}
           </Button>
         </form>
 
         <p className="text-center text-sm text-muted-foreground">
           <Link href="/admin/login" className="text-primary underline-offset-2 hover:underline">
-            Admin sign in
+            Back to sign in
           </Link>
         </p>
       </div>
     </div>
+  );
+}
+
+export default function AuthUpdatePasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[50vh] items-center justify-center px-4 text-sm text-muted-foreground">Loading…</div>
+      }
+    >
+      <UpdatePasswordInner />
+    </Suspense>
   );
 }

@@ -12,7 +12,14 @@ export function RecoveryHashRedirect() {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (pathname !== "/" && pathname !== "/admin/login" && pathname !== "/auth/callback") return;
+    if (
+      pathname !== "/" &&
+      pathname !== "/admin/login" &&
+      pathname !== "/superadmin/login" &&
+      pathname !== "/auth/callback"
+    ) {
+      return;
+    }
     const raw = window.location.hash ?? "";
     if (raw.length < 12) return;
     const h = decodeURIComponent(raw.slice(1));

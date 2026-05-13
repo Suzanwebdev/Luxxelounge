@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { RequestPasswordResetInline } from "@/components/auth/request-password-reset-inline";
+import { RequestPasswordResetForm } from "@/components/auth/request-password-reset-form";
+import { cn } from "@/lib/utils";
 
 function SignOutRow() {
   const router = useRouter();
@@ -37,6 +38,7 @@ type SuperadminLoginFormProps = {
 };
 
 export function SuperadminLoginForm({ nextPath, reason }: SuperadminLoginFormProps) {
+  const [panel, setPanel] = React.useState<"signin" | "reset">("signin");
   const [error, setError] = React.useState<string | null>(null);
   const [pending, setPending] = React.useState(false);
 
@@ -65,7 +67,7 @@ export function SuperadminLoginForm({ nextPath, reason }: SuperadminLoginFormPro
       const lower = signError.message.toLowerCase();
       const hint =
         lower.includes("invalid") || lower.includes("credentials")
-          ? " New invites have no password yet—expand “First time or forgot password?” below and email yourself a setup link, or confirm the user in Supabase Authentication."
+          ? " If you were invited with email only, use the Reset password tab first."
           : "";
       setError(`${signError.message}${hint}`);
       return;
@@ -78,7 +80,7 @@ export function SuperadminLoginForm({ nextPath, reason }: SuperadminLoginFormPro
     <div className="mx-auto w-full max-w-md space-y-6 rounded-3xl border border-border bg-card p-6 md:p-8">
       <div>
         <p className="text-sm uppercase tracking-[0.18em] text-muted-foreground">Platform access</p>
-        <h1 className="font-heading text-3xl">Superadmin sign in</h1>
+        <h1 className="font-heading text-3xl">Superadmin</h1>
         {reason === "forbidden" ? (
           <p className="mt-2 text-sm text-muted-foreground">
             You are signed in, but this account is not allowed in the platform portal. Add the email under{" "}
@@ -93,51 +95,81 @@ export function SuperadminLoginForm({ nextPath, reason }: SuperadminLoginFormPro
           </p>
         ) : (
           <p className="mt-2 text-sm text-muted-foreground">
-            This portal is separate from the store admin panel. Use the same Supabase Authentication credentials as
-            for your superadmin allowlist.
+            Same Supabase login as your superadmin user. Use <strong>Reset password</strong> if you have not set a
+            password yet.
           </p>
         )}
         {reason === "forbidden" ? null : (
           <ul className="mt-3 list-inside list-disc space-y-1 text-xs text-muted-foreground">
             <li>
-              The user must exist under Authentication → Users. Password is set via invite/reset email or{" "}
-              <strong className="text-foreground">First time or forgot password?</strong> below—not when typing email
-              only in the dashboard.
-            </li>
-            <li>
-              The email must appear in <code className="rounded bg-muted px-1">public.superadmins</code> or{" "}
-              <code className="rounded bg-muted px-1">profiles.role</code> must be{" "}
+              Email must be in <code className="rounded bg-muted px-1">public.superadmins</code> or{" "}
+              <code className="rounded bg-muted px-1">profiles.role</code> ={" "}
               <code className="rounded bg-muted px-1">superadmin</code>.
             </li>
             <li>
               Put <code className="rounded bg-muted px-1">SUPABASE_SERVICE_ROLE_KEY</code> in{" "}
-              <code className="rounded bg-muted px-1">.env.local</code> if allowlist checks still fail after updating
-              the database.
+              <code className="rounded bg-muted px-1">.env.local</code> if allowlist checks still fail.
             </li>
           </ul>
         )}
       </div>
 
-      <form className="space-y-4" onSubmit={onSubmit}>
-        <div className="space-y-2">
-          <label className="text-sm font-medium" htmlFor="superadmin-email">
-            Email
-          </label>
-          <Input id="superadmin-email" name="email" type="email" autoComplete="email" required />
+      {reason === "forbidden" ? null : (
+        <div className="flex rounded-2xl border border-border bg-muted/25 p-1">
+          <button
+            type="button"
+            onClick={() => {
+              setPanel("signin");
+              setError(null);
+            }}
+            className={cn(
+              "flex-1 rounded-xl py-2.5 text-sm font-medium transition-colors",
+              panel === "signin" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Sign in
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setPanel("reset");
+              setError(null);
+            }}
+            className={cn(
+              "flex-1 rounded-xl py-2.5 text-sm font-medium transition-colors",
+              panel === "reset" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Reset password
+          </button>
         </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium" htmlFor="superadmin-password">
-            Password
-          </label>
-          <Input id="superadmin-password" name="password" type="password" autoComplete="current-password" required />
-        </div>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        <Button type="submit" className="w-full" disabled={pending}>
-          {pending ? "Signing in…" : "Sign in to platform portal"}
-        </Button>
-      </form>
+      )}
 
-      {reason === "forbidden" ? null : <RequestPasswordResetInline />}
+      {reason === "forbidden" || panel === "signin" ? (
+        <form className="space-y-4" onSubmit={onSubmit}>
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="superadmin-email">
+              Email
+            </label>
+            <Input id="superadmin-email" name="email" type="email" autoComplete="email" required />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="superadmin-password">
+              Password
+            </label>
+            <Input id="superadmin-password" name="password" type="password" autoComplete="current-password" required />
+          </div>
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          <Button type="submit" className="w-full" disabled={pending}>
+            {pending ? "Signing in…" : "Sign in to platform portal"}
+          </Button>
+        </form>
+      ) : (
+        <RequestPasswordResetForm
+          postPasswordRedirect="/superadmin"
+          description="We’ll email you a link. After you set a password, you’ll land in the superadmin area (if your email is allowlisted)."
+        />
+      )}
 
       {reason === "forbidden" ? <SignOutRow /> : null}
 

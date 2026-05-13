@@ -10,16 +10,9 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const url = request.nextUrl.clone();
 
-  if (pathname === "/auth/callback" && url.searchParams.has("code")) {
-    const dest = new URL("/api/auth/confirm", url.origin);
-    url.searchParams.forEach((value, key) => {
-      dest.searchParams.set(key, value);
-    });
-    return NextResponse.redirect(dest);
-  }
-
   // PKCE email links: server exchange sets cookies reliably (see /api/auth/confirm).
-  if ((pathname === "/" || pathname === "/admin/login") && url.searchParams.has("code")) {
+  const pkceCodePaths = new Set(["/", "/admin/login", "/superadmin/login", "/auth/exchange", "/auth/callback"]);
+  if (pkceCodePaths.has(pathname) && url.searchParams.has("code")) {
     const dest = new URL("/api/auth/confirm", url.origin);
     url.searchParams.forEach((value, key) => {
       dest.searchParams.set(key, value);
