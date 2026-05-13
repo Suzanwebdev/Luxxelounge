@@ -34,7 +34,7 @@ export default async function SuperadminUsersPage() {
             <li>
               In <strong>Supabase</strong> → Authentication → URL configuration → <strong>Redirect URLs</strong>, add{" "}
               <code className="rounded bg-muted px-1">{inviteRedirectExample}</code> (and your production origin with{" "}
-              <code className="rounded bg-muted px-1">/**</code> if you use wildcards).
+              <code className="rounded bg-muted px-1">{"/**"}</code> if you use wildcards).
             </li>
             <li>
               Invites sent while running <strong>localhost</strong> point at localhost in the email — that link will not
