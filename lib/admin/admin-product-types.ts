@@ -11,7 +11,8 @@ export type AdminProductRow = {
   tags: string[] | null;
   metadata: { colors?: string[] } | null;
   categories: { name: string | null } | { name: string | null }[] | null;
-  product_images: { image_url: string | null }[] | null;
+  product_images: { image_url: string | null; sort_order?: number | null }[] | null;
+  product_videos: { video_url: string | null; sort_order?: number | null }[] | null;
 };
 
 export function pickCategoryName(categories: AdminProductRow["categories"]) {

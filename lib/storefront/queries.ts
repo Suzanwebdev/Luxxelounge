@@ -79,7 +79,7 @@ export async function getHomeData(): Promise<HomeData> {
     supabase
       .from("products")
       .select(
-        "id,slug,name,created_at,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url,sort_order)"
+        "id,slug,name,created_at,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url,sort_order),product_videos(video_url,sort_order)"
       )
       .eq("status", "active")
       .order("created_at", { ascending: false, nullsFirst: false })
@@ -114,7 +114,7 @@ export async function getShopProducts() {
   const { data } = await supabase
     .from("products")
     .select(
-      "id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url,sort_order)"
+      "id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url,sort_order),product_videos(video_url,sort_order)"
     )
     .eq("status", "active")
     .order("created_at", { ascending: false });
@@ -146,7 +146,7 @@ export async function getProductsByCollectionSlug(slug: string) {
     const { data } = await client
       .from("products")
       .select(
-        "id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url,sort_order)"
+        "id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url,sort_order),product_videos(video_url,sort_order)"
       )
       .eq("status", "active")
       .order("created_at", { ascending: false })
@@ -195,7 +195,7 @@ export async function getProductsByCollectionSlug(slug: string) {
   const { data } = await client
     .from("collection_products")
     .select(
-      "products(id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url,sort_order))"
+      "products(id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url,sort_order),product_videos(video_url,sort_order))"
     )
     .eq("collection_id", collection.id);
 
@@ -223,7 +223,7 @@ export async function getProductBySlug(slug: string) {
   const { data } = await supabase
     .from("products")
     .select(
-      "id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url,sort_order)"
+      "id,slug,name,regular_price,sale_price,rating,total_reviews,stock_qty,tags,metadata,description,categories(name),product_images(image_url,sort_order),product_videos(video_url,sort_order)"
     )
     .eq("slug", slug)
     .eq("status", "active")

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { upsertProductAction } from "@/app/admin/actions";
+import { uploadProductVideoFilesToStorage } from "@/lib/admin/upload-product-videos-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -66,6 +67,10 @@ export function ProductEditorForm({ categories, product }: ProductEditorFormProp
   const [isPending, startTransition] = useTransition();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [localPreviewUrls, setLocalPreviewUrls] = useState<string[]>([]);
+  const [videoUrls, setVideoUrls] = useState<string[]>([]);
+  const [videoUrlDraft, setVideoUrlDraft] = useState("");
+  const [videoUploadPending, setVideoUploadPending] = useState(false);
+  const [videoUploadError, setVideoUploadError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [formMessage, setFormMessage] = useState<string | null>(null);
   const [formMessageType, setFormMessageType] = useState<"success" | "error" | null>(null);
@@ -74,9 +79,10 @@ export function ProductEditorForm({ categories, product }: ProductEditorFormProp
 
   const previewImages = useMemo(() => {
     if (localPreviewUrls.length > 0) return localPreviewUrls;
-    return (editing?.product_images || [])
-      .map((img) => img.image_url || "")
-      .filter(Boolean);
+    const rows = (editing?.product_images || [])
+      .slice()
+      .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0));
+    return rows.map((img) => img.image_url || "").filter(Boolean);
   }, [localPreviewUrls, editing]);
 
   useEffect(() => {
@@ -100,10 +106,56 @@ export function ProductEditorForm({ categories, product }: ProductEditorFormProp
       prev.forEach((url) => URL.revokeObjectURL(url));
       return [];
     });
+    const fromDb = (editing?.product_videos || [])
+      .slice()
+      .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0))
+      .map((v) => String(v.video_url || "").trim())
+      .filter(Boolean);
+    setVideoUrls(fromDb);
+    setVideoUrlDraft("");
+    setVideoUploadError(null);
+    setVideoUploadPending(false);
     setUploadError(null);
     setFormMessage(null);
     setFormMessageType(null);
   }, [editing?.id]);
+
+  async function handleVideoFileSelection(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setVideoUploadError(null);
+    setFormMessage(null);
+    setFormMessageType(null);
+    setVideoUploadPending(true);
+    const result = await uploadProductVideoFilesToStorage(Array.from(files));
+    setVideoUploadPending(false);
+    if (!result.ok) {
+      setVideoUploadError(result.message);
+      return;
+    }
+    if (result.urls.length > 0) {
+      setVideoUrls((prev) => [...prev, ...result.urls]);
+    }
+  }
+
+  function appendVideoUrlsFromDraft() {
+    setVideoUploadError(null);
+    const lines = videoUrlDraft
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter(Boolean);
+    const next: string[] = [];
+    for (const line of lines) {
+      if (/^https?:\/\//i.test(line) && line.length <= 2048) {
+        next.push(line);
+      } else {
+        setVideoUploadError(`Invalid or too-long URL (use http/https, max 2048 chars): ${line.slice(0, 80)}…`);
+        return;
+      }
+    }
+    if (next.length === 0) return;
+    setVideoUrls((prev) => [...prev, ...next]);
+    setVideoUrlDraft("");
+  }
 
   function handleFileSelection(files: FileList) {
     const incoming = Array.from(files);
@@ -156,6 +208,7 @@ export function ProductEditorForm({ categories, product }: ProductEditorFormProp
                 formData.append("images", file, file.name);
               });
               formData.set("imageUrls", JSON.stringify([]));
+              formData.set("videoUrls", JSON.stringify(videoUrls));
               const result = await upsertProductAction(formData);
               if (!result?.ok) {
                 setFormMessage(result?.message ?? "Could not save product. Please try again.");
@@ -274,6 +327,61 @@ export function ProductEditorForm({ categories, product }: ProductEditorFormProp
               </div>
             ) : null}
           </div>
+
+          <div className="rounded-2xl border border-border p-3">
+            <p className="mb-2 text-sm font-medium">Product videos</p>
+            <p className="mb-2 text-xs text-muted-foreground">
+              Upload MP4, WebM, or MOV files (up to 120MB each). Videos upload immediately to your store bucket; save the
+              product to attach them. You can also paste HTTPS links (one per line).
+            </p>
+            <Input
+              type="file"
+              accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
+              multiple
+              disabled={videoUploadPending}
+              onChange={(event) => {
+                const files = event.target.files;
+                void handleVideoFileSelection(files);
+                event.target.value = "";
+              }}
+            />
+            {videoUploadPending ? <p className="mt-2 text-xs text-muted-foreground">Uploading to storage…</p> : null}
+            {videoUploadError ? <p className="mt-2 text-xs text-destructive">{videoUploadError}</p> : null}
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
+              <Textarea
+                placeholder={"https://example.com/promo.mp4\n(one URL per line)"}
+                value={videoUrlDraft}
+                onChange={(e) => setVideoUrlDraft(e.target.value)}
+                rows={3}
+                className="min-h-[4.5rem] flex-1 resize-y"
+              />
+              <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={appendVideoUrlsFromDraft}>
+                Add links
+              </Button>
+            </div>
+            {videoUrls.length > 0 ? (
+              <ul className="mt-3 space-y-2 text-xs">
+                {videoUrls.map((url) => (
+                  <li
+                    key={url}
+                    className="flex items-start justify-between gap-2 rounded-lg border border-border bg-muted/20 px-2 py-1.5"
+                  >
+                    <span className="min-w-0 break-all text-muted-foreground">{url}</span>
+                    <button
+                      type="button"
+                      className="shrink-0 text-destructive underline-offset-2 hover:underline"
+                      onClick={() => setVideoUrls((prev) => prev.filter((u) => u !== url))}
+                    >
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-xs text-muted-foreground">No videos in this product yet.</p>
+            )}
+          </div>
+
           <div className="flex flex-wrap gap-2 pt-2">
             <Button type="submit" disabled={isPending}>
               {isPending ? "Saving…" : isEdit ? "Update product" : "Create product"}

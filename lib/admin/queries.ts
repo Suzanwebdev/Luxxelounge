@@ -48,7 +48,7 @@ export async function getAdminDashboardData() {
 }
 
 const ADMIN_PRODUCT_SELECT =
-  "id,name,slug,description,status,category_id,regular_price,sale_price,stock_qty,tags,metadata,categories(name),product_images(image_url)";
+  "id,name,slug,description,status,category_id,regular_price,sale_price,stock_qty,tags,metadata,categories(name),product_images(image_url,sort_order),product_videos(video_url,sort_order)";
 
 export async function getAdminProducts() {
   const supabase = await getAdminDataClient();

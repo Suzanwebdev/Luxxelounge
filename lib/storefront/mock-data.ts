@@ -12,6 +12,8 @@ export type Product = {
   reviews: number;
   image: string;
   images?: string[];
+  /** Public video URLs (e.g. Supabase Storage or external CDN), ordered. */
+  videos?: string[];
   category: string;
   colors: string[];
   sizes: string[];

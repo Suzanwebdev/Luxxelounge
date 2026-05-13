@@ -118,6 +118,19 @@ export async function upsertProductAction(formData: FormData) {
     }
   }
 
+  const videoUrlsRaw = String(formData.get("videoUrls") || "[]");
+  let videoUrls: string[] = [];
+  try {
+    const parsed = JSON.parse(videoUrlsRaw);
+    if (Array.isArray(parsed)) {
+      videoUrls = parsed
+        .map((u) => String(u || "").trim())
+        .filter((u) => /^https?:\/\//i.test(u) && u.length <= 2048);
+    }
+  } catch {
+    videoUrls = [];
+  }
+
   if (imageUrls.length > 0) {
     if (id) {
       // Replace existing gallery rows when editing to avoid duplicate sort_order/constraint conflicts.
@@ -134,11 +147,26 @@ export async function upsertProductAction(formData: FormData) {
     if (insertImagesError) return { ok: false, message: insertImagesError.message };
   }
 
+  if (id) {
+    const { error: deleteVideosError } = await supabase.from("product_videos").delete().eq("product_id", data.id);
+    if (deleteVideosError) return { ok: false, message: deleteVideosError.message };
+  }
+  if (videoUrls.length > 0) {
+    const videoRows = videoUrls.map((video_url, index) => ({
+      product_id: data.id,
+      video_url,
+      sort_order: index
+    }));
+    const { error: insertVideosError } = await supabase.from("product_videos").insert(videoRows);
+    if (insertVideosError) return { ok: false, message: insertVideosError.message };
+  }
+
   revalidatePath("/admin");
   revalidatePath("/admin/products");
   revalidatePath(`/admin/products/${data.id}/edit`);
   revalidatePath("/shop");
   revalidatePath("/");
+  revalidatePath(`/product/${slug}`);
   return { ok: true, message: id ? "Product updated successfully." : "Product created successfully." };
 }
 
@@ -149,7 +177,8 @@ export async function deleteProductAction(formData: FormData) {
   const id = String(formData.get("id") || "");
   if (!id) return { ok: false, message: "Missing product id." };
 
-  // Delete dependent image rows first so product deletion is not blocked by FK constraints.
+  // Delete dependent media rows first so product deletion is not blocked by FK constraints.
+  await supabase.from("product_videos").delete().eq("product_id", id);
   await supabase.from("product_images").delete().eq("product_id", id);
 
   const { error } = await supabase.from("products").delete().eq("id", id);
@@ -179,6 +208,9 @@ export async function bulkDeleteProductsAction(formData: FormData) {
   if (ids.length === 0) return { ok: false, message: "No valid products selected." };
   ids = [...new Set(ids)];
   if (ids.length > 200) return { ok: false, message: "You can delete at most 200 products at once." };
+
+  const { error: vidError } = await supabase.from("product_videos").delete().in("product_id", ids);
+  if (vidError) return { ok: false, message: vidError.message };
 
   const { error: imgError } = await supabase.from("product_images").delete().in("product_id", ids);
   if (imgError) return { ok: false, message: imgError.message };

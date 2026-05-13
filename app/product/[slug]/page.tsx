@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { ProductCard } from "@/components/storefront/cards";
 import { ProductGallery } from "@/components/storefront/product-gallery";
+import { ProductVideoGallery } from "@/components/storefront/product-video-gallery";
 import { ProductPurchaseActions } from "@/components/storefront/product-purchase-actions";
 import { BadgeSet, Container, Heading, Price, Section } from "@/components/storefront/primitives";
 import { getProductBySlug, getShopProducts } from "@/lib/storefront/queries";
@@ -36,6 +37,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </div>
         </Container>
       </Section>
+      {product.videos && product.videos.length > 0 ? (
+        <Section>
+          <Container className="max-w-4xl">
+            <ProductVideoGallery title={product.name} videos={product.videos} />
+          </Container>
+        </Section>
+      ) : null}
       {relatedProducts.length > 0 ? (
         <Section>
           <Container>
