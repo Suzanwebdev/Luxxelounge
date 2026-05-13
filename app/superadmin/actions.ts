@@ -283,10 +283,10 @@ export async function resendStaffSetupEmailAction(
     };
   }
 
-  const emailed = await sendStaffAuthRecoveryEmail(email, actionLink);
+  const sendResult = await sendStaffAuthRecoveryEmail(email, actionLink);
   revalidatePath("/superadmin/users");
 
-  if (emailed) {
+  if (sendResult.ok) {
     return {
       ok: true,
       message: `Sent a password-setup link to ${email} from this app (Resend). They should open it once; it expires like a normal reset link.`
@@ -295,7 +295,7 @@ export async function resendStaffSetupEmailAction(
 
   return {
     ok: false,
-    message: `Supabase generated a recovery link, but this server has no RESEND_API_KEY, so we did not email it. Add RESEND_API_KEY on Vercel, or open Supabase → Authentication → Users → ${email} and send recovery / magic link from there.`
+    message: `Resend could not send: ${sendResult.message}. Fix Resend (domain verification / API key on Vercel), or use Supabase → Authentication → Users → ${email} to send recovery from there.`
   };
 }
 

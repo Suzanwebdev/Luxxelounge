@@ -52,13 +52,33 @@ export function getStaffAuthRecoveryEmailHtml(actionLink: string) {
 }
 
 /** Sends a one-time Supabase recovery link produced by `auth.admin.generateLink`. */
-export async function sendStaffAuthRecoveryEmail(to: string, actionLink: string) {
-  if (!to || !resend || !actionLink) return false;
-  await resend.emails.send({
+export async function sendStaffAuthRecoveryEmail(
+  to: string,
+  actionLink: string
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  if (!to || !actionLink) return { ok: false, message: "Missing recipient or link." };
+  if (!resend) return { ok: false, message: "RESEND_API_KEY is not configured." };
+
+  const { error } = await resend.emails.send({
     from: "Luxxelounge <orders@luxxelounge.com>",
     to,
     subject: "Finish your Luxxelounge admin access",
     html: getStaffAuthRecoveryEmailHtml(actionLink)
   });
-  return true;
+
+  if (error) {
+    const msg =
+      typeof error === "object" && error !== null && "message" in error
+        ? String((error as { message?: unknown }).message)
+        : String(error);
+    console.error("[sendStaffAuthRecoveryEmail] Resend error", error);
+    return {
+      ok: false,
+      message: msg.includes("domain") || msg.includes("verify")
+        ? `${msg} In Resend: verify the sending domain for orders@luxxelounge.com (or change the from address to a verified domain).`
+        : msg
+    };
+  }
+
+  return { ok: true };
 }
