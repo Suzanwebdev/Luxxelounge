@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import type { AssignableAppRole } from "@/lib/admin/allowlist-ops";
 import { syncAllowlistsForProfileRole } from "@/lib/admin/allowlist-ops";
 import { getAdminDataClient } from "@/lib/admin/db";
+import { escapeForIlikeExact, normalizeAuthEmail } from "@/lib/admin/email-allowlist-match";
 import { requireSuperadminAccess } from "@/lib/superadmin/auth";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getPublicSiteUrl } from "@/lib/site/public-url";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type RoleAssignByEmailActionState =
   | null
@@ -38,6 +42,22 @@ export async function setFeatureFlagAction(formData: FormData) {
   revalidatePath("/admin/settings");
 }
 
+async function findAuthUserIdByEmail(
+  authAdmin: SupabaseClient,
+  emailLower: string
+): Promise<string | null> {
+  const target = emailLower.toLowerCase();
+  for (let page = 1; page <= 25; page++) {
+    const { data, error } = await authAdmin.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) return null;
+    const users = data?.users ?? [];
+    const hit = users.find((u) => (u.email || "").toLowerCase() === target);
+    if (hit?.id) return hit.id;
+    if (users.length < 1000) break;
+  }
+  return null;
+}
+
 export async function createStaffAccountAction(
   _prevState: RoleAssignByEmailActionState,
   formData: FormData
@@ -46,8 +66,8 @@ export async function createStaffAccountAction(
   const supabase = await getAdminDataClient();
   if (!supabase) return { ok: false, message: "Database client unavailable." };
 
-  const email = String(formData.get("email") || "").toLowerCase().trim();
-  const fullName = String(formData.get("fullName") || "");
+  const email = normalizeAuthEmail(String(formData.get("email") || ""));
+  const fullNameTrim = String(formData.get("fullName") || "").trim() || null;
   const roleRaw = String(formData.get("role") || "staff");
   const allowed: AssignableAppRole[] = ["superadmin", "admin", "staff", "customer"];
   if (!email || !allowed.includes(roleRaw as AssignableAppRole)) {
@@ -55,30 +75,92 @@ export async function createStaffAccountAction(
   }
   const role = roleRaw as AssignableAppRole;
 
-  if (role === "admin" || role === "staff") {
-    const { error } = await supabase.from("admins").upsert({ email }, { onConflict: "email" });
-    if (error) return { ok: false, message: error.message };
-  } else {
-    const { error } = await supabase.from("admins").delete().ilike("email", email);
-    if (error) return { ok: false, message: error.message };
+  const emailPattern = escapeForIlikeExact(email);
+  const { data: existingProfile } = await supabase
+    .from("profiles")
+    .select("id")
+    .ilike("email", emailPattern)
+    .maybeSingle();
+
+  if (existingProfile?.id) {
+    const { error: profileErr } = await supabase
+      .from("profiles")
+      .update({ role, full_name: fullNameTrim })
+      .eq("id", existingProfile.id);
+    if (profileErr) return { ok: false, message: profileErr.message };
+    try {
+      await syncAllowlistsForProfileRole(supabase, email, role);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Allowlist sync failed.";
+      return { ok: false, message: msg };
+    }
+    await supabase.from("login_audit_logs").insert({
+      email,
+      user_agent: `role_updated:${role}`,
+      success: true,
+      ip_address: "system"
+    });
+    revalidatePath("/superadmin/users");
+    return { ok: true, message: `Updated ${email} to ${role}. Profile and access lists are in sync.` };
   }
 
-  if (role === "superadmin") {
-    const { error } = await supabase.from("superadmins").upsert({ email }, { onConflict: "email" });
-    if (error) return { ok: false, message: error.message };
-  } else {
-    const { error } = await supabase.from("superadmins").delete().ilike("email", email);
-    if (error) return { ok: false, message: error.message };
+  const authAdmin = createSupabaseAdminClient();
+  if (!authAdmin) {
+    return {
+      ok: false,
+      message:
+        "SUPABASE_SERVICE_ROLE_KEY must be set on the server to invite new users and create their profile. Add it in Vercel / .env.local, then try again."
+    };
   }
 
-  // If a profile already exists for this email, keep profile role aligned with allowlists.
-  const { data: profile } = await supabase.from("profiles").select("id").ilike("email", email).maybeSingle();
-  if (profile?.id) {
-    const { error } = await supabase.from("profiles").update({ role }).eq("id", profile.id);
-    if (error) return { ok: false, message: error.message };
+  const redirectTo = `${getPublicSiteUrl()}/admin/login`;
+  const inviteRes = await authAdmin.auth.admin.inviteUserByEmail(email, {
+    redirectTo,
+    data: { full_name: fullNameTrim ?? undefined }
+  });
+
+  let userId: string | null = inviteRes.data?.user?.id ?? null;
+  let invitedByEmail = Boolean(userId);
+
+  if (inviteRes.error) {
+    const em = (inviteRes.error.message || "").toLowerCase();
+    if (em.includes("already") || em.includes("registered") || em.includes("exists")) {
+      userId = await findAuthUserIdByEmail(authAdmin, email);
+      invitedByEmail = false;
+    } else {
+      return {
+        ok: false,
+        message: `Could not send invitation: ${inviteRes.error.message}. Check Supabase Auth email settings and SMTP.`
+      };
+    }
   }
 
-  // TODO: Create auth users via Supabase Admin API in production and then link profile by auth user id.
+  if (!userId) {
+    return {
+      ok: false,
+      message:
+        "No matching Auth user was found for that email. If they already exist under a different address, update the email in Supabase Auth first."
+    };
+  }
+
+  const { error: upsertProfileErr } = await supabase.from("profiles").upsert(
+    {
+      id: userId,
+      email,
+      full_name: fullNameTrim,
+      role
+    },
+    { onConflict: "id" }
+  );
+  if (upsertProfileErr) return { ok: false, message: upsertProfileErr.message };
+
+  try {
+    await syncAllowlistsForProfileRole(supabase, email, role);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Allowlist sync failed.";
+    return { ok: false, message: msg };
+  }
+
   await supabase.from("login_audit_logs").insert({
     email,
     user_agent: `invited:${role}`,
@@ -88,9 +170,9 @@ export async function createStaffAccountAction(
   revalidatePath("/superadmin/users");
   return {
     ok: true,
-    message: profile?.id
-      ? `Updated ${email} to ${role}. Existing profile role was synced.`
-      : `Assigned ${role} access for ${email}.`
+    message: invitedByEmail
+      ? `Invitation sent to ${email}. After they accept the link, they can sign in at ${redirectTo}. Role: ${role}.`
+      : `Linked existing Auth account for ${email}, saved profile, and set role to ${role}.`
   };
 }
 

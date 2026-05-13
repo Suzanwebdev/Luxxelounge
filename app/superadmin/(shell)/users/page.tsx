@@ -15,7 +15,11 @@ export default async function SuperadminUsersPage() {
       <section className="rounded-3xl border border-border bg-card p-5">
         <h2 className="font-heading text-xl">Assign role by email (allowlist)</h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          Sets role access for an email. Create the Auth user separately in Supabase if needed.
+          Invites new people by email (Supabase Auth), creates their profile, and syncs admin allowlists. For addresses
+          already on an account, updates role and access only. Set{" "}
+          <code className="rounded bg-muted px-1">NEXT_PUBLIC_APP_BASE_URL</code> (or{" "}
+          <code className="rounded bg-muted px-1">APP_BASE_URL</code>) so invitation links use your live domain. Requires{" "}
+          <code className="rounded bg-muted px-1">SUPABASE_SERVICE_ROLE_KEY</code> on the server.
         </p>
         <RoleAssignEmailForm />
       </section>
