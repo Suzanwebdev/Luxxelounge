@@ -15,6 +15,10 @@ export type RoleAssignByEmailActionState =
   | {
       ok: boolean;
       message: string;
+      /** Supabase accepted an invite; inbox delivery depends on Auth / SMTP / spam filters. */
+      inviteRequested?: boolean;
+      /** Password-setup links use this redirect (must be allowlisted in Supabase). */
+      inviteRedirectTo?: string;
     };
 
 export async function setMaintenanceModeAction(formData: FormData) {
@@ -130,6 +134,12 @@ export async function createStaffAccountAction(
   let invitedByEmail = Boolean(userId);
 
   if (inviteRes.error) {
+    console.error("[createStaffAccountAction] inviteUserByEmail failed", {
+      message: inviteRes.error.message,
+      name: inviteRes.error.name,
+      status: inviteRes.error.status,
+      redirectTo
+    });
     const em = (inviteRes.error.message || "").toLowerCase();
     if (em.includes("already") || em.includes("registered") || em.includes("exists")) {
       userId = await findAuthUserIdByEmail(authAdmin, email);
@@ -137,9 +147,16 @@ export async function createStaffAccountAction(
     } else {
       return {
         ok: false,
-        message: `Email not sent: ${inviteRes.error.message}. In Supabase: Authentication → Providers → Email.`
+        message: `Invite failed: ${inviteRes.error.message}. Check Supabase Auth (email provider, rate limits, redirect URL allowlist for ${redirectTo}).`
       };
     }
+  } else if (!userId) {
+    console.error("[createStaffAccountAction] inviteUserByEmail returned no user and no error", { redirectTo });
+    return {
+      ok: false,
+      message:
+        "Supabase did not return a new user for that invite. Check Supabase Auth logs and your service role configuration."
+    };
   }
 
   if (!userId) {
@@ -174,11 +191,18 @@ export async function createStaffAccountAction(
     ip_address: "system"
   });
   revalidatePath("/superadmin/users");
+  if (invitedByEmail) {
+    console.info("[createStaffAccountAction] inviteUserByEmail accepted by Supabase", { redirectTo });
+    return {
+      ok: true,
+      inviteRequested: true,
+      inviteRedirectTo: redirectTo,
+      message: `Account ready for ${email} (${roleLabel}). Supabase should send a setup email; delivery depends on your Auth email / SMTP settings.`
+    };
+  }
   return {
     ok: true,
-    message: invitedByEmail
-      ? `Done — we emailed ${email} a link to finish setup (${roleLabel}).`
-      : `Done — linked their existing login and set them as ${roleLabel}.`
+    message: `Done — linked their existing login and set them as ${roleLabel}.`
   };
 }
 

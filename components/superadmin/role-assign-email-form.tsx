@@ -1,16 +1,9 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
-import { createStaffAccountAction } from "@/app/superadmin/actions";
+import { createStaffAccountAction, type RoleAssignByEmailActionState } from "@/app/superadmin/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
-type RoleAssignByEmailActionState =
-  | null
-  | {
-      ok: boolean;
-      message: string;
-    };
 
 const initialState: RoleAssignByEmailActionState = null;
 
@@ -34,14 +27,22 @@ export function RoleAssignEmailForm() {
   return (
     <form ref={formRef} action={formAction} className="mt-6 max-w-xl space-y-5">
       {state?.message ? (
-        <p
+        <div
           role="status"
           className={`rounded-2xl border px-4 py-3 text-sm ${
             state.ok ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-red-200 bg-red-50 text-red-900"
           }`}
         >
-          {state.message}
-        </p>
+          <p>{state.message}</p>
+          {state.ok && state.inviteRequested && state.inviteRedirectTo ? (
+            <p className="mt-2 text-xs leading-relaxed text-emerald-900/85">
+              The invite link redirects to{" "}
+              <span className="break-all font-mono text-[11px]">{state.inviteRedirectTo}</span>. That URL must appear
+              under Supabase → Authentication → URL configuration → Redirect URLs. If no email arrives, check spam,
+              Auth → Users (resend invitation), and custom SMTP.
+            </p>
+          ) : null}
+        </div>
       ) : null}
 
       <div className="space-y-2">
@@ -83,7 +84,8 @@ export function RoleAssignEmailForm() {
           ))}
         </select>
         <p className="text-xs text-muted-foreground">
-          New people get an email to set their password. People already on the list only get their access updated.
+          New people are created in Supabase Auth and should receive a setup email. People already on the list only get
+          their access updated (no new invite).
         </p>
       </div>
 

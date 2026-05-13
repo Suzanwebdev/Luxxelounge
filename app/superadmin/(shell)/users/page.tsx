@@ -1,9 +1,12 @@
 import { ProfileRoleAssignForm } from "@/components/superadmin/profile-role-assign-form";
 import { RoleAssignEmailForm } from "@/components/superadmin/role-assign-email-form";
+import { getPublicSiteUrl } from "@/lib/site/public-url";
 import { getSuperadminUsers } from "@/lib/superadmin/queries";
 
 export default async function SuperadminUsersPage() {
   const users = await getSuperadminUsers();
+  const inviteBase = getPublicSiteUrl();
+  const inviteRedirectExample = `${inviteBase}/admin/login`;
 
   return (
     <div className="space-y-8">
@@ -19,11 +22,37 @@ export default async function SuperadminUsersPage() {
           open Supabase for normal invites.
         </p>
         <details className="mt-3 text-xs text-muted-foreground">
-          <summary className="cursor-pointer font-medium text-foreground/80">Technical setup (click to expand)</summary>
-          <p className="mt-2 pl-1">
-            Server needs <code className="rounded bg-muted px-1">SUPABASE_SERVICE_ROLE_KEY</code>. Set{" "}
-            <code className="rounded bg-muted px-1">NEXT_PUBLIC_APP_BASE_URL</code> to your live site URL so invite
-            links redirect correctly. Supabase must be able to send email (Auth → Email / SMTP).
+          <summary className="cursor-pointer font-medium text-foreground/80">Email not arriving or link opens localhost? (click)</summary>
+          <ul className="mt-2 list-inside list-disc space-y-2 pl-1">
+            <li>
+              On <strong>Vercel</strong>, set{" "}
+              <code className="rounded bg-muted px-1">NEXT_PUBLIC_APP_BASE_URL</code> to your real store URL (example:{" "}
+              <code className="rounded bg-muted px-1">https://www.luxxelounge.shop</code>
+              ). Otherwise invite links may use a <code className="rounded bg-muted px-1">*.vercel.app</code> host and
+              Supabase may block or users may not get mail as expected.
+            </li>
+            <li>
+              In <strong>Supabase</strong> → Authentication → URL configuration → <strong>Redirect URLs</strong>, add{" "}
+              <code className="rounded bg-muted px-1">{inviteRedirectExample}</code> (and your production origin with{" "}
+              <code className="rounded bg-muted px-1">/**</code> if you use wildcards).
+            </li>
+            <li>
+              Invites sent while running <strong>localhost</strong> point at localhost in the email — that link will not
+              open on a phone or another computer. Always invite from the live site after env is set, or use Supabase
+              dashboard → Authentication → Users to resend.
+            </li>
+            <li>
+              Check spam, and in Supabase → Authentication → <strong>Users</strong> confirm the user exists. For
+              reliable delivery, configure <strong>custom SMTP</strong> (Auth → SMTP) — the built-in sender has strict
+              limits.
+            </li>
+            <li>
+              Server needs <code className="rounded bg-muted px-1">SUPABASE_SERVICE_ROLE_KEY</code> on Vercel (same
+              project as your keys).
+            </li>
+          </ul>
+          <p className="mt-3 rounded-lg bg-muted/50 px-2 py-1.5 font-mono text-[11px] text-foreground/80">
+            Current invite redirect base: {inviteBase}
           </p>
         </details>
         <RoleAssignEmailForm />
