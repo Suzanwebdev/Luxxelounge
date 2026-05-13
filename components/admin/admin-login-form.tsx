@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { RequestPasswordResetInline } from "@/components/auth/request-password-reset-inline";
 
 function SignOutRow() {
   const router = useRouter();
@@ -86,7 +87,11 @@ export function AdminLoginForm({ nextPath, reason, error: initialError, notice }
             authorized account, or ask the store owner to grant access.
           </p>
         ) : (
-          <p className="mt-2 text-sm text-muted-foreground">Sign in with your Luxxelounge admin email and password.</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Invited accounts do not get a password until you open the setup email or use{" "}
+            <strong className="font-medium text-foreground">First time or forgot password?</strong> below. Then sign in
+            here with that password.
+          </p>
         )}
 
         <details className="mt-3 rounded-xl border border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
@@ -117,8 +122,11 @@ export function AdminLoginForm({ nextPath, reason, error: initialError, notice }
                   Supabase → Authentication → Redirect URLs.
                 </p>
                 <p>
-                  The account must exist in Supabase <strong>Authentication → Users</strong> (email + password). It also
-                  needs to be allowlisted: your email in <code className="rounded bg-muted px-1">public.admins</code> or{" "}
+                  The account must exist in Supabase <strong>Authentication → Users</strong>. Until you set a password
+                  (invite or reset link), sign-in will say invalid credentials—that is normal.
+                </p>
+                <p>
+                  It also needs to be allowlisted: your email in <code className="rounded bg-muted px-1">public.admins</code> or{" "}
                   <code className="rounded bg-muted px-1">public.superadmins</code>, or <code className="rounded bg-muted px-1">profiles.role</code>{" "}
                   set to <code className="rounded bg-muted px-1">admin</code> or <code className="rounded bg-muted px-1">staff</code>.
                 </p>
@@ -159,6 +167,8 @@ export function AdminLoginForm({ nextPath, reason, error: initialError, notice }
           {pending ? "Signing in…" : "Sign in"}
         </Button>
       </form>
+
+      {reason === "forbidden" ? null : <RequestPasswordResetInline />}
 
       {reason === "forbidden" ? (
         <SignOutRow />

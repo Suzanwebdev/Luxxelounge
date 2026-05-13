@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { RequestPasswordResetInline } from "@/components/auth/request-password-reset-inline";
 
 function SignOutRow() {
   const router = useRouter();
@@ -61,9 +62,10 @@ export function SuperadminLoginForm({ nextPath, reason }: SuperadminLoginFormPro
     setPending(false);
 
     if (signError) {
+      const lower = signError.message.toLowerCase();
       const hint =
-        signError.message.toLowerCase().includes("invalid") || signError.message.includes("credentials")
-          ? " If you recently created the user, confirm the email in Supabase or disable “Confirm email” for testing."
+        lower.includes("invalid") || lower.includes("credentials")
+          ? " New invites have no password yet—expand “First time or forgot password?” below and email yourself a setup link, or confirm the user in Supabase Authentication."
           : "";
       setError(`${signError.message}${hint}`);
       return;
@@ -98,7 +100,9 @@ export function SuperadminLoginForm({ nextPath, reason }: SuperadminLoginFormPro
         {reason === "forbidden" ? null : (
           <ul className="mt-3 list-inside list-disc space-y-1 text-xs text-muted-foreground">
             <li>
-              The user must exist under Authentication → Users (email + password, or your configured provider).
+              The user must exist under Authentication → Users. Password is set via invite/reset email or{" "}
+              <strong className="text-foreground">First time or forgot password?</strong> below—not when typing email
+              only in the dashboard.
             </li>
             <li>
               The email must appear in <code className="rounded bg-muted px-1">public.superadmins</code> or{" "}
@@ -132,6 +136,8 @@ export function SuperadminLoginForm({ nextPath, reason }: SuperadminLoginFormPro
           {pending ? "Signing in…" : "Sign in to platform portal"}
         </Button>
       </form>
+
+      {reason === "forbidden" ? null : <RequestPasswordResetInline />}
 
       {reason === "forbidden" ? <SignOutRow /> : null}
 
