@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -13,8 +14,14 @@ import { useCart } from "@/components/storefront/cart-provider";
 import { NAV_CATEGORY_LINKS } from "@/lib/storefront/categories";
 
 export function Navbar() {
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const { itemCount } = useCart();
+
+  /** Storefront chrome must not sit over admin / superadmin tools (sticky header covered table actions). */
+  if (pathname?.startsWith("/superadmin") || pathname?.startsWith("/admin")) {
+    return null;
+  }
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">

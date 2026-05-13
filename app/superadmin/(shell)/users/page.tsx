@@ -3,6 +3,8 @@ import { RoleAssignEmailForm } from "@/components/superadmin/role-assign-email-f
 import { getPublicSiteUrl } from "@/lib/site/public-url";
 import { getSuperadminUsers } from "@/lib/superadmin/queries";
 
+export const dynamic = "force-dynamic";
+
 export default async function SuperadminUsersPage() {
   const users = await getSuperadminUsers();
   const inviteBase = getPublicSiteUrl();

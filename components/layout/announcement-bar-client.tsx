@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { usePathname } from "next/navigation";
 
 const DEFAULT_TEXT = "Fast delivery • Authentic products • Easy returns";
 
@@ -9,9 +10,12 @@ const DEFAULT_TEXT = "Fast delivery • Authentic products • Easy returns";
  * which can interact badly with streaming/CSS ordering in production.
  */
 export function AnnouncementBarClient() {
+  const pathname = usePathname();
+  const isBackOffice = pathname?.startsWith("/superadmin") || pathname?.startsWith("/admin");
   const [text, setText] = React.useState(DEFAULT_TEXT);
 
   React.useEffect(() => {
+    if (isBackOffice) return;
     let cancelled = false;
     fetch("/api/storefront/announcement", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
@@ -26,7 +30,11 @@ export function AnnouncementBarClient() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isBackOffice]);
+
+  if (isBackOffice) {
+    return null;
+  }
 
   return (
     <div className="border-b border-border bg-accent/60 py-2 text-center text-xs tracking-wide text-muted-foreground">
