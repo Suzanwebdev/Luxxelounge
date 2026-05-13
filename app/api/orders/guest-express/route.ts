@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import { z } from "zod";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { products } from "@/lib/storefront/mock-data";
+import { fetchProductsBySlugMap } from "@/lib/storefront/checkout-resolve-db";
 
 const bodySchema = z.object({
   items: z
@@ -56,15 +56,33 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const resolved: { name: string; sku: string; qty: number; unit: number; total: number; color?: string }[] = [];
+  const slugs = [...merged.values()].map((r) => r.slug);
+  const { map: productBySlug, missing } = await fetchProductsBySlugMap(supabase, slugs);
+  if (missing.length > 0) {
+    return NextResponse.json(
+      { error: `Unknown or inactive product: ${missing.join(", ")}` },
+      { status: 400 }
+    );
+  }
+
+  const resolved: {
+    productId: string;
+    name: string;
+    sku: string;
+    qty: number;
+    unit: number;
+    total: number;
+    color?: string;
+  }[] = [];
   for (const row of merged.values()) {
-    const product = products.find((p) => p.slug === row.slug);
+    const product = productBySlug.get(row.slug);
     if (!product) {
       return NextResponse.json({ error: `Unknown product: ${row.slug}` }, { status: 400 });
     }
     const unit = Number(product.price);
     const qty = Math.min(99, Math.max(1, Math.round(row.quantity)));
     resolved.push({
+      productId: product.id,
       name: product.name,
       sku: row.color ? `${product.id}::${row.color}` : product.id,
       qty,
@@ -112,7 +130,7 @@ export async function POST(request: NextRequest) {
 
   const itemRows = resolved.map((r) => ({
     order_id: order.id,
-    product_id: null as string | null,
+    product_id: r.productId,
     variant_id: null as string | null,
     product_name: r.color ? `${r.name} (Color: ${r.color})` : r.name,
     sku: r.sku,
