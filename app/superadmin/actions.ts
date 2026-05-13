@@ -68,12 +68,20 @@ export async function createStaffAccountAction(
 
   const email = normalizeAuthEmail(String(formData.get("email") || ""));
   const fullNameTrim = String(formData.get("fullName") || "").trim() || null;
-  const roleRaw = String(formData.get("role") || "staff");
+  const roleRaw = String(formData.get("role") || "admin");
   const allowed: AssignableAppRole[] = ["superadmin", "admin", "staff", "customer"];
   if (!email || !allowed.includes(roleRaw as AssignableAppRole)) {
     return { ok: false, message: "Provide a valid email and role." };
   }
   const role = roleRaw as AssignableAppRole;
+  const roleLabel =
+    role === "admin"
+      ? "Store admin"
+      : role === "staff"
+        ? "Staff"
+        : role === "superadmin"
+          ? "Superadmin"
+          : "Customer";
 
   const emailPattern = escapeForIlikeExact(email);
   const { data: existingProfile } = await supabase
@@ -101,15 +109,14 @@ export async function createStaffAccountAction(
       ip_address: "system"
     });
     revalidatePath("/superadmin/users");
-    return { ok: true, message: `Updated ${email} to ${role}. Profile and access lists are in sync.` };
+    return { ok: true, message: `Updated ${email} — they can sign in as ${roleLabel}.` };
   }
 
   const authAdmin = createSupabaseAdminClient();
   if (!authAdmin) {
     return {
       ok: false,
-      message:
-        "SUPABASE_SERVICE_ROLE_KEY must be set on the server to invite new users and create their profile. Add it in Vercel / .env.local, then try again."
+      message: "Add SUPABASE_SERVICE_ROLE_KEY in Vercel or .env.local to invite new users."
     };
   }
 
@@ -130,7 +137,7 @@ export async function createStaffAccountAction(
     } else {
       return {
         ok: false,
-        message: `Could not send invitation: ${inviteRes.error.message}. Check Supabase Auth email settings and SMTP.`
+        message: `Email not sent: ${inviteRes.error.message}. In Supabase: Authentication → Providers → Email.`
       };
     }
   }
@@ -138,8 +145,7 @@ export async function createStaffAccountAction(
   if (!userId) {
     return {
       ok: false,
-      message:
-        "No matching Auth user was found for that email. If they already exist under a different address, update the email in Supabase Auth first."
+      message: "No account found for that email. Ask them to sign up once, or create the user in Supabase Auth."
     };
   }
 
@@ -171,20 +177,25 @@ export async function createStaffAccountAction(
   return {
     ok: true,
     message: invitedByEmail
-      ? `Invitation sent to ${email}. After they accept the link, they can sign in at ${redirectTo}. Role: ${role}.`
-      : `Linked existing Auth account for ${email}, saved profile, and set role to ${role}.`
+      ? `Done — we emailed ${email} a link to finish setup (${roleLabel}).`
+      : `Done — linked their existing login and set them as ${roleLabel}.`
   };
 }
 
-export async function assignProfileRoleAction(formData: FormData) {
+export async function assignProfileRoleAction(
+  _prev: { ok: boolean; message: string } | null,
+  formData: FormData
+): Promise<{ ok: boolean; message: string }> {
   await requireSuperadminAccess();
   const supabase = await getAdminDataClient();
-  if (!supabase) return;
+  if (!supabase) return { ok: false, message: "Database unavailable." };
 
   const profileId = String(formData.get("profileId") || "").trim();
   const roleRaw = String(formData.get("role") || "").trim();
   const allowed: AssignableAppRole[] = ["superadmin", "admin", "staff", "customer"];
-  if (!profileId || !allowed.includes(roleRaw as AssignableAppRole)) return;
+  if (!profileId || !allowed.includes(roleRaw as AssignableAppRole)) {
+    return { ok: false, message: "Invalid request." };
+  }
 
   const role = roleRaw as AssignableAppRole;
 
@@ -194,15 +205,17 @@ export async function assignProfileRoleAction(formData: FormData) {
     .eq("id", profileId)
     .maybeSingle();
 
-  if (fetchError || !profile?.email) return;
+  if (fetchError || !profile?.email) {
+    return { ok: false, message: "User not found." };
+  }
 
   const { error: updateError } = await supabase.from("profiles").update({ role }).eq("id", profileId);
-  if (updateError) return;
+  if (updateError) return { ok: false, message: updateError.message };
 
   try {
     await syncAllowlistsForProfileRole(supabase, profile.email, role);
   } catch {
-    // Allowlist sync failed — role in profiles may still be updated; superadmin can fix in SQL if needed.
+    return { ok: false, message: "Role saved, but access list sync failed. Retry or check Supabase." };
   }
 
   await supabase.from("login_audit_logs").insert({
@@ -216,6 +229,7 @@ export async function assignProfileRoleAction(formData: FormData) {
   revalidatePath("/superadmin/users");
   revalidatePath("/admin");
   revalidatePath("/superadmin");
+  return { ok: true, message: "Saved." };
 }
 
 export async function updateRateLimitPolicyAction(formData: FormData) {

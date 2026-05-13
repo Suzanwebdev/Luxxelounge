@@ -9,22 +9,30 @@ export default async function SuperadminUsersPage() {
     <div className="space-y-8">
       <div>
         <h1 className="font-heading text-3xl">User management</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Profiles and roles (latest 100).</p>
+        <p className="mt-1 text-sm text-muted-foreground">Who can use the admin area and what they can do.</p>
       </div>
 
-      <section className="rounded-3xl border border-border bg-card p-5">
-        <h2 className="font-heading text-xl">Assign role by email (allowlist)</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Invites new people by email (Supabase Auth), creates their profile, and syncs admin allowlists. For addresses
-          already on an account, updates role and access only. Set{" "}
-          <code className="rounded bg-muted px-1">NEXT_PUBLIC_APP_BASE_URL</code> (or{" "}
-          <code className="rounded bg-muted px-1">APP_BASE_URL</code>) so invitation links use your live domain. Requires{" "}
-          <code className="rounded bg-muted px-1">SUPABASE_SERVICE_ROLE_KEY</code> on the server.
+      <section className="rounded-3xl border border-border bg-card p-6 md:p-8">
+        <h2 className="font-heading text-xl md:text-2xl">Add someone by email</h2>
+        <p className="mt-2 max-w-xl text-sm text-muted-foreground">
+          Fill in their work email, pick access, and press the button. We email them a link to finish setup—no need to
+          open Supabase for normal invites.
         </p>
+        <details className="mt-3 text-xs text-muted-foreground">
+          <summary className="cursor-pointer font-medium text-foreground/80">Technical setup (click to expand)</summary>
+          <p className="mt-2 pl-1">
+            Server needs <code className="rounded bg-muted px-1">SUPABASE_SERVICE_ROLE_KEY</code>. Set{" "}
+            <code className="rounded bg-muted px-1">NEXT_PUBLIC_APP_BASE_URL</code> to your live site URL so invite
+            links redirect correctly. Supabase must be able to send email (Auth → Email / SMTP).
+          </p>
+        </details>
         <RoleAssignEmailForm />
       </section>
 
-      <div className="overflow-x-auto rounded-3xl border border-border bg-card">
+      <section className="space-y-3">
+        <h2 className="font-heading text-xl">People ({users.length})</h2>
+        <p className="text-sm text-muted-foreground">Change a role and click Apply. Updates apply immediately.</p>
+        <div className="overflow-x-auto rounded-3xl border border-border bg-card">
         <table className="w-full min-w-[800px] text-left text-sm">
           <thead className="border-b border-border bg-muted/40 text-xs uppercase text-muted-foreground">
             <tr>
@@ -32,7 +40,7 @@ export default async function SuperadminUsersPage() {
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Role</th>
               <th className="px-4 py-3">Joined</th>
-              <th className="px-4 py-3">Actions</th>
+              <th className="px-4 py-3">Change access</th>
             </tr>
           </thead>
           <tbody>
@@ -55,6 +63,7 @@ export default async function SuperadminUsersPage() {
                   </td>
                   <td className="px-4 py-3">
                     <ProfileRoleAssignForm
+                      key={`${u.id}-${u.role}`}
                       profile={{
                         id: u.id,
                         email: u.email,
@@ -68,7 +77,8 @@ export default async function SuperadminUsersPage() {
             )}
           </tbody>
         </table>
-      </div>
+        </div>
+      </section>
     </div>
   );
 }

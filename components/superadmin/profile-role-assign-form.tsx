@@ -1,3 +1,6 @@
+"use client";
+
+import { useActionState } from "react";
 import { assignProfileRoleAction } from "@/app/superadmin/actions";
 import { Button } from "@/components/ui/button";
 
@@ -9,17 +12,20 @@ type ProfileRow = {
 };
 
 const ROLE_OPTIONS: { value: string; label: string }[] = [
-  { value: "customer", label: "Customer" },
-  { value: "staff", label: "Staff" },
   { value: "admin", label: "Store admin" },
-  { value: "superadmin", label: "Superadmin" }
+  { value: "staff", label: "Staff" },
+  { value: "superadmin", label: "Superadmin" },
+  { value: "customer", label: "Customer" }
 ];
+
+type RowState = { ok: boolean; message: string } | null;
 
 export function ProfileRoleAssignForm({ profile }: { profile: ProfileRow }) {
   const roleValue = ROLE_OPTIONS.some((o) => o.value === profile.role) ? profile.role : "customer";
+  const [state, formAction, pending] = useActionState(assignProfileRoleAction, null as RowState);
 
   return (
-    <form action={assignProfileRoleAction} className="flex flex-wrap items-center gap-2">
+    <form action={formAction} className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
       <input type="hidden" name="profileId" value={profile.id} />
       <label className="sr-only" htmlFor={`role-${profile.id}`}>
         Role for {profile.email}
@@ -28,7 +34,7 @@ export function ProfileRoleAssignForm({ profile }: { profile: ProfileRow }) {
         id={`role-${profile.id}`}
         name="role"
         defaultValue={roleValue}
-        className="h-10 min-w-[11rem] rounded-2xl border border-border bg-background px-3 text-sm"
+        className="h-10 min-w-[10.5rem] rounded-2xl border border-border bg-background px-3 text-sm"
       >
         {ROLE_OPTIONS.map((opt) => (
           <option key={opt.value} value={opt.value}>
@@ -36,9 +42,14 @@ export function ProfileRoleAssignForm({ profile }: { profile: ProfileRow }) {
           </option>
         ))}
       </select>
-      <Button type="submit" size="sm" variant="outline">
-        Save role
+      <Button type="submit" size="sm" disabled={pending}>
+        {pending ? "…" : "Apply"}
       </Button>
+      {state?.message ? (
+        <span className={`text-xs ${state.ok ? "text-emerald-700" : "text-red-600"}`} role="status">
+          {state.message}
+        </span>
+      ) : null}
     </form>
   );
 }
