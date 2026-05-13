@@ -19,7 +19,7 @@ export function Navbar() {
   const { itemCount } = useCart();
 
   /** Storefront chrome must not sit over admin / superadmin tools (sticky header covered table actions). */
-  if (pathname?.startsWith("/superadmin") || pathname?.startsWith("/admin")) {
+  if (pathname?.startsWith("/superadmin") || pathname?.startsWith("/admin") || pathname?.startsWith("/auth")) {
     return null;
   }
 

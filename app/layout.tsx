@@ -8,6 +8,7 @@ import { ScrollToTopOnRoute } from "@/components/layout/scroll-to-top-on-route";
 import { Footer } from "@/components/layout/footer";
 import { StoreRealtimeSync } from "@/components/storefront/realtime-sync";
 import { CartProvider } from "@/components/storefront/cart-provider";
+import { RecoveryHashRedirect } from "@/components/auth/recovery-hash-redirect";
 
 const heading = Playfair_Display({ subsets: ["latin"], variable: "--font-heading" });
 const body = Inter({ subsets: ["latin"], variable: "--font-body" });
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className={`${heading.variable} ${body.variable}`}>
         <CartProvider>
           <div className="flex min-h-screen flex-col">
+            <RecoveryHashRedirect />
             <AnnouncementBarClient />
             <ScrollToTopOnRoute />
             <Navbar />

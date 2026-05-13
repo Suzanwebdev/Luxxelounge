@@ -33,11 +33,17 @@ function SignOutRow() {
 type AdminLoginFormProps = {
   nextPath: string;
   reason?: string;
+  error?: string;
+  notice?: string;
 };
 
-export function AdminLoginForm({ nextPath, reason }: AdminLoginFormProps) {
-  const [error, setError] = React.useState<string | null>(null);
+export function AdminLoginForm({ nextPath, reason, error: initialError, notice }: AdminLoginFormProps) {
+  const [error, setError] = React.useState<string | null>(initialError ?? null);
   const [pending, setPending] = React.useState(false);
+
+  React.useEffect(() => {
+    setError(initialError ?? null);
+  }, [initialError]);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -105,6 +111,12 @@ export function AdminLoginForm({ nextPath, reason }: AdminLoginFormProps) {
             ) : (
               <>
                 <p>
+                  Password reset links from email must finish on this site’s{" "}
+                  <code className="rounded bg-muted px-1">/auth/callback</code> route (configured automatically). If
+                  you land on the shop homepage with a long URL, open the link again after refreshing—then set your
+                  password on the page we show you.
+                </p>
+                <p>
                   The account must exist in Supabase <strong>Authentication → Users</strong> (email + password). It also
                   needs to be allowlisted: your email in <code className="rounded bg-muted px-1">public.admins</code> or{" "}
                   <code className="rounded bg-muted px-1">public.superadmins</code>, or <code className="rounded bg-muted px-1">profiles.role</code>{" "}
@@ -119,6 +131,15 @@ export function AdminLoginForm({ nextPath, reason }: AdminLoginFormProps) {
           </div>
         </details>
       </div>
+
+      {notice === "password_reset" ? (
+        <p
+          role="status"
+          className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
+        >
+          Password updated. Sign in with your new password below.
+        </p>
+      ) : null}
 
       <form className="space-y-4" onSubmit={onSubmit}>
         <div className="space-y-2">

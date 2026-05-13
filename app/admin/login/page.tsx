@@ -4,7 +4,7 @@ import { sanitizeAdminNextPath } from "@/lib/admin/login-redirect";
 import { AdminLoginForm } from "@/components/admin/admin-login-form";
 
 type Props = {
-  searchParams: Promise<{ next?: string; reason?: string }>;
+  searchParams: Promise<{ next?: string; reason?: string; error?: string; notice?: string }>;
 };
 
 export default async function AdminLoginPage({ searchParams }: Props) {
@@ -17,7 +17,7 @@ export default async function AdminLoginPage({ searchParams }: Props) {
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4 py-12">
-      <AdminLoginForm nextPath={nextPath} reason={sp.reason} />
+      <AdminLoginForm nextPath={nextPath} reason={sp.reason} error={sp.error} notice={sp.notice} />
     </div>
   );
 }

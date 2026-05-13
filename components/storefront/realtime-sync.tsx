@@ -1,13 +1,23 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export function StoreRealtimeSync() {
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
+    if (pathname?.startsWith("/auth")) return;
+
+    if (typeof window !== "undefined") {
+      const h = window.location.hash;
+      if (h && (h.includes("access_token") || h.includes("type=recovery") || h.includes("type=invite"))) {
+        return;
+      }
+    }
+
     const supabase = createSupabaseBrowserClient();
     if (!supabase) return;
     let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -41,7 +51,7 @@ export function StoreRealtimeSync() {
       if (refreshTimeout) clearTimeout(refreshTimeout);
       supabase.removeChannel(channel);
     };
-  }, [router]);
+  }, [router, pathname]);
 
   return null;
 }

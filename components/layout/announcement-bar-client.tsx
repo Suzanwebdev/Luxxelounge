@@ -11,7 +11,8 @@ const DEFAULT_TEXT = "Fast delivery • Authentic products • Easy returns";
  */
 export function AnnouncementBarClient() {
   const pathname = usePathname();
-  const isBackOffice = pathname?.startsWith("/superadmin") || pathname?.startsWith("/admin");
+  const isBackOffice =
+    pathname?.startsWith("/superadmin") || pathname?.startsWith("/admin") || pathname?.startsWith("/auth");
   const [text, setText] = React.useState(DEFAULT_TEXT);
 
   React.useEffect(() => {

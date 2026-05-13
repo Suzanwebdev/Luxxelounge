@@ -8,6 +8,17 @@ import { getSupabaseEnv } from "@/lib/supabase/env";
  */
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  const url = request.nextUrl.clone();
+
+  // PKCE email links: redirect to client handler (homepage or admin login may receive ?code=…).
+  if ((pathname === "/" || pathname === "/admin/login") && url.searchParams.has("code")) {
+    const dest = new URL("/auth/callback", url.origin);
+    url.searchParams.forEach((value, key) => {
+      dest.searchParams.set(key, value);
+    });
+    return NextResponse.redirect(dest);
+  }
+
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-url-path", pathname + request.nextUrl.search);
 
@@ -44,7 +55,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/admin") ||
     pathname.startsWith("/superadmin") ||
     pathname.startsWith("/account") ||
-    pathname.startsWith("/checkout");
+    pathname.startsWith("/checkout") ||
+    pathname.startsWith("/auth");
 
   // Keep navigation fast even when auth endpoint is slow/unreachable.
   // Refresh auth only for routes that actually rely on session state.
