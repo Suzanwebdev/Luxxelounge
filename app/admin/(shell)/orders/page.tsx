@@ -1,4 +1,5 @@
 import { updateOrderStatusAction } from "@/app/admin/actions";
+import { OrderCustomerBlock } from "@/components/admin/order-customer-block";
 import { OrderItemQtyForm } from "@/components/admin/order-item-qty-form";
 import { Button } from "@/components/ui/button";
 import { getAdminOrders } from "@/lib/admin/queries";
@@ -17,13 +18,13 @@ export default async function AdminOrdersPage() {
       </div>
 
       <div className="overflow-x-auto rounded-3xl border border-border bg-card">
-        <table className="w-full min-w-[720px] text-left text-sm">
+        <table className="w-full min-w-[960px] text-left text-sm">
           <thead className="border-b border-border bg-muted/40 text-xs uppercase text-muted-foreground">
             <tr>
               <th className="px-4 py-3">Order</th>
               <th className="px-4 py-3">Date</th>
               <th className="px-4 py-3">Total</th>
-              <th className="px-4 py-3">Guest email</th>
+              <th className="px-4 py-3">Customer & delivery</th>
               <th className="px-4 py-3">Status</th>
             </tr>
           </thead>
@@ -42,7 +43,18 @@ export default async function AdminOrdersPage() {
                     {o.created_at ? new Date(o.created_at).toLocaleString() : "—"}
                   </td>
                   <td className="px-4 py-3">{formatGhs(Number(o.total_amount || 0))}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{o.guest_email ?? "—"}</td>
+                  <td className="px-4 py-3 align-top text-muted-foreground">
+                    <OrderCustomerBlock
+                      order={{
+                        guest_email: o.guest_email,
+                        guest_phone: o.guest_phone,
+                        notes: o.notes,
+                        shipping_address: o.shipping_address,
+                        billing_address: o.billing_address,
+                        customers: o.customers
+                      }}
+                    />
+                  </td>
                   <td className="px-4 py-3">
                     <div className="space-y-3">
                       <form action={updateOrderStatusAction} className="flex flex-wrap items-center gap-2">
