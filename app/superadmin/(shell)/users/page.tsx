@@ -18,12 +18,22 @@ export default async function SuperadminUsersPage() {
       <section className="rounded-3xl border border-border bg-card p-6 md:p-8">
         <h2 className="font-heading text-xl md:text-2xl">Add someone by email</h2>
         <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-          Fill in their work email, pick access, and press the button. We email them a link to finish setup—no need to
-          open Supabase for normal invites.
+          Fill in their work email, pick access, and press the button. New users are created in Supabase Auth and should
+          receive a setup email (delivery depends on your Supabase email / SMTP settings).
         </p>
         <details className="mt-3 text-xs text-muted-foreground">
           <summary className="cursor-pointer font-medium text-foreground/80">Email not arriving or link opens localhost? (click)</summary>
           <ul className="mt-2 list-inside list-disc space-y-2 pl-1">
+            <li>
+              If someone already appears under <strong>People</strong> but never got the message: use{" "}
+              <strong>Resend setup email</strong> on their row. Supabase may send another invite; if the address is
+              already registered, the app can email a password-reset link when <code className="rounded bg-muted px-1">RESEND_API_KEY</code>{" "}
+              is set on the server.
+            </li>
+            <li>
+              To drop someone from admin/staff/superadmin access, use <strong>Remove admin access</strong> (they stay a
+              shop customer) or set <strong>Customer</strong> and <strong>Apply</strong>.
+            </li>
             <li>
               On <strong>Vercel</strong>, set{" "}
               <code className="rounded bg-muted px-1">NEXT_PUBLIC_APP_BASE_URL</code> to your real store URL (example:{" "}
@@ -60,7 +70,10 @@ export default async function SuperadminUsersPage() {
 
       <section className="space-y-3">
         <h2 className="font-heading text-xl">People ({users.length})</h2>
-        <p className="text-sm text-muted-foreground">Change a role and click Apply. Updates apply immediately.</p>
+        <p className="text-sm text-muted-foreground">
+          Change a role and click Apply, or use <strong>Resend setup email</strong> / <strong>Remove admin access</strong>{" "}
+          on each row. Updates apply immediately.
+        </p>
         <div className="overflow-x-auto rounded-3xl border border-border bg-card">
         <table className="w-full min-w-[800px] text-left text-sm">
           <thead className="border-b border-border bg-muted/40 text-xs uppercase text-muted-foreground">

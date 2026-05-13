@@ -35,3 +35,30 @@ export async function sendOrderPaidEmail(input: OrderPaidEmailInput) {
     html: getOrderPaidEmailHtml(input)
   });
 }
+
+export function getStaffAuthRecoveryEmailHtml(actionLink: string) {
+  return `
+    <div style="font-family: Inter, Arial, sans-serif; background:#f4f1eb; color:#1f2430; padding:24px;">
+      <div style="max-width:560px; margin:0 auto; background:#ffffff; border-radius:18px; padding:24px; border:1px solid #e7deca;">
+        <h1 style="margin:0; font-family: 'Playfair Display', Georgia, serif; color:#b29146;">Luxxelounge</h1>
+        <p style="margin-top:12px;">Use the secure link below to set your password and open the admin sign-in page.</p>
+        <p style="margin-top:20px;">
+          <a href="${actionLink}" style="display:inline-block; background:#b29146; color:#fff; text-decoration:none; padding:12px 20px; border-radius:12px; font-weight:600;">Continue setup</a>
+        </p>
+        <p style="margin-top:16px; font-size:13px; color:#5c6478;">If you did not expect this, you can ignore this email.</p>
+      </div>
+    </div>
+  `;
+}
+
+/** Sends a one-time Supabase recovery link produced by `auth.admin.generateLink`. */
+export async function sendStaffAuthRecoveryEmail(to: string, actionLink: string) {
+  if (!to || !resend || !actionLink) return false;
+  await resend.emails.send({
+    from: "Luxxelounge <orders@luxxelounge.com>",
+    to,
+    subject: "Finish your Luxxelounge admin access",
+    html: getStaffAuthRecoveryEmailHtml(actionLink)
+  });
+  return true;
+}
