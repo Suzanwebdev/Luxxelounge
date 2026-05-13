@@ -1,9 +1,9 @@
 import { Suspense } from "react";
-import { AuthCallbackClient } from "./auth-callback-client";
+import { AuthExchangeClient } from "./auth-exchange-client";
 
 export const dynamic = "force-dynamic";
 
-export default function AuthCallbackPage() {
+export default function AuthExchangePage() {
   return (
     <Suspense
       fallback={
@@ -12,7 +12,7 @@ export default function AuthCallbackPage() {
         </div>
       }
     >
-      <AuthCallbackClient />
+      <AuthExchangeClient />
     </Suspense>
   );
 }

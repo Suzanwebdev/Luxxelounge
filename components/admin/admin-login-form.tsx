@@ -111,10 +111,10 @@ export function AdminLoginForm({ nextPath, reason, error: initialError, notice }
             ) : (
               <>
                 <p>
-                  Password reset links from email must finish on this site’s{" "}
-                  <code className="rounded bg-muted px-1">/auth/callback</code> route (configured automatically). If
-                  you land on the shop homepage with a long URL, open the link again after refreshing—then set your
-                  password on the page we show you.
+                  Password reset uses <code className="rounded bg-muted px-1">/api/auth/confirm</code> (for links with{" "}
+                  <code className="rounded bg-muted px-1">?code=</code>) and <code className="rounded bg-muted px-1">/auth/exchange</code>{" "}
+                  (for hash links). Add <code className="rounded bg-muted px-1">https://www.luxxelounge.shop/**</code> under
+                  Supabase → Authentication → Redirect URLs.
                 </p>
                 <p>
                   The account must exist in Supabase <strong>Authentication → Users</strong> (email + password). It also
