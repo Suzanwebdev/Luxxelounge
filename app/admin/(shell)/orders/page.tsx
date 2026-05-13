@@ -18,7 +18,9 @@ export default async function AdminOrdersPage() {
       </div>
 
       <div className="scrollbar-hidden overflow-x-auto rounded-3xl border border-border bg-card">
-        <table className="w-full min-w-[960px] text-left text-sm">
+        <table
+          className={`w-full text-left text-sm ${orders.length > 0 ? "min-w-[960px]" : "min-w-0"}`}
+        >
           <thead className="border-b border-border bg-muted/40 text-xs uppercase text-muted-foreground">
             <tr>
               <th className="px-4 py-3">Order</th>

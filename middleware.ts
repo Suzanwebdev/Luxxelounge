@@ -59,6 +59,10 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  if (pathname === "/checkout") {
+    response.headers.set("Cache-Control", "private, no-store, max-age=0, must-revalidate");
+  }
+
   return response;
 }
 

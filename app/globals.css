@@ -53,12 +53,24 @@ a {
   @apply rounded-xl3 bg-card shadow-card;
 }
 
-/* Keep scrolling behavior while hiding scrollbar chrome. */
+/* Keep scrolling behavior while hiding scrollbar chrome (horizontal + vertical). */
 .scrollbar-hidden {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
 .scrollbar-hidden::-webkit-scrollbar {
+  /* width/height 0: more reliable than display:none for horizontal bars in Chromium */
+  width: 0;
+  height: 0;
   display: none;
+  background: transparent;
+}
+
+.scrollbar-hidden::-webkit-scrollbar:horizontal {
+  height: 0;
+}
+
+.scrollbar-hidden::-webkit-scrollbar:vertical {
+  width: 0;
 }
