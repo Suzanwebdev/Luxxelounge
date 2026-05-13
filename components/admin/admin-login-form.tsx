@@ -61,11 +61,7 @@ export function AdminLoginForm({ nextPath, reason }: AdminLoginFormProps) {
     setPending(false);
 
     if (signError) {
-      const hint =
-        signError.message.toLowerCase().includes("invalid") || signError.message.includes("credentials")
-          ? " If you recently created the user, confirm the email in Supabase or disable “Confirm email” for testing."
-          : "";
-      setError(`${signError.message}${hint}`);
+      setError(signError.message);
       return;
     }
 
@@ -80,37 +76,48 @@ export function AdminLoginForm({ nextPath, reason }: AdminLoginFormProps) {
         <h1 className="font-heading text-3xl">Admin sign in</h1>
         {reason === "forbidden" ? (
           <p className="mt-2 text-sm text-muted-foreground">
-            You are signed in, but this account is not allowed in the admin panel. Add the row under{" "}
-            <strong>Table Editor → public.admins</strong> (or{" "}
-            <code className="rounded bg-muted px-1 py-0.5 text-xs">superadmins</code>), not only under Authentication.
-            Matching ignores letter case. Or set{" "}
-            <code className="rounded bg-muted px-1 py-0.5 text-xs">profiles.role</code> to{" "}
-            <code className="rounded bg-muted px-1 py-0.5 text-xs">admin</code> or{" "}
-            <code className="rounded bg-muted px-1 py-0.5 text-xs">staff</code>, then sign out and sign in again.
+            You’re signed in, but this account doesn’t have access to the admin area. Sign out below and use an
+            authorized account, or ask the store owner to grant access.
           </p>
         ) : (
-          <p className="mt-2 text-sm text-muted-foreground">
-            Use the same email and password as in Supabase Authentication. That user must also be allowlisted (see
-            below).
-          </p>
+          <p className="mt-2 text-sm text-muted-foreground">Sign in with your Luxxelounge admin email and password.</p>
         )}
-        {reason === "forbidden" ? null : (
-          <ul className="mt-3 list-inside list-disc space-y-1 text-xs text-muted-foreground">
-            <li>
-              The user must exist under Authentication → Users (create one there if you have not, with email +
-              password).
-            </li>
-            <li>
-              The email must appear in <code className="rounded bg-muted px-1">public.admins</code> or{" "}
-              <code className="rounded bg-muted px-1">public.superadmins</code>, or your{" "}
-              <code className="rounded bg-muted px-1">profiles</code> row must have role <code className="rounded bg-muted px-1">admin</code> or{" "}
-              <code className="rounded bg-muted px-1">staff</code>.
-            </li>
-            <li>
-              Put <code className="rounded bg-muted px-1">SUPABASE_SERVICE_ROLE_KEY</code> in <code className="rounded bg-muted px-1">.env.local</code> and run the latest SQL migrations if access still fails after allowlisting.
-            </li>
-          </ul>
-        )}
+
+        <details className="mt-3 rounded-xl border border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+          <summary className="cursor-pointer font-medium text-foreground outline-none [&::-webkit-details-marker]:hidden">
+            {reason === "forbidden" ? "How to grant admin access (store owner)" : "Having trouble signing in?"}
+          </summary>
+          <div className="mt-2 space-y-2 border-t border-border pt-2">
+            {reason === "forbidden" ? (
+              <>
+                <p>
+                  In Supabase: add this user’s email to <code className="rounded bg-muted px-1">public.admins</code>{" "}
+                  or <code className="rounded bg-muted px-1">public.superadmins</code> (Table Editor), or set their{" "}
+                  <code className="rounded bg-muted px-1">profiles.role</code> to <code className="rounded bg-muted px-1">admin</code>{" "}
+                  or <code className="rounded bg-muted px-1">staff</code>. Email matching is case-insensitive. Then sign
+                  out and sign in again.
+                </p>
+                <p>
+                  Ensure <code className="rounded bg-muted px-1">SUPABASE_SERVICE_ROLE_KEY</code> is set on the server
+                  (e.g. Vercel env) if checks still fail after allowlisting.
+                </p>
+              </>
+            ) : (
+              <>
+                <p>
+                  The account must exist in Supabase <strong>Authentication → Users</strong> (email + password). It also
+                  needs to be allowlisted: your email in <code className="rounded bg-muted px-1">public.admins</code> or{" "}
+                  <code className="rounded bg-muted px-1">public.superadmins</code>, or <code className="rounded bg-muted px-1">profiles.role</code>{" "}
+                  set to <code className="rounded bg-muted px-1">admin</code> or <code className="rounded bg-muted px-1">staff</code>.
+                </p>
+                <p>
+                  On the server, set <code className="rounded bg-muted px-1">SUPABASE_SERVICE_ROLE_KEY</code> (e.g. in
+                  Vercel environment variables) and apply the latest database migrations if access still fails.
+                </p>
+              </>
+            )}
+          </div>
+        </details>
       </div>
 
       <form className="space-y-4" onSubmit={onSubmit}>
