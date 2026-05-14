@@ -68,6 +68,8 @@ export function ProductEditorForm({ categories, product }: ProductEditorFormProp
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [localPreviewUrls, setLocalPreviewUrls] = useState<string[]>([]);
   const [videoUrls, setVideoUrls] = useState<string[]>([]);
+  /** Object URLs for files currently uploading — same idea as image previews. */
+  const [pendingVideoPreviewUrls, setPendingVideoPreviewUrls] = useState<string[]>([]);
   const [videoUrlDraft, setVideoUrlDraft] = useState("");
   const [videoUploadPending, setVideoUploadPending] = useState(false);
   const [videoUploadError, setVideoUploadError] = useState<string | null>(null);
@@ -106,6 +108,10 @@ export function ProductEditorForm({ categories, product }: ProductEditorFormProp
       prev.forEach((url) => URL.revokeObjectURL(url));
       return [];
     });
+    setPendingVideoPreviewUrls((prev) => {
+      prev.forEach((url) => URL.revokeObjectURL(url));
+      return [];
+    });
     const fromDb = (editing?.product_videos || [])
       .slice()
       .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0))
@@ -125,8 +131,15 @@ export function ProductEditorForm({ categories, product }: ProductEditorFormProp
     setVideoUploadError(null);
     setFormMessage(null);
     setFormMessageType(null);
+    const fileArr = Array.from(files);
+    const blobUrls = fileArr.map((f) => URL.createObjectURL(f));
+    setPendingVideoPreviewUrls((prev) => [...prev, ...blobUrls]);
     setVideoUploadPending(true);
-    const result = await uploadProductVideoFilesToStorage(Array.from(files));
+    const result = await uploadProductVideoFilesToStorage(fileArr);
+    setPendingVideoPreviewUrls((prev) => {
+      blobUrls.forEach((u) => URL.revokeObjectURL(u));
+      return prev.filter((u) => !blobUrls.includes(u));
+    });
     setVideoUploadPending(false);
     if (!result.ok) {
       setVideoUploadError(result.message);
@@ -359,24 +372,55 @@ export function ProductEditorForm({ categories, product }: ProductEditorFormProp
                 Add links
               </Button>
             </div>
-            {videoUrls.length > 0 ? (
-              <ul className="mt-3 space-y-2 text-xs">
-                {videoUrls.map((url) => (
-                  <li
-                    key={url}
-                    className="flex items-start justify-between gap-2 rounded-lg border border-border bg-muted/20 px-2 py-1.5"
+            {pendingVideoPreviewUrls.length > 0 || videoUrls.length > 0 ? (
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {pendingVideoPreviewUrls.map((url, index) => (
+                  <div
+                    key={`pending-${url}-${index}`}
+                    className="relative overflow-hidden rounded-lg border border-dashed border-primary/40 bg-muted/30"
                   >
-                    <span className="min-w-0 break-all text-muted-foreground">{url}</span>
-                    <button
-                      type="button"
-                      className="shrink-0 text-destructive underline-offset-2 hover:underline"
-                      onClick={() => setVideoUrls((prev) => prev.filter((u) => u !== url))}
-                    >
-                      Remove
-                    </button>
-                  </li>
+                    <video
+                      src={url}
+                      muted
+                      playsInline
+                      controls
+                      className="aspect-video max-h-40 w-full bg-black object-contain"
+                      preload="metadata"
+                    />
+                    {videoUploadPending ? (
+                      <span className="absolute bottom-1 left-1 rounded bg-background/90 px-1.5 py-0.5 text-[10px] font-medium text-foreground shadow">
+                        Uploading…
+                      </span>
+                    ) : null}
+                  </div>
                 ))}
-              </ul>
+                {videoUrls.map((url) => (
+                  <div key={url} className="flex flex-col gap-1 overflow-hidden rounded-lg border border-border bg-muted/30">
+                    <video
+                      src={url}
+                      muted
+                      playsInline
+                      controls
+                      className="aspect-video max-h-40 w-full bg-black object-contain"
+                      preload="metadata"
+                    />
+                    <div className="flex items-center justify-between gap-2 px-1 pb-1">
+                      <p className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground" title={url}>
+                        {url.replace(/^https?:\/\//, "").slice(0, 40)}
+                        {url.length > 44 ? "…" : ""}
+                      </p>
+                      <button
+                        type="button"
+                        className="shrink-0 rounded-md px-2 py-1 text-[11px] font-medium text-destructive hover:bg-destructive/10"
+                        title="Remove this video"
+                        onClick={() => setVideoUrls((prev) => prev.filter((u) => u !== url))}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : (
               <p className="mt-2 text-xs text-muted-foreground">No videos in this product yet.</p>
             )}
