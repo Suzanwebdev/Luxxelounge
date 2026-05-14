@@ -1,8 +1,7 @@
-import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ProductCard, PromoBanner } from "@/components/storefront/cards";
+import { NewsletterSignup } from "@/components/storefront/newsletter-signup";
 import { CategoryOrbitCarousel } from "@/components/storefront/category-orbit-carousel";
 import { HeroSlider, type HeroSlide } from "@/components/storefront/hero-slider";
 import { Container, Heading, Section } from "@/components/storefront/primitives";
@@ -164,13 +163,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               Receive curated drops, styling notes, and early access to limited releases.
             </p>
           </div>
-          <div className="mt-4 flex gap-2 md:mt-0">
-            <Input placeholder="Enter your email" className="h-11 md:w-72" />
-            <Button size="sm" className="h-11 px-4">
-              Subscribe
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
+          <NewsletterSignup />
         </Container>
       </Section>
     </>
