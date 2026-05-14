@@ -11,7 +11,14 @@ export async function middleware(request: NextRequest) {
   const url = request.nextUrl.clone();
 
   // PKCE email links: server exchange sets cookies reliably (see /api/auth/confirm).
-  const pkceCodePaths = new Set(["/", "/admin/login", "/superadmin/login", "/auth/exchange", "/auth/callback"]);
+  const pkceCodePaths = new Set([
+    "/",
+    "/admin/login",
+    "/superadmin/login",
+    "/auth/exchange",
+    "/auth/update-password",
+    "/auth/callback"
+  ]);
   if (pkceCodePaths.has(pathname) && url.searchParams.has("code")) {
     const dest = new URL("/api/auth/confirm", url.origin);
     url.searchParams.forEach((value, key) => {

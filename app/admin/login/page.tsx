@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { checkAdminSession, resolvePostLoginRedirect } from "@/lib/admin/auth";
+import { getPendingPasswordSetupRedirect } from "@/lib/auth/pending-password-setup";
 import { sanitizeAdminNextPath } from "@/lib/admin/login-redirect";
 import { AdminLoginForm } from "@/components/admin/admin-login-form";
 
@@ -10,6 +11,10 @@ type Props = {
 export default async function AdminLoginPage({ searchParams }: Props) {
   const sp = await searchParams;
   const nextPath = sanitizeAdminNextPath(sp.next);
+  const pendingPassword = await getPendingPasswordSetupRedirect();
+  if (pendingPassword) {
+    redirect(pendingPassword);
+  }
   const session = await checkAdminSession();
   if (session.ok) {
     redirect(resolvePostLoginRedirect(nextPath, session));

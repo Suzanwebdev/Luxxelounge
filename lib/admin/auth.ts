@@ -1,5 +1,6 @@
 import type { User } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
+import { redirectIfPasswordSetupPending } from "@/lib/auth/pending-password-setup";
 import { getAdminDataClient } from "@/lib/admin/db";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { fetchAllowlistEmailRow } from "@/lib/admin/allowlist-lookup";
@@ -101,6 +102,7 @@ export async function checkAdminSession(): Promise<AdminSessionCheck> {
 }
 
 export async function requireAdminAccess() {
+  await redirectIfPasswordSetupPending();
   const session = await checkAdminSession();
   const path = await getRequestedPathFromHeaders();
   const next = sanitizeAdminNextPath(path);

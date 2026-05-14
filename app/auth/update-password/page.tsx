@@ -23,17 +23,22 @@ function UpdatePasswordInner() {
         router.replace("/?notice=supabase_env");
         return;
       }
-      const {
-        data: { user }
-      } = await supabase.auth.getUser();
-      if (cancelled) return;
-      if (!user) {
-        router.replace(
-          `/admin/login?error=${encodeURIComponent("Session expired. Open the reset link again or send a new one from the login page.")}`
-        );
-        return;
+      // After `/api/auth/confirm`, cookies can lag one tick behind client JS; retry briefly before sending users away.
+      for (let attempt = 0; attempt < 8; attempt++) {
+        if (cancelled) return;
+        const {
+          data: { user }
+        } = await supabase.auth.getUser();
+        if (user) {
+          setChecking(false);
+          return;
+        }
+        await new Promise((r) => setTimeout(r, 120));
       }
-      setChecking(false);
+      if (cancelled) return;
+      router.replace(
+        `/admin/login?error=${encodeURIComponent("Session expired. Open the reset link again or send a new one from the login page.")}`
+      );
     }
     void check();
     return () => {

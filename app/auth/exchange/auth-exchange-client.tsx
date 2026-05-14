@@ -92,7 +92,8 @@ export function AuthExchangeClient() {
         } catch {
           /* noop */
         }
-        router.replace("/auth/update-password");
+        // Full navigation so auth cookies from the hash exchange are visible before `/auth/update-password` runs `getUser()`.
+        window.location.assign("/auth/update-password");
         return;
       }
 

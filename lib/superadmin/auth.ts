@@ -1,5 +1,6 @@
 import type { User } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
+import { redirectIfPasswordSetupPending } from "@/lib/auth/pending-password-setup";
 import { getAdminDataClient } from "@/lib/admin/db";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { fetchAllowlistEmailRow } from "@/lib/admin/allowlist-lookup";
@@ -85,6 +86,7 @@ export async function checkSuperadminPortalSession(): Promise<SuperadminPortalCh
 }
 
 export async function requireSuperadminAccess() {
+  await redirectIfPasswordSetupPending();
   const sessionClient = await createSupabaseServerClient();
   if (!sessionClient) {
     redirect("/?notice=supabase_env");
