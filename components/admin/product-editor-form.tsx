@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { upsertProductAction } from "@/app/admin/actions";
@@ -78,20 +78,47 @@ export function ProductEditorForm({ categories, product }: ProductEditorFormProp
   const [formMessageType, setFormMessageType] = useState<"success" | "error" | null>(null);
   const router = useRouter();
   const defaultCategory = categories[0]?.id || "";
+  /** Avoid setState / blob leaks after navigation or Strict Mode unmount. */
+  const isMountedRef = useRef(true);
+  /** Nested video uploads: only clear “pending” UI when the last one finishes. */
+  const videoUploadDepthRef = useRef(0);
 
-  const previewImages = useMemo(() => {
-    if (localPreviewUrls.length > 0) return localPreviewUrls;
+  const serverImageUrlsKey = useMemo(() => {
     const rows = (editing?.product_images || [])
       .slice()
       .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0));
-    return rows.map((img) => img.image_url || "").filter(Boolean);
-  }, [localPreviewUrls, editing]);
+    return rows
+      .map((img) => String(img.image_url || "").trim())
+      .filter(Boolean)
+      .join("\0");
+  }, [editing?.product_images]);
+
+  const previewImages = useMemo(() => {
+    if (localPreviewUrls.length > 0) return localPreviewUrls;
+    if (!serverImageUrlsKey) return [];
+    return serverImageUrlsKey.split("\0").filter(Boolean);
+  }, [localPreviewUrls, serverImageUrlsKey]);
+
+  const initialVideoUrlList = useMemo(() => {
+    return (editing?.product_videos || [])
+      .slice()
+      .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0))
+      .map((v) => String(v.video_url || "").trim())
+      .filter(Boolean);
+  }, [editing?.product_videos]);
 
   useEffect(() => {
     return () => {
       localPreviewUrls.forEach((url) => URL.revokeObjectURL(url));
     };
   }, [localPreviewUrls]);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!formMessage) return;
@@ -112,19 +139,15 @@ export function ProductEditorForm({ categories, product }: ProductEditorFormProp
       prev.forEach((url) => URL.revokeObjectURL(url));
       return [];
     });
-    const fromDb = (editing?.product_videos || [])
-      .slice()
-      .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0))
-      .map((v) => String(v.video_url || "").trim())
-      .filter(Boolean);
-    setVideoUrls(fromDb);
+    setVideoUrls(initialVideoUrlList);
     setVideoUrlDraft("");
     setVideoUploadError(null);
+    videoUploadDepthRef.current = 0;
     setVideoUploadPending(false);
     setUploadError(null);
     setFormMessage(null);
     setFormMessageType(null);
-  }, [editing?.id]);
+  }, [editing?.id, initialVideoUrlList]);
 
   async function handleVideoFileSelection(files: FileList | null) {
     if (!files || files.length === 0) return;
@@ -134,19 +157,34 @@ export function ProductEditorForm({ categories, product }: ProductEditorFormProp
     const fileArr = Array.from(files);
     const blobUrls = fileArr.map((f) => URL.createObjectURL(f));
     setPendingVideoPreviewUrls((prev) => [...prev, ...blobUrls]);
-    setVideoUploadPending(true);
-    const result = await uploadProductVideoFilesToStorage(fileArr);
-    setPendingVideoPreviewUrls((prev) => {
+    videoUploadDepthRef.current += 1;
+    if (videoUploadDepthRef.current === 1) {
+      setVideoUploadPending(true);
+    }
+    let result: Awaited<ReturnType<typeof uploadProductVideoFilesToStorage>> | null = null;
+    try {
+      result = await uploadProductVideoFilesToStorage(fileArr);
+    } finally {
       blobUrls.forEach((u) => URL.revokeObjectURL(u));
-      return prev.filter((u) => !blobUrls.includes(u));
-    });
-    setVideoUploadPending(false);
+      if (isMountedRef.current) {
+        setPendingVideoPreviewUrls((prev) => prev.filter((u) => !blobUrls.includes(u)));
+      }
+      videoUploadDepthRef.current = Math.max(0, videoUploadDepthRef.current - 1);
+      if (videoUploadDepthRef.current === 0 && isMountedRef.current) {
+        setVideoUploadPending(false);
+      }
+    }
+    if (!isMountedRef.current || !result) return;
     if (!result.ok) {
       setVideoUploadError(result.message);
       return;
     }
     if (result.urls.length > 0) {
-      setVideoUrls((prev) => [...prev, ...result.urls]);
+      setVideoUrls((prev) => {
+        const next = new Set(prev);
+        for (const u of result.urls) next.add(u);
+        return [...next];
+      });
     }
   }
 
@@ -166,7 +204,11 @@ export function ProductEditorForm({ categories, product }: ProductEditorFormProp
       }
     }
     if (next.length === 0) return;
-    setVideoUrls((prev) => [...prev, ...next]);
+    setVideoUrls((prev) => {
+      const merged = new Set(prev);
+      for (const u of next) merged.add(u);
+      return [...merged];
+    });
     setVideoUrlDraft("");
   }
 
@@ -217,12 +259,14 @@ export function ProductEditorForm({ categories, product }: ProductEditorFormProp
               if (editing) formData.set("id", editing.id);
               formData.delete("images");
               const optimizedFiles = await Promise.all(selectedFiles.map((file) => optimizeImageForUpload(file)));
+              if (!isMountedRef.current) return;
               optimizedFiles.forEach((file) => {
                 formData.append("images", file, file.name);
               });
               formData.set("imageUrls", JSON.stringify([]));
               formData.set("videoUrls", JSON.stringify(videoUrls));
               const result = await upsertProductAction(formData);
+              if (!isMountedRef.current) return;
               if (!result?.ok) {
                 setFormMessage(result?.message ?? "Could not save product. Please try again.");
                 setFormMessageType("error");
