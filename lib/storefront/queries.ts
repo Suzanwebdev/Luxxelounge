@@ -8,7 +8,7 @@ import {
   testimonials,
   type Product
 } from "@/lib/storefront/mock-data";
-import { mapRowToProduct, type StorefrontProductDbRow } from "@/lib/storefront/product-map";
+import { mapRowToProduct, STOREFRONT_PRODUCT_ROW_SELECT, type StorefrontProductDbRow } from "@/lib/storefront/product-map";
 
 export type HomeContentSections = {
   hero?: {
@@ -19,6 +19,8 @@ export type HomeContentSections = {
   };
   promo?: { title?: string; subtitle?: string; enabled?: boolean };
   announcement?: string;
+  /** Optional: pin a product by slug for the homepage Trending hero. Otherwise highest review count wins. */
+  trending?: { productSlug?: string };
 };
 
 export const HOME_CONTENT_DEFAULTS = {
@@ -49,6 +51,8 @@ type HomeData = {
   promoEnabled: boolean;
   categoryChips: string[];
   categoryCards: HomepageCategoryCardItem[];
+  /** Homepage hero spotlight above New arrivals (same actions as ProductCard). */
+  trendingProduct: Product | null;
   bestSellers: Product[];
   testimonials: { name: string; quote: string }[];
 };
@@ -68,7 +72,13 @@ export async function getHomeData(): Promise<HomeData> {
       promoEnabled: HOME_CONTENT_DEFAULTS.promoEnabled,
       categoryChips: fallbackCategoryChips,
       categoryCards: withCategoryImageOverrides([]),
-      bestSellers: fallbackProducts,
+      trendingProduct: [...fallbackProducts].sort((a, b) => b.reviews - a.reviews)[0] ?? fallbackProducts[0] ?? null,
+      bestSellers: (() => {
+        const trend =
+          [...fallbackProducts].sort((a, b) => b.reviews - a.reviews)[0] ?? fallbackProducts[0] ?? null;
+        if (!trend) return fallbackProducts.slice(0, 12);
+        return fallbackProducts.filter((p) => p.slug !== trend.slug).slice(0, 12);
+      })(),
       testimonials
     };
   }
@@ -84,10 +94,40 @@ export async function getHomeData(): Promise<HomeData> {
       .eq("status", "active")
       .order("created_at", { ascending: false, nullsFirst: false })
       .order("id", { ascending: false })
-      .limit(12)
+      .limit(13)
   ]);
 
   const sections = homeRes.data?.sections as HomeContentSections | undefined;
+
+  const pool: Product[] =
+    productsRes.error || !productsRes.data?.length
+      ? fallbackProducts
+      : productsRes.data.map((row) => mapRowToProduct(row as StorefrontProductDbRow));
+
+  const slug = sections?.trending?.productSlug?.trim();
+  let trendingProduct: Product | null = null;
+
+  if (slug) {
+    trendingProduct = pool.find((p) => p.slug === slug) ?? null;
+    if (!trendingProduct) {
+      const { data: row } = await supabase
+        .from("products")
+        .select(STOREFRONT_PRODUCT_ROW_SELECT)
+        .eq("status", "active")
+        .eq("slug", slug)
+        .maybeSingle();
+      if (row) trendingProduct = mapRowToProduct(row as StorefrontProductDbRow);
+    }
+  }
+
+  if (!trendingProduct && pool.length > 0) {
+    trendingProduct = [...pool].sort((a, b) => b.reviews - a.reviews)[0] ?? pool[0];
+  }
+
+  const bestSellers =
+    trendingProduct && pool.length > 0
+      ? pool.filter((p) => p.slug !== trendingProduct.slug).slice(0, 12)
+      : pool.slice(0, 12);
 
   return {
     heroTitle: sections?.hero?.title || HERO_FALLBACK_TITLE,
@@ -100,9 +140,8 @@ export async function getHomeData(): Promise<HomeData> {
     promoEnabled: sections?.promo?.enabled !== false,
     categoryChips: categoriesRes.data?.map((c) => c.name).filter(Boolean) as string[] || fallbackCategoryChips,
     categoryCards: withCategoryImageOverrides(categoriesRes.data || []),
-    bestSellers: productsRes.error
-      ? []
-      : productsRes.data?.map(mapRowToProduct) || fallbackProducts,
+    trendingProduct,
+    bestSellers,
     testimonials
   };
 }

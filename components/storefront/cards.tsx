@@ -100,6 +100,107 @@ export function ProductCard({ product }: { product: Product }) {
   );
 }
 
+/** Large homepage hero product — same actions as ProductCard; prefers first video URL when present. */
+export function TrendingProductCard({ product }: { product: Product }) {
+  const router = useRouter();
+  const { addItem } = useCart();
+  const [justAdded, setJustAdded] = React.useState(false);
+  const videoUrl = product.videos?.[0];
+
+  const onAddToCart = () => {
+    addItem(product, 1, { color: product.colors[0] });
+    setJustAdded(true);
+    window.setTimeout(() => setJustAdded(false), 1400);
+  };
+
+  const onBuyNow = () => {
+    writeExpressCheckout({ items: [{ slug: product.slug, quantity: 1, color: product.colors[0] }] });
+    router.push("/checkout?express=1");
+  };
+
+  return (
+    <motion.article
+      whileHover={{ y: -3 }}
+      transition={{ duration: 0.2 }}
+      className="luxury-panel mx-auto max-w-6xl overflow-hidden border border-border/60"
+    >
+      <Link href={`/product/${product.slug}`} className="group block">
+        <div className="relative aspect-[16/10] min-h-[13rem] w-full bg-muted/50 p-2 sm:min-h-[16rem] sm:p-3 md:aspect-[2/1] md:min-h-[17.5rem]">
+          {videoUrl ? (
+            <video
+              src={videoUrl}
+              className="absolute inset-0 h-full w-full object-contain"
+              controls
+              playsInline
+              muted
+              loop
+              poster={product.image}
+            />
+          ) : (
+            <Image
+              src={product.image}
+              alt={product.name}
+              fill
+              className="object-contain transition-transform duration-200 group-hover:scale-[1.02]"
+              sizes="(max-width: 640px) 100vw, (max-width: 1280px) 90vw, 1152px"
+              priority
+            />
+          )}
+        </div>
+      </Link>
+      <div className="space-y-4 p-4 sm:p-5 md:space-y-5 md:p-6">
+        <BadgeSet tags={product.tags} />
+        <div className="space-y-1.5">
+          {isStorefrontCategory(product.category) ? (
+            <Link
+              href={categoryShopHref(product.category)}
+              className="block text-sm font-medium leading-tight text-muted-foreground transition hover:text-primary sm:text-base"
+            >
+              {product.category}
+            </Link>
+          ) : (
+            <p className="text-sm font-medium leading-tight text-muted-foreground sm:text-base">{product.category}</p>
+          )}
+          <h3 className="font-heading text-2xl leading-tight sm:text-3xl md:text-[2rem]">
+            <Link href={`/product/${product.slug}`} className="transition-colors hover:text-primary">
+              {product.name}
+            </Link>
+          </h3>
+        </div>
+        <Price price={product.price} compareAt={product.compareAt} />
+        <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
+          <Button type="button" className="h-11 flex-1 sm:h-12" onClick={onBuyNow}>
+            <ShoppingBag className="mr-2 h-4 w-4" />
+            Buy Now
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="default"
+            className="h-11 px-4 sm:h-12"
+            aria-label="Add to cart"
+            title="Add to cart"
+            onClick={onAddToCart}
+          >
+            {justAdded ? "Added" : "Add to Cart"}
+          </Button>
+        </div>
+        {justAdded ? (
+          <p className="text-sm text-primary" role="status" aria-live="polite">
+            Added to cart. Open the bag to review or checkout.
+          </p>
+        ) : null}
+        <WhatsAppAssistCta
+          product={product}
+          source="product-card"
+          ctaLabel="Chat Before You Buy"
+          helperText="Ask about finishes, delivery details, and payment guidance on WhatsApp."
+        />
+      </div>
+    </motion.article>
+  );
+}
+
 export function CategoryChip({ name, href }: { name: string; href?: string }) {
   const classes =
     "group flex aspect-square w-[7.25rem] shrink-0 items-center justify-center rounded-2xl border border-border bg-white p-3 text-center shadow-none transition-colors duration-200 hover:border-[hsl(38,12%,72%)] sm:w-32 md:w-[9.25rem]";

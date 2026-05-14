@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ProductCard, PromoBanner } from "@/components/storefront/cards";
+import { ProductCard, PromoBanner, TrendingProductCard } from "@/components/storefront/cards";
 import { NewsletterSignup } from "@/components/storefront/newsletter-signup";
 import { CategoryOrbitCarousel } from "@/components/storefront/category-orbit-carousel";
 import { HeroSlider, type HeroSlide } from "@/components/storefront/hero-slider";
@@ -119,6 +119,17 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       </Section>
 
       <CategoryOrbitCarousel items={homeData.categoryCards} />
+
+      {homeData.trendingProduct ? (
+        <Section>
+          <Container>
+            <div className="mb-5 md:mb-6">
+              <p className="text-sm uppercase tracking-[0.18em] text-muted-foreground">Trending</p>
+            </div>
+            <TrendingProductCard product={homeData.trendingProduct} />
+          </Container>
+        </Section>
+      ) : null}
 
       <Section>
         <Container>
