@@ -127,6 +127,8 @@ export async function getAdminCustomerProfiles() {
 export type AdminNewsletterSubscriberRow = {
   id: string;
   email: string;
+  full_name: string | null;
+  phone: string | null;
   source: string;
   created_at: string | null;
 };
@@ -136,7 +138,7 @@ export async function getAdminNewsletterSubscribers(): Promise<AdminNewsletterSu
   if (!supabase) return [];
   const { data } = await supabase
     .from("newsletter_subscribers")
-    .select("id,email,source,created_at")
+    .select("id,email,full_name,phone,source,created_at")
     .order("created_at", { ascending: false })
     .limit(200);
   return (data || []) as AdminNewsletterSubscriberRow[];

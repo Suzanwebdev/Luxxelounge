@@ -72,10 +72,12 @@ export default async function AdminCustomersPage() {
           also creates an account.
         </p>
         <div className="overflow-x-auto rounded-3xl border border-border bg-card">
-          <table className="w-full min-w-[520px] text-left text-sm">
+          <table className="w-full min-w-[800px] text-left text-sm">
             <thead className="border-b border-border bg-muted/40 text-xs uppercase text-muted-foreground">
               <tr>
                 <th className="px-4 py-3">Email</th>
+                <th className="px-4 py-3">Name</th>
+                <th className="px-4 py-3">Phone</th>
                 <th className="px-4 py-3">Source</th>
                 <th className="px-4 py-3">Subscribed</th>
               </tr>
@@ -83,7 +85,7 @@ export default async function AdminCustomersPage() {
             <tbody>
               {newsletterRows.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
                     No newsletter signups yet.
                   </td>
                 </tr>
@@ -91,6 +93,8 @@ export default async function AdminCustomersPage() {
                 newsletterRows.map((row) => (
                   <tr key={row.id} className="border-b border-border last:border-0">
                     <td className="px-4 py-3">{row.email}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{row.full_name?.trim() || "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{row.phone?.trim() || "—"}</td>
                     <td className="px-4 py-3 text-muted-foreground">{row.source}</td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {row.created_at ? new Date(row.created_at).toLocaleString() : "—"}
