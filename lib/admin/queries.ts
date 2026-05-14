@@ -124,6 +124,24 @@ export async function getAdminCustomerProfiles() {
   return data || [];
 }
 
+export type AdminNewsletterSubscriberRow = {
+  id: string;
+  email: string;
+  source: string;
+  created_at: string | null;
+};
+
+export async function getAdminNewsletterSubscribers(): Promise<AdminNewsletterSubscriberRow[]> {
+  const supabase = await getAdminDataClient();
+  if (!supabase) return [];
+  const { data } = await supabase
+    .from("newsletter_subscribers")
+    .select("id,email,source,created_at")
+    .order("created_at", { ascending: false })
+    .limit(200);
+  return (data || []) as AdminNewsletterSubscriberRow[];
+}
+
 export async function getAdminDiscounts() {
   const supabase = await getAdminDataClient();
   if (!supabase) return [];

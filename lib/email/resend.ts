@@ -36,6 +36,43 @@ export async function sendOrderPaidEmail(input: OrderPaidEmailInput) {
   });
 }
 
+function getNewsletterWelcomeHtml() {
+  return `
+    <div style="font-family: Inter, Arial, sans-serif; background:#f4f1eb; color:#1f2430; padding:24px;">
+      <div style="max-width:560px; margin:0 auto; background:#ffffff; border-radius:18px; padding:24px; border:1px solid #e7deca;">
+        <h1 style="margin:0; font-family: 'Playfair Display', Georgia, serif; color:#b29146;">Luxxelounge</h1>
+        <p style="margin-top:12px;">You are now on the <strong>Private Edit</strong> list.</p>
+        <p style="margin-top:12px; line-height:1.5;">You will receive curated drops, styling notes, and early access to limited releases—straight to this inbox.</p>
+        <p style="margin-top:18px; font-size:13px; color:#5c6478;">If you did not sign up, you can ignore this message.</p>
+      </div>
+    </div>
+  `;
+}
+
+/** Sends a welcome note after homepage newsletter signup. Requires RESEND_API_KEY and a verified sender domain in Resend. */
+export async function sendNewsletterWelcomeEmail(to: string): Promise<{ sent: boolean }> {
+  if (!to || !resend) return { sent: false };
+
+  const { error } = await resend.emails.send({
+    from: "Luxxelounge <orders@luxxelounge.com>",
+    to,
+    subject: "You are in — Luxxelounge Private Edit",
+    html: getNewsletterWelcomeHtml()
+  });
+
+  if (error) {
+    const msg =
+      typeof error === "object" && error !== null && "message" in error
+        ? String((error as { message?: unknown }).message)
+        : String(error);
+    console.error("[sendNewsletterWelcomeEmail] Resend error", error);
+    console.error("[sendNewsletterWelcomeEmail] detail", msg);
+    return { sent: false };
+  }
+
+  return { sent: true };
+}
+
 export function getStaffAuthRecoveryEmailHtml(actionLink: string) {
   return `
     <div style="font-family: Inter, Arial, sans-serif; background:#f4f1eb; color:#1f2430; padding:24px;">

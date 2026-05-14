@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { sendNewsletterWelcomeEmail } from "@/lib/email/resend";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const bodySchema = z.object({
@@ -40,10 +41,11 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     if (error.code === "23505") {
-      return NextResponse.json({ ok: true, alreadySubscribed: true });
+      return NextResponse.json({ ok: true, alreadySubscribed: true, emailSent: false });
     }
     return NextResponse.json({ error: "Could not save your email. Please try again shortly." }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true });
+  const { sent: emailSent } = await sendNewsletterWelcomeEmail(email);
+  return NextResponse.json({ ok: true, emailSent });
 }

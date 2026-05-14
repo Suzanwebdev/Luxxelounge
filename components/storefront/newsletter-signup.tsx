@@ -24,6 +24,7 @@ export function NewsletterSignup() {
       const data = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
         alreadySubscribed?: boolean;
+        emailSent?: boolean;
         error?: string;
       };
 
@@ -37,8 +38,12 @@ export function NewsletterSignup() {
       setEmail("");
       if (data.alreadySubscribed) {
         setMessage("You are already on the list. Thank you.");
+      } else if (data.emailSent) {
+        setMessage("You are in. Check your inbox (and spam) for a short confirmation from Luxxelounge.");
       } else {
-        setMessage("You are in. Watch your inbox for the Private Edit.");
+        setMessage(
+          "You are on the list. We could not send a confirmation email from the server (set RESEND_API_KEY on Vercel and verify your sending domain in Resend). Your signup is still saved."
+        );
       }
     } catch {
       setStatus("error");
