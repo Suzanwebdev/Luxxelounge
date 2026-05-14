@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { getAccessTokenIssuedAt } from "@/lib/admin/access-audit";
 import { checkAdminSession } from "@/lib/admin/auth";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function POST(req: Request) {
@@ -20,9 +21,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Not configured" }, { status: 503 });
   }
 
-  const admin = await checkAdminSession();
-  if (!admin.ok) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const {
+    data: { user: authUser },
+    error: authErr
+  } = await supabase.auth.getUser();
+  if (authErr || !authUser?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const {
@@ -37,16 +41,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid session token" }, { status: 400 });
   }
 
-  const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", admin.user.id).maybeSingle();
+  const admin = await checkAdminSession();
+  const actor = admin.ok ? admin.user : authUser;
+
+  const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", actor.id).maybeSingle();
   const headersList = await headers();
   const forwarded = headersList.get("x-forwarded-for");
   const clientIp =
     forwarded?.split(",")[0]?.trim() ?? headersList.get("x-real-ip") ?? headersList.get("cf-connecting-ip") ?? null;
   const userAgent = headersList.get("user-agent");
 
-  const { error } = await supabase.from("admin_access_events").insert({
-    user_id: admin.user.id,
-    email: (admin.user.email ?? "").toLowerCase(),
+  /** Service role inserts so “wrong account” / forbidden users can still log a sign-out from login pages. */
+  const dbForInsert = createSupabaseAdminClient() ?? supabase;
+
+  const { error } = await dbForInsert.from("admin_access_events").insert({
+    user_id: actor.id,
+    email: (actor.email ?? "").toLowerCase(),
     full_name: profile?.full_name?.trim() || null,
     event_type: "logout",
     jwt_iat: iat,

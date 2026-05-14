@@ -25,6 +25,16 @@ function SignOutRow() {
     const supabase = createSupabaseBrowserClient();
     if (!supabase) return;
     setBusy(true);
+    try {
+      await fetch("/api/admin/access-audit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event: "logout" }),
+        credentials: "same-origin"
+      });
+    } catch {
+      /* still sign out */
+    }
     await supabase.auth.signOut();
     setBusy(false);
     router.refresh();
