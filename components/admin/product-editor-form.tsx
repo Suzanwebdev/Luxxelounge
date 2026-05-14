@@ -59,11 +59,9 @@ type ProductEditorFormProps = {
   categories: Category[];
   /** When set, form is in edit mode for this product. */
   product?: AdminProductRow | null;
-  /** True when this product’s slug is pinned as the homepage Trending hero. */
-  isHomeTrending?: boolean;
 };
 
-export function ProductEditorForm({ categories, product, isHomeTrending = false }: ProductEditorFormProps) {
+export function ProductEditorForm({ categories, product }: ProductEditorFormProps) {
   const editing = product ?? null;
   const isEdit = Boolean(editing);
   const [isPending, startTransition] = useTransition();
@@ -318,7 +316,11 @@ export function ProductEditorForm({ categories, product, isHomeTrending = false 
             <p className="text-xs text-muted-foreground">Set 0 if the product is out of stock.</p>
           </div>
           <div className="grid gap-3">
-            <Input name="tags" placeholder="Tags: New, Best Seller, Sale" defaultValue={editing?.tags?.join(", ")} />
+            {isEdit ? <input type="hidden" name="previousSlug" defaultValue={editing?.slug ?? ""} /> : null}
+            <Input name="tags" placeholder="Tags: New, Best Seller, Sale, Trending" defaultValue={editing?.tags?.join(", ")} />
+            <p className="-mt-1 text-xs text-muted-foreground">
+              Add <span className="font-medium text-foreground">Trending</span> as a tag (any capitalization) to use this product in the large homepage Trending card. If more than one product has that tag, the last one you save wins.
+            </p>
           </div>
           <div className="grid gap-3">
             <Input
@@ -353,25 +355,6 @@ export function ProductEditorForm({ categories, product, isHomeTrending = false 
                 ))
               )}
             </select>
-          </div>
-          <div className="space-y-2 rounded-2xl border border-border p-3">
-            <p className="text-sm font-medium">Homepage</p>
-            <input type="hidden" name="previousSlug" defaultValue={editing?.slug ?? ""} />
-            <label className="flex cursor-pointer items-start gap-3 text-sm leading-snug">
-              <input
-                type="checkbox"
-                name="homeTrending"
-                value="on"
-                defaultChecked={isHomeTrending}
-                className="mt-0.5 h-4 w-4 shrink-0 rounded border-border"
-              />
-              <span>
-                <span className="font-medium">Show as Trending on the homepage</span>
-                <span className="mt-0.5 block text-xs text-muted-foreground">
-                  Only one product can be pinned; saving with this checked replaces the current Trending pick.
-                </span>
-              </span>
-            </label>
           </div>
           <div className="rounded-2xl border border-border p-3">
             <p className="mb-2 text-sm text-muted-foreground">Upload product images (multiple allowed)</p>

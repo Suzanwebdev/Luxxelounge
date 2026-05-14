@@ -191,7 +191,7 @@ export async function upsertProductAction(formData: FormData) {
     videoUrls = [];
   }
 
-  const setHomeTrending = formData.get("homeTrending") === "on";
+  const setHomeTrending = tags.some((t) => t.toLowerCase() === "trending");
   const previousSlug = String(formData.get("previousSlug") || "").trim();
 
   if (imageUrls.length > 0) {

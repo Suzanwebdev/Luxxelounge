@@ -180,17 +180,6 @@ export async function getAdminHomeContentSections() {
   return (data?.sections || {}) as Record<string, unknown>;
 }
 
-/** Slug pinned for the storefront homepage Trending hero (`home_content.sections.trending.productSlug`). */
-export async function getAdminHomeTrendingProductSlug(): Promise<string | null> {
-  const sections = await getAdminHomeContentSections();
-  const t = sections.trending;
-  if (t && typeof t === "object" && "productSlug" in t) {
-    const slug = String((t as { productSlug?: string }).productSlug || "").trim();
-    return slug || null;
-  }
-  return null;
-}
-
 export async function getAdminOrders() {
   const supabase = await getAdminDataClient();
   if (!supabase) return [];
