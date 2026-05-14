@@ -9,7 +9,67 @@ import { STOREFRONT_CATEGORY_NAMES } from "@/lib/storefront/categories";
 import type { HomeContentSections } from "@/lib/storefront/queries";
 import { toSlug } from "@/lib/slug";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 const PRODUCT_ID_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+async function syncHomeContentTrendingSlug(
+  supabase: SupabaseClient,
+  opts: { setTrending: boolean; slug: string; previousSlug: string }
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const { data: hc, error: fetchErr } = await supabase.from("home_content").select("sections").eq("id", 1).single();
+  if (fetchErr || !hc) return { ok: true };
+
+  const prev = (hc.sections || {}) as Record<string, unknown> & { trending?: { productSlug?: string } };
+  const trendingObj =
+    prev.trending && typeof prev.trending === "object" ? (prev.trending as { productSlug?: string }) : {};
+  const trendingSlugCurrent = String(trendingObj.productSlug || "").trim();
+
+  let nextSections: Record<string, unknown> | null = null;
+
+  if (opts.setTrending) {
+    nextSections = { ...prev, trending: { productSlug: opts.slug } };
+  } else if (
+    trendingSlugCurrent &&
+    (trendingSlugCurrent === opts.slug ||
+      (!!opts.previousSlug && trendingSlugCurrent === opts.previousSlug))
+  ) {
+    const { trending: _removed, ...rest } = prev;
+    nextSections = { ...rest };
+  }
+
+  if (!nextSections) return { ok: true };
+
+  const { error } = await supabase.from("home_content").update({ sections: nextSections }).eq("id", 1);
+  if (error) return { ok: false, message: error.message };
+  return { ok: true };
+}
+
+async function clearHomeTrendingIfSlugMatches(supabase: SupabaseClient, productSlug: string) {
+  const slug = productSlug.trim();
+  if (!slug) return;
+  const { data: hc } = await supabase.from("home_content").select("sections").eq("id", 1).maybeSingle();
+  if (!hc) return;
+  const prev = (hc.sections || {}) as Record<string, unknown> & { trending?: { productSlug?: string } };
+  const cur = String(prev.trending?.productSlug || "").trim();
+  if (cur && cur === slug) {
+    const { trending: _removed, ...rest } = prev;
+    await supabase.from("home_content").update({ sections: { ...rest } }).eq("id", 1);
+  }
+}
+
+async function clearHomeTrendingIfSlugInSet(supabase: SupabaseClient, slugs: string[]) {
+  const set = new Set(slugs.map((s) => s.trim()).filter(Boolean));
+  if (set.size === 0) return;
+  const { data: hc } = await supabase.from("home_content").select("sections").eq("id", 1).maybeSingle();
+  if (!hc) return;
+  const prev = (hc.sections || {}) as Record<string, unknown> & { trending?: { productSlug?: string } };
+  const cur = String(prev.trending?.productSlug || "").trim();
+  if (cur && set.has(cur)) {
+    const { trending: _removed, ...rest } = prev;
+    await supabase.from("home_content").update({ sections: { ...rest } }).eq("id", 1);
+  }
+}
 
 export async function upsertProductAction(formData: FormData) {
   await requireAdminAccess();
@@ -131,6 +191,9 @@ export async function upsertProductAction(formData: FormData) {
     videoUrls = [];
   }
 
+  const setHomeTrending = formData.get("homeTrending") === "on";
+  const previousSlug = String(formData.get("previousSlug") || "").trim();
+
   if (imageUrls.length > 0) {
     if (id) {
       // Replace existing gallery rows when editing to avoid duplicate sort_order/constraint conflicts.
@@ -161,6 +224,15 @@ export async function upsertProductAction(formData: FormData) {
     if (insertVideosError) return { ok: false, message: insertVideosError.message };
   }
 
+  const trendingRes = await syncHomeContentTrendingSlug(supabase, {
+    setTrending: setHomeTrending,
+    slug,
+    previousSlug
+  });
+  if (!trendingRes.ok) {
+    return { ok: false, message: trendingRes.message };
+  }
+
   revalidatePath("/admin");
   revalidatePath("/admin/products");
   revalidatePath(`/admin/products/${data.id}/edit`);
@@ -177,12 +249,16 @@ export async function deleteProductAction(formData: FormData) {
   const id = String(formData.get("id") || "");
   if (!id) return { ok: false, message: "Missing product id." };
 
+  const { data: slugRow } = await supabase.from("products").select("slug").eq("id", id).maybeSingle();
+  const slugBeforeDelete = slugRow?.slug ? String(slugRow.slug) : "";
+
   // Delete dependent media rows first so product deletion is not blocked by FK constraints.
   await supabase.from("product_videos").delete().eq("product_id", id);
   await supabase.from("product_images").delete().eq("product_id", id);
 
   const { error } = await supabase.from("products").delete().eq("id", id);
   if (error) return { ok: false, message: error.message };
+  await clearHomeTrendingIfSlugMatches(supabase, slugBeforeDelete);
   revalidatePath("/admin");
   revalidatePath("/admin/products");
   revalidatePath("/shop");
@@ -209,6 +285,9 @@ export async function bulkDeleteProductsAction(formData: FormData) {
   ids = [...new Set(ids)];
   if (ids.length > 200) return { ok: false, message: "You can delete at most 200 products at once." };
 
+  const { data: slugRows } = await supabase.from("products").select("slug").in("id", ids);
+  const slugsToRemove = (slugRows || []).map((r) => String(r.slug || "").trim()).filter(Boolean);
+
   const { error: vidError } = await supabase.from("product_videos").delete().in("product_id", ids);
   if (vidError) return { ok: false, message: vidError.message };
 
@@ -217,6 +296,8 @@ export async function bulkDeleteProductsAction(formData: FormData) {
 
   const { error } = await supabase.from("products").delete().in("id", ids);
   if (error) return { ok: false, message: error.message };
+
+  await clearHomeTrendingIfSlugInSet(supabase, slugsToRemove);
 
   revalidatePath("/admin");
   revalidatePath("/admin/products");

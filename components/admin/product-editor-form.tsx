@@ -59,9 +59,11 @@ type ProductEditorFormProps = {
   categories: Category[];
   /** When set, form is in edit mode for this product. */
   product?: AdminProductRow | null;
+  /** True when this product’s slug is pinned as the homepage Trending hero. */
+  isHomeTrending?: boolean;
 };
 
-export function ProductEditorForm({ categories, product }: ProductEditorFormProps) {
+export function ProductEditorForm({ categories, product, isHomeTrending = false }: ProductEditorFormProps) {
   const editing = product ?? null;
   const isEdit = Boolean(editing);
   const [isPending, startTransition] = useTransition();
@@ -351,6 +353,25 @@ export function ProductEditorForm({ categories, product }: ProductEditorFormProp
                 ))
               )}
             </select>
+          </div>
+          <div className="space-y-2 rounded-2xl border border-border p-3">
+            <p className="text-sm font-medium">Homepage</p>
+            <input type="hidden" name="previousSlug" defaultValue={editing?.slug ?? ""} />
+            <label className="flex cursor-pointer items-start gap-3 text-sm leading-snug">
+              <input
+                type="checkbox"
+                name="homeTrending"
+                value="on"
+                defaultChecked={isHomeTrending}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-border"
+              />
+              <span>
+                <span className="font-medium">Show as Trending on the homepage</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">
+                  Only one product can be pinned; saving with this checked replaces the current Trending pick.
+                </span>
+              </span>
+            </label>
           </div>
           <div className="rounded-2xl border border-border p-3">
             <p className="mb-2 text-sm text-muted-foreground">Upload product images (multiple allowed)</p>
