@@ -1,6 +1,7 @@
 import type { User } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { redirectIfPasswordSetupPending } from "@/lib/auth/pending-password-setup";
+import { recordAdminLoginIfNew } from "@/lib/admin/access-audit";
 import { getAdminDataClient } from "@/lib/admin/db";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { fetchAllowlistEmailRow } from "@/lib/admin/allowlist-lookup";
@@ -115,6 +116,16 @@ export async function requireAdminAccess() {
   }
   if (!session.ok && session.reason === "forbidden") {
     redirect(`/admin/login?reason=forbidden&next=${encodeURIComponent(next)}`);
+  }
+
+  const sessionClient = await createSupabaseServerClient();
+  if (sessionClient) {
+    const {
+      data: { session: cookieSession }
+    } = await sessionClient.auth.getSession();
+    if (cookieSession?.access_token) {
+      void recordAdminLoginIfNew(sessionClient, session.user, cookieSession.access_token).catch(() => {});
+    }
   }
 
   return { enabled: true as const, role: session.role, user: session.user };
