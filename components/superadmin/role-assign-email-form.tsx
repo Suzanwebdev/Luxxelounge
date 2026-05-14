@@ -34,14 +34,6 @@ export function RoleAssignEmailForm() {
           }`}
         >
           <p>{state.message}</p>
-          {state.ok && state.inviteRequested && state.inviteRedirectTo ? (
-            <p className="mt-2 text-xs leading-relaxed text-emerald-900/85">
-              The invite link redirects to{" "}
-              <span className="break-all font-mono text-[11px]">{state.inviteRedirectTo}</span>. That URL must appear
-              under Supabase → Authentication → URL configuration → Redirect URLs. If no email arrives, check spam,
-              Auth → Users (resend invitation), and custom SMTP.
-            </p>
-          ) : null}
         </div>
       ) : null}
 
@@ -84,8 +76,7 @@ export function RoleAssignEmailForm() {
           ))}
         </select>
         <p className="text-xs text-muted-foreground">
-          New people are created in Supabase Auth and should receive a setup email. People already on the list only get
-          their access updated (no new invite).
+          New people get a setup email. If they’re already in the list, only their access is updated (no new invite).
         </p>
       </div>
 

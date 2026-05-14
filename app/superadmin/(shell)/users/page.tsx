@@ -1,14 +1,11 @@
 import { ProfileRoleAssignForm } from "@/components/superadmin/profile-role-assign-form";
 import { RoleAssignEmailForm } from "@/components/superadmin/role-assign-email-form";
-import { getPublicSiteUrl } from "@/lib/site/public-url";
 import { getSuperadminUsers } from "@/lib/superadmin/queries";
 
 export const dynamic = "force-dynamic";
 
 export default async function SuperadminUsersPage() {
   const users = await getSuperadminUsers();
-  const inviteBase = getPublicSiteUrl();
-  const inviteRedirectExample = `${inviteBase}/admin/login`;
 
   return (
     <div className="space-y-8">
@@ -20,52 +17,24 @@ export default async function SuperadminUsersPage() {
       <section className="rounded-3xl border border-border bg-card p-6 md:p-8">
         <h2 className="font-heading text-xl md:text-2xl">Add someone by email</h2>
         <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-          Fill in their work email, pick access, and press the button. New users are created in Supabase Auth and should
-          receive a setup email (delivery depends on your Supabase email / SMTP settings).
+          Enter their work email, choose access, and send the invite. They’ll get an email to finish setup.
         </p>
         <details className="mt-3 text-xs text-muted-foreground">
-          <summary className="cursor-pointer font-medium text-foreground/80">Email not arriving or link opens localhost? (click)</summary>
-          <ul className="mt-2 list-inside list-disc space-y-2 pl-1">
+          <summary className="cursor-pointer font-medium text-foreground/80">Didn’t get the email?</summary>
+          <ul className="mt-2 list-inside list-disc space-y-1.5 pl-1">
+            <li>Ask them to check spam and promotions tabs.</li>
             <li>
-              If someone already appears under <strong>People</strong> but never got the message: use{" "}
-              <strong>Resend setup email</strong> on their row. Supabase may send another invite; if the address is
-              already registered, the app can email a password-reset link when <code className="rounded bg-muted px-1">RESEND_API_KEY</code>{" "}
-              is set on the server.
+              If they already appear under <strong>People</strong>, use <strong>Resend setup email</strong> on their row.
             </li>
             <li>
-              To drop someone from admin/staff/superadmin access, use <strong>Remove admin access</strong> (they stay a
-              shop customer) or set <strong>Customer</strong> and <strong>Apply</strong>.
+              Send invites from your <strong>live</strong> store URL so the link works on their phone—local development
+              links only open on your computer.
             </li>
             <li>
-              On <strong>Vercel</strong>, set{" "}
-              <code className="rounded bg-muted px-1">NEXT_PUBLIC_APP_BASE_URL</code> to your real store URL (example:{" "}
-              <code className="rounded bg-muted px-1">https://www.luxxelounge.shop</code>
-              ). Otherwise invite links may use a <code className="rounded bg-muted px-1">*.vercel.app</code> host and
-              Supabase may block or users may not get mail as expected.
-            </li>
-            <li>
-              In <strong>Supabase</strong> → Authentication → URL configuration → <strong>Redirect URLs</strong>, add{" "}
-              <code className="rounded bg-muted px-1">{inviteRedirectExample}</code> (and your production origin with{" "}
-              <code className="rounded bg-muted px-1">{"/**"}</code> if you use wildcards).
-            </li>
-            <li>
-              Invites sent while running <strong>localhost</strong> point at localhost in the email — that link will not
-              open on a phone or another computer. Always invite from the live site after env is set, or use Supabase
-              dashboard → Authentication → Users to resend.
-            </li>
-            <li>
-              Check spam, and in Supabase → Authentication → <strong>Users</strong> confirm the user exists. For
-              reliable delivery, configure <strong>custom SMTP</strong> (Auth → SMTP) — the built-in sender has strict
-              limits.
-            </li>
-            <li>
-              Server needs <code className="rounded bg-muted px-1">SUPABASE_SERVICE_ROLE_KEY</code> on Vercel (same
-              project as your keys).
+              To remove admin access, use <strong>Remove admin access</strong> or set <strong>Customer</strong> and{" "}
+              <strong>Apply</strong>.
             </li>
           </ul>
-          <p className="mt-3 rounded-lg bg-muted/50 px-2 py-1.5 font-mono text-[11px] text-foreground/80">
-            Current invite redirect base: {inviteBase}
-          </p>
         </details>
         <RoleAssignEmailForm />
       </section>

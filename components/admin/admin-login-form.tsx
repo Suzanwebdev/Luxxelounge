@@ -9,6 +9,14 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { RequestPasswordResetForm } from "@/components/auth/request-password-reset-form";
 import { cn } from "@/lib/utils";
 
+function formatSignInError(message: string): string {
+  const l = message.toLowerCase();
+  if (l.includes("invalid") && (l.includes("credential") || l.includes("login"))) {
+    return "That email or password doesn’t match. If you haven’t set a password yet, use Reset password.";
+  }
+  return message;
+}
+
 function SignOutRow() {
   const router = useRouter();
   const [busy, setBusy] = React.useState(false);
@@ -61,7 +69,7 @@ export function AdminLoginForm({ nextPath, reason, error: initialError, notice }
 
     const supabase = createSupabaseBrowserClient();
     if (!supabase) {
-      setError("Supabase is not configured in this environment.");
+      setError("Sign-in isn’t available right now. Please try again later.");
       return;
     }
 
@@ -70,7 +78,7 @@ export function AdminLoginForm({ nextPath, reason, error: initialError, notice }
     setPending(false);
 
     if (signError) {
-      setError(signError.message);
+      setError(formatSignInError(signError.message));
       return;
     }
 
@@ -84,48 +92,12 @@ export function AdminLoginForm({ nextPath, reason, error: initialError, notice }
         <h1 className="font-heading text-3xl">Admin</h1>
         {reason === "forbidden" ? (
           <p className="mt-2 text-sm text-muted-foreground">
-            You’re signed in, but this account doesn’t have access to the admin area. Sign out below and use an
-            authorized account, or ask the store owner to grant access.
+            This account can’t open the admin area. Sign out below and sign in with an authorized email, or ask the
+            store owner for access.
           </p>
         ) : (
-          <p className="mt-2 text-sm text-muted-foreground">
-            Sign in with your work email, or reset your password if you were just invited.
-          </p>
+          <p className="mt-2 text-sm text-muted-foreground">Sign in with your work email.</p>
         )}
-
-        <details className="mt-3 rounded-xl border border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-          <summary className="cursor-pointer font-medium text-foreground outline-none [&::-webkit-details-marker]:hidden">
-            {reason === "forbidden" ? "How to grant admin access (store owner)" : "Having trouble?"}
-          </summary>
-          <div className="mt-2 space-y-2 border-t border-border pt-2">
-            {reason === "forbidden" ? (
-              <>
-                <p>
-                  In Supabase: add this user’s email to <code className="rounded bg-muted px-1">public.admins</code>{" "}
-                  or <code className="rounded bg-muted px-1">public.superadmins</code> (Table Editor), or set their{" "}
-                  <code className="rounded bg-muted px-1">profiles.role</code> to <code className="rounded bg-muted px-1">admin</code>{" "}
-                  or <code className="rounded bg-muted px-1">staff</code>. Email matching is case-insensitive. Then sign
-                  out and sign in again.
-                </p>
-                <p>
-                  Ensure <code className="rounded bg-muted px-1">SUPABASE_SERVICE_ROLE_KEY</code> is set on the server
-                  (e.g. Vercel env) if checks still fail after allowlisting.
-                </p>
-              </>
-            ) : (
-              <>
-                <p>
-                  New accounts start with email only—you set the password from the <strong>Reset password</strong> tab or
-                  the invite email. “Invalid login credentials” usually means no password has been set yet.
-                </p>
-                <p>
-                  Allowlist: <code className="rounded bg-muted px-1">public.admins</code> or{" "}
-                  <code className="rounded bg-muted px-1">profiles.role</code> admin/staff.
-                </p>
-              </>
-            )}
-          </div>
-        </details>
       </div>
 
       {notice === "password_reset" ? (
@@ -188,10 +160,7 @@ export function AdminLoginForm({ nextPath, reason, error: initialError, notice }
           </Button>
         </form>
       ) : (
-        <RequestPasswordResetForm
-          postPasswordRedirect="/admin"
-          description="We’ll email you a secure link. Open it on this device to choose a password—you’ll go straight into the store admin after."
-        />
+        <RequestPasswordResetForm postPasswordRedirect="/admin" />
       )}
 
       {reason === "forbidden" ? <SignOutRow /> : null}

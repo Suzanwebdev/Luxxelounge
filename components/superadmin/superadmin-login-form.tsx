@@ -9,6 +9,14 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { RequestPasswordResetForm } from "@/components/auth/request-password-reset-form";
 import { cn } from "@/lib/utils";
 
+function formatSignInError(message: string): string {
+  const l = message.toLowerCase();
+  if (l.includes("invalid") && (l.includes("credential") || l.includes("login"))) {
+    return "That email or password doesn’t match. If you haven’t set a password yet, use Reset password.";
+  }
+  return message;
+}
+
 function SignOutRow() {
   const router = useRouter();
   const [busy, setBusy] = React.useState(false);
@@ -55,7 +63,7 @@ export function SuperadminLoginForm({ nextPath, reason }: SuperadminLoginFormPro
 
     const supabase = createSupabaseBrowserClient();
     if (!supabase) {
-      setError("Supabase is not configured in this environment.");
+      setError("Sign-in isn’t available right now. Please try again later.");
       return;
     }
 
@@ -64,12 +72,7 @@ export function SuperadminLoginForm({ nextPath, reason }: SuperadminLoginFormPro
     setPending(false);
 
     if (signError) {
-      const lower = signError.message.toLowerCase();
-      const hint =
-        lower.includes("invalid") || lower.includes("credentials")
-          ? " If you were invited with email only, use the Reset password tab first."
-          : "";
-      setError(`${signError.message}${hint}`);
+      setError(formatSignInError(signError.message));
       return;
     }
 
@@ -83,34 +86,14 @@ export function SuperadminLoginForm({ nextPath, reason }: SuperadminLoginFormPro
         <h1 className="font-heading text-3xl">Superadmin</h1>
         {reason === "forbidden" ? (
           <p className="mt-2 text-sm text-muted-foreground">
-            You are signed in, but this account is not allowed in the platform portal. Add the email under{" "}
-            <strong>Table Editor → public.superadmins</strong>, or set{" "}
-            <code className="rounded bg-muted px-1 py-0.5 text-xs">profiles.role</code> to{" "}
-            <code className="rounded bg-muted px-1 py-0.5 text-xs">superadmin</code> for this user, then sign out and
-            sign in again. Store staff should use{" "}
+            This account can’t open the platform portal. Store staff should use{" "}
             <Link href="/admin/login" className="text-primary underline-offset-2 hover:underline">
-              /admin/login
+              Store admin
             </Link>
-            .
+            . Sign out below to try a different email.
           </p>
         ) : (
-          <p className="mt-2 text-sm text-muted-foreground">
-            Same Supabase login as your superadmin user. Use <strong>Reset password</strong> if you have not set a
-            password yet.
-          </p>
-        )}
-        {reason === "forbidden" ? null : (
-          <ul className="mt-3 list-inside list-disc space-y-1 text-xs text-muted-foreground">
-            <li>
-              Email must be in <code className="rounded bg-muted px-1">public.superadmins</code> or{" "}
-              <code className="rounded bg-muted px-1">profiles.role</code> ={" "}
-              <code className="rounded bg-muted px-1">superadmin</code>.
-            </li>
-            <li>
-              Put <code className="rounded bg-muted px-1">SUPABASE_SERVICE_ROLE_KEY</code> in{" "}
-              <code className="rounded bg-muted px-1">.env.local</code> if allowlist checks still fail.
-            </li>
-          </ul>
+          <p className="mt-2 text-sm text-muted-foreground">Sign in with your platform email.</p>
         )}
       </div>
 
@@ -161,25 +144,22 @@ export function SuperadminLoginForm({ nextPath, reason }: SuperadminLoginFormPro
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <Button type="submit" className="w-full" disabled={pending}>
-            {pending ? "Signing in…" : "Sign in to platform portal"}
+            {pending ? "Signing in…" : "Sign in"}
           </Button>
         </form>
       ) : (
-        <RequestPasswordResetForm
-          postPasswordRedirect="/superadmin"
-          description="We’ll email you a link. After you set a password, you’ll land in the superadmin area (if your email is allowlisted)."
-        />
+        <RequestPasswordResetForm postPasswordRedirect="/superadmin" />
       )}
 
       {reason === "forbidden" ? <SignOutRow /> : null}
 
       <p className="text-center text-sm text-muted-foreground">
         <Link href="/admin/login" className="text-primary underline-offset-2 hover:underline">
-          Store admin sign in
+          Store admin
         </Link>
         {" · "}
         <Link href="/" className="text-primary underline-offset-2 hover:underline">
-          Back to storefront
+          Storefront
         </Link>
       </p>
     </div>
