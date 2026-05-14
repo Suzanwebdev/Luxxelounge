@@ -10,6 +10,17 @@ export function setPostPasswordRedirectPath(path: string) {
   }
 }
 
+/** Read stored portal path without clearing (e.g. “Back to sign in” before submit). */
+export function peekPostPasswordRedirectPath(): string | null {
+  try {
+    if (typeof window === "undefined") return null;
+    const v = sessionStorage.getItem(STORAGE_KEY);
+    return v && v.startsWith("/") ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Single-use path (e.g. `/admin` or `/superadmin`). */
 export function consumePostPasswordRedirectPath(): string | null {
   try {

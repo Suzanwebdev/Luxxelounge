@@ -5,7 +5,7 @@ import { resolveSuperadminPostLoginRedirect, sanitizeSuperadminNextPath } from "
 import { SuperadminLoginForm } from "@/components/superadmin/superadmin-login-form";
 
 type Props = {
-  searchParams: Promise<{ next?: string; reason?: string }>;
+  searchParams: Promise<{ next?: string; reason?: string; notice?: string }>;
 };
 
 export default async function SuperadminLoginPage({ searchParams }: Props) {
@@ -22,7 +22,7 @@ export default async function SuperadminLoginPage({ searchParams }: Props) {
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4 py-12">
-      <SuperadminLoginForm nextPath={nextPath} reason={sp.reason} />
+      <SuperadminLoginForm nextPath={nextPath} reason={sp.reason} notice={sp.notice} />
     </div>
   );
 }

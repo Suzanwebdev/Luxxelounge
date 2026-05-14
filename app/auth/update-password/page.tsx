@@ -1,12 +1,22 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { consumePostPasswordRedirectPath } from "@/lib/auth/post-password-redirect";
+import {
+  consumePostPasswordRedirectPath,
+  peekPostPasswordRedirectPath
+} from "@/lib/auth/post-password-redirect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+function resolveLoginUrl(searchParams: ReturnType<typeof useSearchParams>): string {
+  const next = searchParams.get("next");
+  if (next?.startsWith("/superadmin")) return "/superadmin/login";
+  const peeked = peekPostPasswordRedirectPath();
+  if (peeked?.startsWith("/superadmin")) return "/superadmin/login";
+  return "/admin/login";
+}
 
 function UpdatePasswordInner() {
   const router = useRouter();
@@ -14,6 +24,9 @@ function UpdatePasswordInner() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [checking, setChecking] = useState(true);
+  /** Password saved; signed out; about to send user to sign-in. */
+  const [finished, setFinished] = useState(false);
+  const [signInUrlAfterSave, setSignInUrlAfterSave] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -23,7 +36,6 @@ function UpdatePasswordInner() {
         router.replace("/?notice=supabase_env");
         return;
       }
-      // After `/api/auth/confirm`, cookies can lag one tick behind client JS; retry briefly before sending users away.
       for (let attempt = 0; attempt < 8; attempt++) {
         if (cancelled) return;
         const {
@@ -45,6 +57,15 @@ function UpdatePasswordInner() {
       cancelled = true;
     };
   }, [router]);
+
+  async function goBackToSignIn() {
+    const supabase = createSupabaseBrowserClient({ isSingleton: false });
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+    const login = resolveLoginUrl(searchParams);
+    window.location.assign(login);
+  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -71,20 +92,51 @@ function UpdatePasswordInner() {
       return;
     }
 
-    const fromQuery = searchParams.get("next");
-    const fromStorage = consumePostPasswordRedirectPath();
-    const target =
-      (fromQuery && fromQuery.startsWith("/") ? fromQuery : null) ||
-      fromStorage ||
-      "/admin";
+    const loginBase = resolveLoginUrl(searchParams);
+    consumePostPasswordRedirectPath();
+    const signInUrl = `${loginBase}?notice=password_reset`;
 
-    window.location.assign(target);
+    await supabase.auth.signOut();
+    setSignInUrlAfterSave(signInUrl);
+    setFinished(true);
+
+    window.setTimeout(() => {
+      window.location.assign(signInUrl);
+    }, 2200);
   }
 
   if (checking) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center px-4 text-sm text-muted-foreground">
         Preparing password form…
+      </div>
+    );
+  }
+
+  if (finished) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center px-4 py-12">
+        <div className="mx-auto w-full max-w-md space-y-5 rounded-3xl border border-border bg-card p-6 md:p-8">
+          <p className="text-sm uppercase tracking-[0.18em] text-muted-foreground">Account</p>
+          <h1 className="font-heading text-3xl">Password saved</h1>
+          <p
+            role="status"
+            className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
+          >
+            Your new password is set. Taking you to the sign-in page so you can log in with it.
+          </p>
+          <p className="text-center text-xs text-muted-foreground">You can also tap the button if nothing happens.</p>
+          <Button
+            type="button"
+            className="w-full"
+            onClick={() => {
+              const url = signInUrlAfterSave ?? `${resolveLoginUrl(searchParams)}?notice=password_reset`;
+              window.location.assign(url);
+            }}
+          >
+            Go to sign in now
+          </Button>
+        </div>
       </div>
     );
   }
@@ -96,7 +148,7 @@ function UpdatePasswordInner() {
           <p className="text-sm uppercase tracking-[0.18em] text-muted-foreground">Account</p>
           <h1 className="font-heading text-3xl">Create your password</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Choose a strong password. You’ll be signed in and taken to your dashboard next.
+            Choose a strong password. After you save, you’ll sign in again with this password.
           </p>
         </div>
 
@@ -131,14 +183,19 @@ function UpdatePasswordInner() {
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <Button type="submit" className="w-full" disabled={pending}>
-            {pending ? "Saving…" : "Save and continue"}
+            {pending ? "Saving…" : "Save password"}
           </Button>
         </form>
 
         <p className="text-center text-sm text-muted-foreground">
-          <Link href="/admin/login" className="text-primary underline-offset-2 hover:underline">
+          <button
+            type="button"
+            className="text-primary underline-offset-2 hover:underline disabled:opacity-50"
+            disabled={pending}
+            onClick={() => void goBackToSignIn()}
+          >
             Back to sign in
-          </Link>
+          </button>
         </p>
       </div>
     </div>

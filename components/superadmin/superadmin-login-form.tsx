@@ -43,9 +43,10 @@ function SignOutRow() {
 type SuperadminLoginFormProps = {
   nextPath: string;
   reason?: string;
+  notice?: string;
 };
 
-export function SuperadminLoginForm({ nextPath, reason }: SuperadminLoginFormProps) {
+export function SuperadminLoginForm({ nextPath, reason, notice }: SuperadminLoginFormProps) {
   const [panel, setPanel] = React.useState<"signin" | "reset">("signin");
   const [error, setError] = React.useState<string | null>(null);
   const [pending, setPending] = React.useState(false);
@@ -96,6 +97,15 @@ export function SuperadminLoginForm({ nextPath, reason }: SuperadminLoginFormPro
           <p className="mt-2 text-sm text-muted-foreground">Sign in with your platform email.</p>
         )}
       </div>
+
+      {notice === "password_reset" ? (
+        <p
+          role="status"
+          className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
+        >
+          Password saved. Sign in below.
+        </p>
+      ) : null}
 
       {reason === "forbidden" ? null : (
         <div className="flex rounded-2xl border border-border bg-muted/25 p-1">
