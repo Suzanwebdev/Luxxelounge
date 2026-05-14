@@ -10,6 +10,14 @@ type OrderPaidEmailInput = {
 const resendApiKey = process.env.RESEND_API_KEY;
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
+function escapeHtml(s: string) {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 export function getOrderPaidEmailHtml(input: OrderPaidEmailInput) {
   return `
     <div style="font-family: Inter, Arial, sans-serif; background:#f4f1eb; color:#1f2430; padding:24px;">
@@ -71,6 +79,75 @@ export async function sendNewsletterWelcomeEmail(to: string): Promise<{ sent: bo
   }
 
   return { sent: true };
+}
+
+type ContactFormEmailInput = {
+  storeInbox: string | null;
+  visitorEmail: string;
+  visitorName: string;
+  message: string;
+};
+
+/**
+ * Notifies the store inbox (when set) and sends a short receipt to the visitor.
+ * Uses the same verified `from` as other Luxxelounge mail. Visitor address appears in the body for reply.
+ */
+export async function sendContactFormEmails(
+  input: ContactFormEmailInput
+): Promise<{ storeNotified: boolean; visitorNotified: boolean }> {
+  if (!resend) return { storeNotified: false, visitorNotified: false };
+
+  const safeName = escapeHtml(input.visitorName);
+  const safeEmail = escapeHtml(input.visitorEmail);
+  const safeMsg = escapeHtml(input.message);
+
+  let storeNotified = false;
+  if (input.storeInbox) {
+    const { error } = await resend.emails.send({
+      from: "Luxxelounge <orders@luxxelounge.com>",
+      to: input.storeInbox,
+      subject: `Website contact: ${input.visitorName}`,
+      html: `
+    <div style="font-family: Inter, Arial, sans-serif; background:#f4f1eb; color:#1f2430; padding:24px;">
+      <div style="max-width:560px; margin:0 auto; background:#ffffff; border-radius:18px; padding:24px; border:1px solid #e7deca;">
+        <h1 style="margin:0; font-family: 'Playfair Display', Georgia, serif; color:#b29146;">New contact form</h1>
+        <p style="margin-top:12px;"><strong>Name:</strong> ${safeName}</p>
+        <p style="margin-top:6px;"><strong>Email:</strong> ${safeEmail}</p>
+        <p style="margin-top:16px;"><strong>Message</strong></p>
+        <pre style="margin:8px 0 0; padding:12px; background:#f8f6f0; border-radius:10px; white-space:pre-wrap; font-size:14px; line-height:1.45;">${safeMsg}</pre>
+      </div>
+    </div>
+  `
+    });
+    if (error) {
+      console.error("[sendContactFormEmails] store notify", error);
+    } else {
+      storeNotified = true;
+    }
+  }
+
+  const { error: visitorErr } = await resend.emails.send({
+    from: "Luxxelounge <orders@luxxelounge.com>",
+    to: input.visitorEmail,
+    subject: "We received your message — Luxxelounge",
+    html: `
+    <div style="font-family: Inter, Arial, sans-serif; background:#f4f1eb; color:#1f2430; padding:24px;">
+      <div style="max-width:560px; margin:0 auto; background:#ffffff; border-radius:18px; padding:24px; border:1px solid #e7deca;">
+        <h1 style="margin:0; font-family: 'Playfair Display', Georgia, serif; color:#b29146;">Luxxelounge</h1>
+        <p style="margin-top:12px;">Hi ${safeName},</p>
+        <p style="margin-top:12px; line-height:1.5;">Thanks for reaching out. We have received your message and will respond as soon as we can.</p>
+        <p style="margin-top:18px; font-size:13px; color:#5c6478;">If you did not send this request, you can ignore this email.</p>
+      </div>
+    </div>
+  `
+  });
+
+  if (visitorErr) {
+    console.error("[sendContactFormEmails] visitor receipt", visitorErr);
+    return { storeNotified, visitorNotified: false };
+  }
+
+  return { storeNotified, visitorNotified: true };
 }
 
 export function getStaffAuthRecoveryEmailHtml(actionLink: string) {

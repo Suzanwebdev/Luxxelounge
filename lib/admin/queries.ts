@@ -142,6 +142,26 @@ export async function getAdminNewsletterSubscribers(): Promise<AdminNewsletterSu
   return (data || []) as AdminNewsletterSubscriberRow[];
 }
 
+export type AdminContactMessageRow = {
+  id: string;
+  full_name: string;
+  email: string;
+  message: string;
+  source: string;
+  created_at: string | null;
+};
+
+export async function getAdminContactMessages(): Promise<AdminContactMessageRow[]> {
+  const supabase = await getAdminDataClient();
+  if (!supabase) return [];
+  const { data } = await supabase
+    .from("contact_messages")
+    .select("id,full_name,email,message,source,created_at")
+    .order("created_at", { ascending: false })
+    .limit(150);
+  return (data || []) as AdminContactMessageRow[];
+}
+
 export async function getAdminDiscounts() {
   const supabase = await getAdminDataClient();
   if (!supabase) return [];

@@ -1,6 +1,5 @@
 import { Container, Heading, Section } from "@/components/storefront/primitives";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { ContactForm } from "@/components/storefront/contact-form";
 import { getPublishedCmsPage } from "@/lib/storefront/cms";
 
 export default async function ContactPage() {
@@ -22,12 +21,7 @@ export default async function ContactPage() {
             {phone ? <p>Phone: {phone}</p> : null}
           </div>
         ) : null}
-        <div className="space-y-3 rounded-3xl border border-border bg-card p-5">
-          <Input placeholder="Full name" />
-          <Input placeholder="Email" />
-          <Input placeholder="Message" />
-          <Button>Send Message</Button>
-        </div>
+        <ContactForm />
       </Container>
     </Section>
   );

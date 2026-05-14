@@ -1,9 +1,19 @@
-import { getAdminCustomerProfiles, getAdminNewsletterSubscribers } from "@/lib/admin/queries";
+import {
+  getAdminContactMessages,
+  getAdminCustomerProfiles,
+  getAdminNewsletterSubscribers
+} from "@/lib/admin/queries";
+
+function truncateMessage(text: string, max = 120) {
+  const t = text.replace(/\s+/g, " ").trim();
+  return t.length <= max ? t : `${t.slice(0, max)}…`;
+}
 
 export default async function AdminCustomersPage() {
-  const [profiles, newsletterRows] = await Promise.all([
+  const [profiles, newsletterRows, contactRows] = await Promise.all([
     getAdminCustomerProfiles(),
-    getAdminNewsletterSubscribers()
+    getAdminNewsletterSubscribers(),
+    getAdminContactMessages()
   ]);
 
   return (
@@ -11,8 +21,8 @@ export default async function AdminCustomersPage() {
       <div>
         <h1 className="font-heading text-3xl">Customers</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Registered accounts are Supabase Auth profiles. Newsletter-only signups from the homepage appear under Private
-          Edit subscribers.
+          Registered accounts are Supabase Auth profiles. Newsletter signups and contact form messages are stored
+          separately and appear in the sections below.
         </p>
       </div>
 
@@ -83,6 +93,47 @@ export default async function AdminCustomersPage() {
                     <td className="px-4 py-3">{row.email}</td>
                     <td className="px-4 py-3 text-muted-foreground">{row.source}</td>
                     <td className="px-4 py-3 text-muted-foreground">
+                      {row.created_at ? new Date(row.created_at).toLocaleString() : "—"}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="font-heading text-xl">Contact form</h2>
+        <p className="text-sm text-muted-foreground">
+          Messages from the /contact page (latest 150). Open the row in Supabase for the full text if truncated.
+        </p>
+        <div className="overflow-x-auto rounded-3xl border border-border bg-card">
+          <table className="w-full min-w-[720px] text-left text-sm">
+            <thead className="border-b border-border bg-muted/40 text-xs uppercase text-muted-foreground">
+              <tr>
+                <th className="px-4 py-3">Name</th>
+                <th className="px-4 py-3">Email</th>
+                <th className="px-4 py-3">Message</th>
+                <th className="px-4 py-3">Received</th>
+              </tr>
+            </thead>
+            <tbody>
+              {contactRows.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
+                    No contact messages yet.
+                  </td>
+                </tr>
+              ) : (
+                contactRows.map((row) => (
+                  <tr key={row.id} className="border-b border-border align-top last:border-0">
+                    <td className="px-4 py-3">{row.full_name}</td>
+                    <td className="px-4 py-3">{row.email}</td>
+                    <td className="max-w-[280px] px-4 py-3 text-muted-foreground" title={row.message}>
+                      {truncateMessage(row.message)}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
                       {row.created_at ? new Date(row.created_at).toLocaleString() : "—"}
                     </td>
                   </tr>
