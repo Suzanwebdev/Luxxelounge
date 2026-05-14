@@ -122,10 +122,10 @@ export function TrendingProductCard({ product }: { product: Product }) {
     <motion.article
       whileHover={{ y: -3 }}
       transition={{ duration: 0.2 }}
-      className="luxury-panel mx-auto max-w-6xl overflow-hidden border border-border/60"
+      className="luxury-panel mx-auto max-w-xl overflow-hidden border border-border/60"
     >
       <Link href={`/product/${product.slug}`} className="group block">
-        <div className="relative aspect-[16/10] min-h-[13rem] w-full bg-muted/50 p-2 sm:min-h-[16rem] sm:p-3 md:aspect-[2/1] md:min-h-[17.5rem]">
+        <div className="relative aspect-[16/10] min-h-[6.5rem] w-full bg-muted/50 p-1.5 sm:min-h-[8rem] sm:p-2 md:aspect-[2/1] md:min-h-[8.75rem]">
           {videoUrl ? (
             <video
               src={videoUrl}
@@ -142,42 +142,42 @@ export function TrendingProductCard({ product }: { product: Product }) {
               alt={product.name}
               fill
               className="object-contain transition-transform duration-200 group-hover:scale-[1.02]"
-              sizes="(max-width: 640px) 100vw, (max-width: 1280px) 90vw, 1152px"
+              sizes="(max-width: 640px) 90vw, (max-width: 1280px) 40vw, 576px"
               priority
             />
           )}
         </div>
       </Link>
-      <div className="space-y-4 p-4 sm:p-5 md:space-y-5 md:p-6">
+      <div className="space-y-2 p-3 sm:space-y-3 sm:p-3 md:p-4">
         <BadgeSet tags={product.tags} />
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           {isStorefrontCategory(product.category) ? (
             <Link
               href={categoryShopHref(product.category)}
-              className="block text-sm font-medium leading-tight text-muted-foreground transition hover:text-primary sm:text-base"
+              className="block text-xs font-medium leading-tight text-muted-foreground transition hover:text-primary sm:text-sm"
             >
               {product.category}
             </Link>
           ) : (
-            <p className="text-sm font-medium leading-tight text-muted-foreground sm:text-base">{product.category}</p>
+            <p className="text-xs font-medium leading-tight text-muted-foreground sm:text-sm">{product.category}</p>
           )}
-          <h3 className="font-heading text-2xl leading-tight sm:text-3xl md:text-[2rem]">
+          <h3 className="font-heading text-lg leading-tight sm:text-xl md:text-2xl">
             <Link href={`/product/${product.slug}`} className="transition-colors hover:text-primary">
               {product.name}
             </Link>
           </h3>
         </div>
         <Price price={product.price} compareAt={product.compareAt} />
-        <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
-          <Button type="button" className="h-11 flex-1 sm:h-12" onClick={onBuyNow}>
-            <ShoppingBag className="mr-2 h-4 w-4" />
+        <div className="flex flex-col gap-1.5 sm:flex-row sm:gap-2">
+          <Button type="button" className="h-9 flex-1 text-sm sm:h-9" onClick={onBuyNow}>
+            <ShoppingBag className="mr-2 h-3.5 w-3.5" />
             Buy Now
           </Button>
           <Button
             type="button"
             variant="outline"
             size="default"
-            className="h-11 px-4 sm:h-12"
+            className="h-9 px-3 text-sm sm:h-9"
             aria-label="Add to cart"
             title="Add to cart"
             onClick={onAddToCart}
@@ -186,7 +186,7 @@ export function TrendingProductCard({ product }: { product: Product }) {
           </Button>
         </div>
         {justAdded ? (
-          <p className="text-sm text-primary" role="status" aria-live="polite">
+          <p className="text-xs text-primary" role="status" aria-live="polite">
             Added to cart. Open the bag to review or checkout.
           </p>
         ) : null}
