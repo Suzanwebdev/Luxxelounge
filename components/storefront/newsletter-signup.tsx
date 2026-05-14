@@ -62,12 +62,12 @@ export function NewsletterSignup() {
   return (
     <form
       onSubmit={onSubmit}
-      className="w-full min-w-0 space-y-3 rounded-2xl border border-border/80 bg-muted/20 p-4 md:mt-0"
+      className="w-full min-w-0 space-y-2 rounded-xl border border-border/80 bg-muted/15 p-3 md:mt-0"
     >
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Your contact</p>
-      <div className="space-y-1.5">
-        <label htmlFor="private-edit-name" className="text-sm font-medium text-foreground">
-          Name <span className="font-normal text-muted-foreground">(optional)</span>
+      <p className="text-[0.625rem] font-medium uppercase tracking-wide text-muted-foreground">Contact</p>
+      <div className="space-y-1">
+        <label htmlFor="private-edit-name" className="text-xs font-medium text-foreground">
+          Name <span className="font-normal text-muted-foreground">(opt.)</span>
         </label>
         <Input
           id="private-edit-name"
@@ -75,7 +75,7 @@ export function NewsletterSignup() {
           name="fullName"
           autoComplete="name"
           placeholder="Full name"
-          className="h-11 w-full min-w-0"
+          className="h-9 w-full min-w-0 text-sm"
           value={fullName}
           onChange={(e) => {
             setFullName(e.target.value);
@@ -88,9 +88,9 @@ export function NewsletterSignup() {
           maxLength={120}
         />
       </div>
-      <div className="space-y-1.5">
-        <label htmlFor="private-edit-phone" className="text-sm font-medium text-foreground">
-          Phone or WhatsApp <span className="font-normal text-muted-foreground">(optional)</span>
+      <div className="space-y-1">
+        <label htmlFor="private-edit-phone" className="text-xs font-medium text-foreground">
+          Phone / WhatsApp <span className="font-normal text-muted-foreground">(opt.)</span>
         </label>
         <Input
           id="private-edit-phone"
@@ -98,7 +98,7 @@ export function NewsletterSignup() {
           name="phone"
           autoComplete="tel"
           placeholder="+233 …"
-          className="h-11 w-full min-w-0"
+          className="h-9 w-full min-w-0 text-sm"
           value={phone}
           onChange={(e) => {
             setPhone(e.target.value);
@@ -111,18 +111,18 @@ export function NewsletterSignup() {
           maxLength={40}
         />
       </div>
-      <div className="space-y-1.5">
-        <label htmlFor="private-edit-email" className="text-sm font-medium text-foreground">
+      <div className="space-y-1">
+        <label htmlFor="private-edit-email" className="text-xs font-medium text-foreground">
           Email
         </label>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+        <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
           <Input
             id="private-edit-email"
             type="email"
             name="email"
             autoComplete="email"
-            placeholder="Enter your email"
-            className="h-11 min-h-[2.75rem] w-full min-w-0 flex-1 sm:min-w-[12rem]"
+            placeholder="Email"
+            className="h-9 w-full min-w-0 flex-1 text-sm sm:min-w-0"
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);
@@ -139,11 +139,11 @@ export function NewsletterSignup() {
           <Button
             type="submit"
             size="sm"
-            className="h-11 w-full shrink-0 px-4 sm:w-auto sm:min-w-[8.5rem]"
+            className="h-9 w-full shrink-0 px-3 text-sm sm:w-auto sm:min-w-[7.5rem]"
             disabled={status === "loading"}
           >
             {status === "loading" ? "…" : "Subscribe"}
-            {status !== "loading" ? <ArrowRight className="ml-2 h-4 w-4" aria-hidden /> : null}
+            {status !== "loading" ? <ArrowRight className="ml-1.5 h-3.5 w-3.5" aria-hidden /> : null}
           </Button>
         </div>
       </div>
@@ -153,8 +153,8 @@ export function NewsletterSignup() {
           role="status"
           className={
             status === "error"
-              ? "text-sm text-destructive"
-              : "text-sm text-muted-foreground"
+              ? "text-xs text-destructive"
+              : "text-xs leading-snug text-muted-foreground"
           }
         >
           {message}

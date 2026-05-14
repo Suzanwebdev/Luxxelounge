@@ -155,13 +155,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </Container>
       </Section>
 
-      <Section>
-        <Container className="max-w-4xl rounded-3xl border border-border bg-card p-5 md:p-7">
-          <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(16rem,22rem)] md:items-start md:gap-8">
-            <div className="min-w-0">
-              <h3 className="font-heading text-2xl md:text-[1.75rem]">Join the Private Edit</h3>
-              <p className="mt-1.5 text-sm text-muted-foreground md:text-base">
-                Receive curated drops, styling notes, and early access to limited releases.
+      <Section className="py-6 md:py-10">
+        <Container className="max-w-3xl rounded-2xl border border-border bg-card p-4 md:p-5">
+          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(13.5rem,17.5rem)] md:items-start md:gap-5">
+            <div className="min-w-0 self-start">
+              <h3 className="font-heading text-xl leading-snug md:text-2xl">Join the Private Edit</h3>
+              <p className="mt-1 max-w-sm text-xs leading-relaxed text-muted-foreground md:text-sm">
+                Curated drops, styling notes, and early access to limited releases.
               </p>
             </div>
             <NewsletterSignup />
