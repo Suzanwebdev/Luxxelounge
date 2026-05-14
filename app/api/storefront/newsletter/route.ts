@@ -4,9 +4,7 @@ import { sendNewsletterWelcomeEmail } from "@/lib/email/resend";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const bodySchema = z.object({
-  email: z.string().email().max(320),
-  fullName: z.string().trim().max(120).optional(),
-  phone: z.string().trim().max(40).optional()
+  email: z.string().email().max(320)
 });
 
 function normalizeEmail(raw: string) {
@@ -36,24 +34,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Please enter a valid email address." }, { status: 400 });
   }
 
-  const fullName = (parsed.data.fullName ?? "").trim() || null;
-  const phone = (parsed.data.phone ?? "").trim() || null;
-
   const { error } = await supabase.from("newsletter_subscribers").insert({
     email,
-    full_name: fullName,
-    phone,
     source: "homepage"
   });
 
   if (error) {
     if (error.code === "23505") {
-      const patch: { full_name?: string | null; phone?: string | null } = {};
-      if (fullName !== null) patch.full_name = fullName;
-      if (phone !== null) patch.phone = phone;
-      if (Object.keys(patch).length > 0) {
-        await supabase.from("newsletter_subscribers").update(patch).eq("email", email);
-      }
       return NextResponse.json({ ok: true, alreadySubscribed: true, emailSent: false });
     }
     return NextResponse.json({ error: "Could not save your email. Please try again shortly." }, { status: 500 });

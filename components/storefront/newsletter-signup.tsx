@@ -6,8 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export function NewsletterSignup() {
-  const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
@@ -21,11 +19,7 @@ export function NewsletterSignup() {
       const res = await fetch("/api/storefront/newsletter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          fullName: fullName.trim() || undefined,
-          phone: phone.trim() || undefined
-        })
+        body: JSON.stringify({ email })
       });
       const data = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
@@ -42,8 +36,6 @@ export function NewsletterSignup() {
 
       setStatus("success");
       setEmail("");
-      setFullName("");
-      setPhone("");
       if (data.alreadySubscribed) {
         setMessage("You are already on the list. Thank you.");
       } else if (data.emailSent) {
@@ -60,101 +52,38 @@ export function NewsletterSignup() {
   }
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className="w-full min-w-0 space-y-2 rounded-xl border border-border/80 bg-muted/15 p-3 md:mt-0"
-    >
-      <p className="text-[0.625rem] font-medium uppercase tracking-wide text-muted-foreground">Contact</p>
-      <div className="space-y-1">
-        <label htmlFor="private-edit-name" className="text-xs font-medium text-foreground">
-          Name <span className="font-normal text-muted-foreground">(opt.)</span>
-        </label>
+    <form onSubmit={onSubmit} className="mt-4 flex min-w-0 flex-col gap-2 md:mt-0">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <Input
-          id="private-edit-name"
-          type="text"
-          name="fullName"
-          autoComplete="name"
-          placeholder="Full name"
-          className="h-9 w-full min-w-0 text-sm"
-          value={fullName}
+          type="email"
+          name="email"
+          autoComplete="email"
+          placeholder="Enter your email"
+          className="h-11 w-full min-w-0 sm:max-w-none md:w-72"
+          value={email}
           onChange={(e) => {
-            setFullName(e.target.value);
+            setEmail(e.target.value);
             if (status === "success" || status === "error") {
               setStatus("idle");
               setMessage(null);
             }
           }}
           disabled={status === "loading"}
-          maxLength={120}
+          required
+          aria-invalid={status === "error"}
+          aria-describedby={message ? "newsletter-signup-status" : undefined}
         />
-      </div>
-      <div className="space-y-1">
-        <label htmlFor="private-edit-phone" className="text-xs font-medium text-foreground">
-          Phone / WhatsApp <span className="font-normal text-muted-foreground">(opt.)</span>
-        </label>
-        <Input
-          id="private-edit-phone"
-          type="tel"
-          name="phone"
-          autoComplete="tel"
-          placeholder="+233 …"
-          className="h-9 w-full min-w-0 text-sm"
-          value={phone}
-          onChange={(e) => {
-            setPhone(e.target.value);
-            if (status === "success" || status === "error") {
-              setStatus("idle");
-              setMessage(null);
-            }
-          }}
-          disabled={status === "loading"}
-          maxLength={40}
-        />
-      </div>
-      <div className="space-y-1">
-        <label htmlFor="private-edit-email" className="text-xs font-medium text-foreground">
-          Email
-        </label>
-        <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
-          <Input
-            id="private-edit-email"
-            type="email"
-            name="email"
-            autoComplete="email"
-            placeholder="Email"
-            className="h-9 w-full min-w-0 flex-1 text-sm sm:min-w-0"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              if (status === "success" || status === "error") {
-                setStatus("idle");
-                setMessage(null);
-              }
-            }}
-            disabled={status === "loading"}
-            required
-            aria-invalid={status === "error"}
-            aria-describedby={message ? "newsletter-signup-status" : undefined}
-          />
-          <Button
-            type="submit"
-            size="sm"
-            className="h-9 w-full shrink-0 px-3 text-sm sm:w-auto sm:min-w-[7.5rem]"
-            disabled={status === "loading"}
-          >
-            {status === "loading" ? "…" : "Subscribe"}
-            {status !== "loading" ? <ArrowRight className="ml-1.5 h-3.5 w-3.5" aria-hidden /> : null}
-          </Button>
-        </div>
+        <Button type="submit" size="sm" className="h-11 w-full shrink-0 px-4 sm:w-auto" disabled={status === "loading"}>
+          {status === "loading" ? "…" : "Subscribe"}
+          {status !== "loading" ? <ArrowRight className="ml-2 h-4 w-4" aria-hidden /> : null}
+        </Button>
       </div>
       {message ? (
         <p
           id="newsletter-signup-status"
           role="status"
           className={
-            status === "error"
-              ? "text-xs text-destructive"
-              : "text-xs leading-snug text-muted-foreground"
+            status === "error" ? "text-sm text-destructive" : "text-sm text-muted-foreground"
           }
         >
           {message}
