@@ -93,7 +93,7 @@ export function ProductCard({ product }: { product: Product }) {
           product={product}
           source="product-card"
           ctaLabel="Chat Before You Buy"
-          helperText="Ask about finishes, delivery details, and payment guidance on WhatsApp."
+          helperText="Ask about finishes and delivery details on WhatsApp."
         />
       </div>
     </motion.article>
@@ -194,7 +194,7 @@ export function TrendingProductCard({ product }: { product: Product }) {
           product={product}
           source="product-card"
           ctaLabel="Chat Before You Buy"
-          helperText="Ask about finishes, delivery details, and payment guidance on WhatsApp."
+          helperText="Ask about finishes and delivery details on WhatsApp."
         />
       </div>
     </motion.article>

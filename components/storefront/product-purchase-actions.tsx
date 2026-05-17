@@ -108,7 +108,7 @@ export function ProductPurchaseActions({ product }: { product: Product }) {
           product={product}
           source="product-page"
           ctaLabel="Talk on WhatsApp Before Purchase"
-          helperText="Chat with our design advisor to confirm finishes, delivery windows, and payment options."
+          helperText="Chat with our design advisor to confirm finishes and delivery windows."
           className="max-w-xl"
         />
       </div>

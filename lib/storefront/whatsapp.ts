@@ -6,8 +6,7 @@ const HIGH_TICKET_CATEGORIES = new Set(["Sofas", "Lounge Chairs", "Dining Set"])
 export const WHATSAPP_INTENT_OPTIONS = [
   { id: "availability", label: "Availability" },
   { id: "custom_size", label: "Custom size" },
-  { id: "delivery_timeline", label: "Delivery timeline" },
-  { id: "payment_plan", label: "Payment plan" }
+  { id: "delivery_timeline", label: "Delivery timeline" }
 ] as const;
 export type WhatsAppIntentId = (typeof WHATSAPP_INTENT_OPTIONS)[number]["id"];
 export type WhatsAppSource = "product-card" | "product-page" | "cart";
@@ -58,7 +57,7 @@ export function buildWhatsAppProductHref({ product, source, intents = [] }: Buil
     `Category: ${product.category}.`,
     intentLabels.length > 0
       ? `I need help with: ${intentLabels.join(", ")}.`
-      : "Please help with available finishes, delivery timeline, and payment options.",
+      : "Please help with available finishes and delivery timeline.",
     `Product link: ${productUrl}`,
     `Source: ${context}`
   ].join(" ");
