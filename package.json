@@ -11,7 +11,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "deploy": "vercel deploy --prod --yes"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.2",

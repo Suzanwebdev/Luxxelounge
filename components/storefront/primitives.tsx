@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { cn, formatGhs } from "@/lib/utils";
 import type { ProductTag } from "@/lib/storefront/mock-data";
+import { displayProductTags } from "@/lib/storefront/shop-filters";
 
 export function Container({
   className,
@@ -50,9 +51,11 @@ export function Price({ price, compareAt }: { price: number; compareAt?: number 
 }
 
 export function BadgeSet({ tags }: { tags: ProductTag[] }) {
+  const visible = displayProductTags(tags);
+  if (visible.length === 0) return null;
   return (
     <div className="flex flex-wrap gap-2">
-      {tags.map((tag) => (
+      {visible.map((tag) => (
         <span
           key={tag}
           className="rounded-full border border-border bg-accent px-2.5 py-1 text-xs font-medium"

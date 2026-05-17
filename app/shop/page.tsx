@@ -1,9 +1,13 @@
+import Link from "next/link";
 import { ProductCard } from "@/components/storefront/cards";
 import { Container, Heading, Section } from "@/components/storefront/primitives";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { STOREFRONT_CATEGORY_NAMES } from "@/lib/storefront/categories";
+import { filterShopProducts } from "@/lib/storefront/shop-filters";
 import { getShopProducts } from "@/lib/storefront/queries";
+
+export const dynamic = "force-dynamic";
 
 type ShopPageProps = {
   searchParams?: Promise<{
@@ -13,35 +17,14 @@ type ShopPageProps = {
   }>;
 };
 
-function bySort(sort: string, a: { price: number; reviews: number }, b: { price: number; reviews: number }) {
-  if (sort === "price-low") return a.price - b.price;
-  if (sort === "price-high") return b.price - a.price;
-  if (sort === "top-rated") return b.reviews - a.reviews;
-  return 0;
-}
-
 export default async function ShopPage({ searchParams }: ShopPageProps) {
   const params = await searchParams;
   const products = await getShopProducts();
-  const q = (params?.q || "").trim().toLowerCase();
-  const category = (params?.category || "").trim().toLowerCase();
+  const q = (params?.q || "").trim();
+  const category = (params?.category || "").trim();
   const sort = (params?.sort || "best-sellers").trim();
 
-  const filtered = products
-    .filter((product) => {
-      if (!q) return true;
-      const haystack = `${product.name} ${product.description} ${product.category} ${(product.tags || []).join(" ")}`
-        .toLowerCase();
-      return haystack.includes(q);
-    })
-    .filter((product) => {
-      if (!category || category === "all products") return true;
-      if (product.category.toLowerCase() === category) return true;
-      const haystack = `${product.name} ${product.description} ${product.category} ${(product.tags || []).join(" ")}`
-        .toLowerCase();
-      return haystack.includes(category);
-    })
-    .sort((a, b) => bySort(sort, a, b));
+  const filtered = filterShopProducts(products, { q, category, sort });
 
   return (
     <Section>
@@ -91,11 +74,25 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             </Button>
           </div>
         </form>
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        {filtered.length === 0 ? (
+          <div className="rounded-3xl border border-border bg-card p-8 text-center">
+            <p className="font-heading text-xl">No products found</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {q
+                ? `Nothing matched "${q}". Try another search or browse the full catalog.`
+                : "Try clearing filters or browse all products."}
+            </p>
+            <Button asChild className="mt-5">
+              <Link href="/shop">View all products</Link>
+            </Button>
+          </div>
+        ) : (
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {filtered.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
       </Container>
     </Section>
   );
