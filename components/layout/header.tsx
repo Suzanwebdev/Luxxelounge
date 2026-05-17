@@ -6,8 +6,8 @@ import Link from "next/link";
 import Image from "next/image";
 import * as Dialog from "@radix-ui/react-dialog";
 import { motion } from "framer-motion";
-import { ChevronDown, Menu, Search, ShoppingBag, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ChevronDown, Menu, ShoppingBag, X } from "lucide-react";
+import { HeaderSearch } from "@/components/layout/header-search";
 import { Container } from "@/components/storefront/primitives";
 import { CartDrawer } from "@/components/layout/cart-drawer";
 import { useCart } from "@/components/storefront/cart-provider";
@@ -148,13 +148,9 @@ export function Navbar() {
           </div>
           <Link href="/about" className="hover:text-primary">About</Link>
         </nav>
-        <Button
-          variant="ghost"
-          className="ml-auto h-10 w-10 rounded-xl border border-border p-0 md:h-11 md:w-11 md:rounded-2xl"
-          aria-label="Search products"
-        >
-          <Search className="h-4 w-4" />
-        </Button>
+        <div className="ml-auto">
+          <HeaderSearch />
+        </div>
         <CartDrawer triggerClassName="rounded-xl border border-border px-2.5 py-2 md:rounded-2xl md:px-3">
           <span className="relative inline-flex items-center">
             <ShoppingBag className="h-4 w-4" />
