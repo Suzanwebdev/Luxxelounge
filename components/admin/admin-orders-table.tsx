@@ -1,64 +1,102 @@
-"use client";
-
-import { useState } from "react";
-import { OrderDetailsPanel } from "@/components/admin/order-details-panel";
+import { updateOrderStatusAction } from "@/app/admin/actions";
+import { AdminOrderDetailPanel } from "@/components/admin/admin-order-detail-panel";
+import { OrderCustomerBlock } from "@/components/admin/order-customer-block";
+import { OrderItemQtyForm } from "@/components/admin/order-item-qty-form";
 import { Button } from "@/components/ui/button";
-import { orderDisplayNumber, statusLabel, type AdminOrder } from "@/lib/admin/admin-order";
+import type { AdminOrderRow } from "@/lib/admin/admin-order-types";
 import { formatGhs } from "@/lib/utils";
-import { ChevronDown, ChevronUp } from "lucide-react";
 
-export function AdminOrdersTable({ orders }: { orders: AdminOrder[] }) {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+const STATUSES = ["pending", "paid", "processing", "shipped", "delivered", "cancelled", "refunded"] as const;
 
-  if (orders.length === 0) {
-    return (
-      <div className="rounded-3xl border border-border bg-card px-4 py-12 text-center text-muted-foreground">
-        No orders yet.
-      </div>
-    );
-  }
+type AdminOrdersTableProps = {
+  orders: AdminOrderRow[];
+};
 
+export function AdminOrdersTable({ orders }: AdminOrdersTableProps) {
   return (
-    <div className="space-y-3">
-      {orders.map((order) => {
-        const open = expandedId === order.id;
-        const number = orderDisplayNumber(order);
-        return (
-          <article key={order.id} className="overflow-hidden rounded-3xl border border-border bg-card">
-            <div className="flex flex-wrap items-center gap-3 px-4 py-3 sm:grid sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_auto_auto] sm:items-center sm:gap-4">
-              <div className="min-w-0">
-                <p className="font-mono text-sm">{number}</p>
-                <p className="text-xs text-muted-foreground">
-                  {order.created_at ? new Date(order.created_at).toLocaleString() : "—"}
-                </p>
-              </div>
-              <p className="text-sm capitalize text-muted-foreground sm:text-foreground">{statusLabel(order.status)}</p>
-              <p className="font-medium">{formatGhs(order.total_amount)}</p>
-              <Button
-                type="button"
-                size="sm"
-                variant={open ? "default" : "outline"}
-                className="ml-auto sm:ml-0"
-                onClick={() => setExpandedId(open ? null : order.id)}
-                aria-expanded={open}
-              >
-                {open ? (
-                  <>
-                    Hide details
-                    <ChevronUp className="ml-1 h-4 w-4" />
-                  </>
-                ) : (
-                  <>
-                    View details
-                    <ChevronDown className="ml-1 h-4 w-4" />
-                  </>
-                )}
-              </Button>
-            </div>
-            {open ? <OrderDetailsPanel order={order} /> : null}
-          </article>
-        );
-      })}
+    <div className="scrollbar-hidden overflow-x-auto rounded-3xl border border-border bg-card">
+      <table
+        className={`w-full text-left text-sm ${orders.length > 0 ? "min-w-[960px]" : "min-w-0"}`}
+      >
+        <thead className="border-b border-border bg-muted/40 text-xs uppercase text-muted-foreground">
+          <tr>
+            <th className="px-4 py-3">Order</th>
+            <th className="px-4 py-3">Date</th>
+            <th className="px-4 py-3">Total</th>
+            <th className="px-4 py-3">Customer & delivery</th>
+            <th className="px-4 py-3">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {orders.length === 0 ? (
+            <tr>
+              <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                No orders yet.
+              </td>
+            </tr>
+          ) : (
+            orders.map((o) => (
+              <tr key={o.id} className="border-b border-border last:border-0">
+                <td className="px-4 py-3 font-mono text-xs">{o.order_number ?? o.id.slice(0, 8)}</td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {o.created_at ? new Date(o.created_at).toLocaleString() : "—"}
+                </td>
+                <td className="px-4 py-3">{formatGhs(Number(o.total_amount || 0))}</td>
+                <td className="px-4 py-3 align-top text-muted-foreground">
+                  <OrderCustomerBlock
+                    order={{
+                      guest_email: o.guest_email,
+                      guest_phone: o.guest_phone,
+                      notes: o.notes,
+                      shipping_address: o.shipping_address,
+                      billing_address: o.billing_address,
+                      customers: o.customers
+                    }}
+                  />
+                </td>
+                <td className="px-4 py-3">
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <AdminOrderDetailPanel order={o} />
+                      <form action={updateOrderStatusAction} className="flex flex-wrap items-center gap-2">
+                        <input type="hidden" name="id" value={o.id} />
+                        <select
+                          name="status"
+                          defaultValue={o.status}
+                          className="h-9 max-w-[11rem] rounded-xl border border-border bg-background px-2 text-xs"
+                        >
+                          {STATUSES.map((s) => (
+                            <option key={s} value={s}>
+                              {s}
+                            </option>
+                          ))}
+                        </select>
+                        <Button type="submit" size="sm" variant="outline">
+                          Update
+                        </Button>
+                      </form>
+                    </div>
+
+                    {Array.isArray(o.order_items) && o.order_items.length > 0 ? (
+                      <div className="space-y-2 rounded-xl border border-border bg-muted/20 p-2">
+                        {o.order_items.map((item) => (
+                          <OrderItemQtyForm
+                            key={item.id}
+                            orderId={o.id}
+                            itemId={item.id}
+                            productName={item.product_name ?? "Order item"}
+                            quantity={Number(item.quantity || 1)}
+                          />
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
     </div>
   );
 }

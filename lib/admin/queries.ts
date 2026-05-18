@@ -180,15 +180,16 @@ export async function getAdminHomeContentSections() {
   return (data?.sections || {}) as Record<string, unknown>;
 }
 
+const ADMIN_ORDER_SELECT =
+  "id,order_number,status,subtotal_amount,discount_amount,shipping_amount,total_amount,currency,created_at,placed_at,guest_email,guest_phone,notes,shipping_address,billing_address,customer_id,customers(email,full_name,phone),order_items(id,product_name,sku,quantity,unit_price,total_price),payments(id,provider,provider_ref,amount,status,paid_at,created_at),shipments(id,carrier,tracking_number,status,shipped_at,delivered_at,created_at)";
+
 export async function getAdminOrders() {
   const supabase = await getAdminDataClient();
   if (!supabase) return [];
 
   const { data } = await supabase
     .from("orders")
-    .select(
-      "id,order_number,status,subtotal_amount,discount_amount,shipping_amount,total_amount,currency,created_at,guest_email,guest_phone,notes,shipping_address,billing_address,customer_id,customers(email,full_name,phone),order_items(id,product_name,quantity,unit_price,total_price)"
-    )
+    .select(ADMIN_ORDER_SELECT)
     .order("created_at", { ascending: false })
     .limit(50);
   return data || [];
@@ -197,13 +198,7 @@ export async function getAdminOrders() {
 export async function getAdminOrderById(id: string) {
   const supabase = await getAdminDataClient();
   if (!supabase) return null;
-  const { data } = await supabase
-    .from("orders")
-    .select(
-      "id,order_number,status,subtotal_amount,discount_amount,shipping_amount,total_amount,currency,created_at,guest_email,guest_phone,notes,shipping_address,billing_address,customer_id,customers(email,full_name,phone),order_items(id,product_name,quantity,unit_price,total_price)"
-    )
-    .eq("id", id)
-    .maybeSingle();
+  const { data } = await supabase.from("orders").select(ADMIN_ORDER_SELECT).eq("id", id).maybeSingle();
   return data;
 }
 

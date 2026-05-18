@@ -34,6 +34,59 @@ export function getOrderPaidEmailHtml(input: OrderPaidEmailInput) {
   `;
 }
 
+type OrderUpdateEmailInput = {
+  to: string;
+  orderNumber: string;
+  status: string;
+  message: string;
+  totalAmount: number;
+  currency: string;
+};
+
+export function getOrderCustomerUpdateEmailHtml(input: OrderUpdateEmailInput) {
+  const safeMsg = escapeHtml(input.message);
+  const safeStatus = escapeHtml(input.status);
+  return `
+    <div style="font-family: Inter, Arial, sans-serif; background:#f4f1eb; color:#1f2430; padding:24px;">
+      <div style="max-width:560px; margin:0 auto; background:#ffffff; border-radius:18px; padding:24px; border:1px solid #e7deca;">
+        <h1 style="margin:0; font-family: 'Playfair Display', Georgia, serif; color:#b29146;">Luxxelounge</h1>
+        <p style="margin-top:12px;">Update for order <strong>${escapeHtml(input.orderNumber)}</strong></p>
+        <div style="margin-top:16px; padding:14px; border:1px solid #e7deca; border-radius:12px;">
+          <p style="margin:0;"><strong>Status:</strong> ${safeStatus}</p>
+          <p style="margin:8px 0 0 0; line-height:1.5;">${safeMsg}</p>
+        </div>
+        <p style="margin-top:14px; font-size:14px; color:#5c6478;">
+          Order total: ${escapeHtml(input.currency)} ${input.totalAmount.toLocaleString()}
+        </p>
+        <p style="margin-top:16px;">Thank you for shopping with us.</p>
+      </div>
+    </div>
+  `;
+}
+
+export async function sendOrderCustomerUpdateEmail(
+  input: OrderUpdateEmailInput
+): Promise<{ sent: boolean; message?: string }> {
+  if (!input.to) return { sent: false, message: "No customer email on this order." };
+  if (!resend) return { sent: false, message: "RESEND_API_KEY is not configured." };
+
+  const { error } = await resend.emails.send({
+    from: "Luxxelounge <orders@luxxelounge.com>",
+    to: input.to,
+    subject: `Order update — ${input.orderNumber}`,
+    html: getOrderCustomerUpdateEmailHtml(input)
+  });
+
+  if (error) {
+    const msg =
+      typeof error === "object" && error !== null && "message" in error
+        ? String((error as { message?: unknown }).message)
+        : String(error);
+    return { sent: false, message: msg };
+  }
+  return { sent: true };
+}
+
 export async function sendOrderPaidEmail(input: OrderPaidEmailInput) {
   if (!input.to || !resend) return;
   await resend.emails.send({
@@ -42,91 +95,6 @@ export async function sendOrderPaidEmail(input: OrderPaidEmailInput) {
     subject: `Payment received for order ${input.orderNumber}`,
     html: getOrderPaidEmailHtml(input)
   });
-}
-
-export type OrderUpdateEmailItem = {
-  name: string;
-  quantity: number;
-  lineTotal: number;
-};
-
-export type OrderUpdateEmailInput = {
-  to: string;
-  orderNumber: string;
-  status: string;
-  message: string;
-  currency: string;
-  totalAmount: number;
-  items?: OrderUpdateEmailItem[];
-};
-
-export function getOrderUpdateEmailHtml(input: OrderUpdateEmailInput) {
-  const safeStatus = escapeHtml(input.status);
-  const safeMessage = escapeHtml(input.message).replace(/\n/g, "<br />");
-  const safeOrder = escapeHtml(input.orderNumber);
-  const itemsHtml =
-    input.items && input.items.length > 0
-      ? `
-        <table style="width:100%; margin-top:14px; border-collapse:collapse; font-size:14px;">
-          <thead>
-            <tr>
-              <th style="text-align:left; padding:8px 0; border-bottom:1px solid #e7deca;">Item</th>
-              <th style="text-align:right; padding:8px 0; border-bottom:1px solid #e7deca;">Qty</th>
-              <th style="text-align:right; padding:8px 0; border-bottom:1px solid #e7deca;">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${input.items
-              .map(
-                (item) => `
-              <tr>
-                <td style="padding:8px 0; border-bottom:1px solid #f0ebe0;">${escapeHtml(item.name)}</td>
-                <td style="padding:8px 0; border-bottom:1px solid #f0ebe0; text-align:right;">${item.quantity}</td>
-                <td style="padding:8px 0; border-bottom:1px solid #f0ebe0; text-align:right;">${input.currency} ${item.lineTotal.toLocaleString()}</td>
-              </tr>`
-              )
-              .join("")}
-          </tbody>
-        </table>`
-      : "";
-
-  return `
-    <div style="font-family: Inter, Arial, sans-serif; background:#f4f1eb; color:#1f2430; padding:24px;">
-      <div style="max-width:560px; margin:0 auto; background:#ffffff; border-radius:18px; padding:24px; border:1px solid #e7deca;">
-        <h1 style="margin:0; font-family: 'Playfair Display', Georgia, serif; color:#b29146;">Luxxelounge</h1>
-        <p style="margin-top:12px;">Order update for <strong>${safeOrder}</strong></p>
-        <p style="margin-top:8px;"><strong>Status:</strong> ${safeStatus}</p>
-        <p style="margin-top:14px; line-height:1.55;">${safeMessage}</p>
-        ${itemsHtml}
-        <p style="margin-top:16px;"><strong>Order total:</strong> ${escapeHtml(input.currency)} ${input.totalAmount.toLocaleString()}</p>
-        <p style="margin-top:18px; font-size:13px; color:#5c6478;">Questions? Reply to this email and our team will help.</p>
-      </div>
-    </div>
-  `;
-}
-
-export async function sendOrderUpdateEmail(
-  input: OrderUpdateEmailInput
-): Promise<{ ok: true } | { ok: false; message: string }> {
-  if (!input.to) return { ok: false, message: "No customer email on this order." };
-  if (!resend) return { ok: false, message: "RESEND_API_KEY is not configured." };
-
-  const { error } = await resend.emails.send({
-    from: "Luxxelounge <orders@luxxelounge.com>",
-    to: input.to,
-    subject: `Order ${input.orderNumber} — ${input.status}`,
-    html: getOrderUpdateEmailHtml(input)
-  });
-
-  if (error) {
-    const msg =
-      typeof error === "object" && error !== null && "message" in error
-        ? String((error as { message?: unknown }).message)
-        : String(error);
-    return { ok: false, message: msg };
-  }
-
-  return { ok: true };
 }
 
 function getNewsletterWelcomeHtml() {
