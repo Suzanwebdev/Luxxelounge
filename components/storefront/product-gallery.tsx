@@ -14,8 +14,15 @@ export function ProductGallery({ name, images }: { name: string; images: string[
 
   return (
     <div className="space-y-3">
-      <div className="relative aspect-[4/3] overflow-hidden rounded-3xl">
-        <Image src={activeImage} alt={name} fill className="object-contain" />
+      <div className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-muted/30">
+        <Image
+          src={activeImage}
+          alt={name}
+          fill
+          priority
+          sizes="(max-width: 1024px) 100vw, 50vw"
+          className="object-contain"
+        />
       </div>
       <div className="grid grid-cols-4 gap-2">
         {gallery.slice(0, 8).map((imageUrl, i) => {
@@ -31,7 +38,14 @@ export function ProductGallery({ name, images }: { name: string; images: string[
               aria-label={`Preview image ${i + 1}`}
               aria-pressed={active}
             >
-              <Image src={imageUrl} alt={`${name} preview ${i + 1}`} fill className="object-contain" />
+              <Image
+                src={imageUrl}
+                alt={`${name} — view ${i + 1}`}
+                fill
+                loading="lazy"
+                sizes="80px"
+                className="object-contain"
+              />
             </button>
           );
         })}

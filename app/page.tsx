@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { SEO_DEFAULT_DESCRIPTION, SEO_DEFAULT_TITLE } from "@/lib/seo/constants";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 import { ProductCard, PromoBanner, TrendingProductCard } from "@/components/storefront/cards";
 import { NewsletterSignup } from "@/components/storefront/newsletter-signup";
 import { CategoryOrbitCarousel } from "@/components/storefront/category-orbit-carousel";
@@ -13,6 +16,14 @@ type HomePageProps = {
 };
 
 export const dynamic = "force-dynamic";
+
+export function generateMetadata(): Metadata {
+  return buildPageMetadata({
+    title: SEO_DEFAULT_TITLE,
+    description: SEO_DEFAULT_DESCRIPTION,
+    path: "/"
+  });
+}
 
 const HERO_SLIDES: HeroSlide[] = [
   { src: "/brand/hero-banner.png", alt: "Luxxelounge curated living room interior" },

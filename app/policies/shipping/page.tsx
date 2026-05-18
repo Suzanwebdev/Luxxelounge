@@ -1,4 +1,14 @@
+import type { Metadata } from "next";
 import { Container, Section } from "@/components/storefront/primitives";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+
+export function generateMetadata(): Metadata {
+  return buildPageMetadata({
+    title: "Shipping Policy",
+    description: "Delivery timelines, shipping regions, and fulfillment information for Luxxelounge luxury furniture orders.",
+    path: "/policies/shipping"
+  });
+}
 
 export default function ShippingPolicyPage() {
   return (

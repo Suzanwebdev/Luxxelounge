@@ -1,5 +1,9 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ProductCard } from "@/components/storefront/cards";
+import { JsonLd } from "@/components/seo/json-ld";
+import { itemListSchema } from "@/lib/seo/json-ld";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 import { Container, Heading, Section } from "@/components/storefront/primitives";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +21,41 @@ type ShopPageProps = {
   }>;
 };
 
+export async function generateMetadata({ searchParams }: ShopPageProps): Promise<Metadata> {
+  const params = searchParams ? await searchParams : undefined;
+  const q = (params?.q || "").trim();
+  const category = (params?.category || "").trim();
+  const hasFilters = Boolean(q || category);
+
+  if (q) {
+    return buildPageMetadata({
+      title: `Search: ${q}`,
+      description: `Results for "${q}" — luxury furniture and modern home decor at Luxxelounge.`,
+      path: "/shop",
+      noIndex: true,
+      canonicalPath: "/shop"
+    });
+  }
+
+  if (category) {
+    return buildPageMetadata({
+      title: `${category} | Shop`,
+      description: `Browse ${category} — premium luxury furniture and elegant home decor at Luxxelounge.`,
+      path: "/shop",
+      noIndex: true,
+      canonicalPath: "/shop"
+    });
+  }
+
+  return buildPageMetadata({
+    title: "Shop Luxury Furniture & Decor",
+    description:
+      "Explore our full catalog of luxury furniture, modern home decor, statement pieces, and premium accessories for elegant interiors.",
+    path: "/shop",
+    noIndex: hasFilters
+  });
+}
+
 export default async function ShopPage({ searchParams }: ShopPageProps) {
   const params = await searchParams;
   const products = await getShopProducts();
@@ -25,11 +64,14 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   const sort = (params?.sort || "best-sellers").trim();
 
   const filtered = filterShopProducts(products, { q, category, sort });
+  const listForSchema = filtered.length > 0 ? filtered : products;
 
   return (
     <Section>
+      <JsonLd data={itemListSchema("Luxxelounge Shop", "/shop", listForSchema)} />
       <Container>
         <Heading
+          as="h1"
           eyebrow="Shop"
           title="All Products"
           description="Browse premium furniture and decor with elegant filtering and sorting controls."

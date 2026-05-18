@@ -1,12 +1,45 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductCard } from "@/components/storefront/cards";
 import { ProductGallery } from "@/components/storefront/product-gallery";
 import { ProductVideoGallery } from "@/components/storefront/product-video-gallery";
 import { ProductPurchaseActions } from "@/components/storefront/product-purchase-actions";
+import { JsonLd } from "@/components/seo/json-ld";
 import { BadgeSet, Container, Heading, Price, Section } from "@/components/storefront/primitives";
+import { breadcrumbSchema, productSchema } from "@/lib/seo/json-ld";
+import { buildPageMetadata, productPageTitle } from "@/lib/seo/metadata";
 import { getProductBySlug, getShopProducts } from "@/lib/storefront/queries";
 
-export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+type ProductPageProps = {
+  params: Promise<{ slug: string }>;
+};
+
+export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const product = await getProductBySlug(slug);
+  if (!product) {
+    return buildPageMetadata({
+      title: productPageTitle("Product"),
+      description: "Browse luxury furniture and decor at Luxxelounge.",
+      path: `/product/${slug}`,
+      noIndex: true
+    });
+  }
+
+  const description =
+    product.description?.trim() ||
+    `Shop ${product.name} — premium ${product.category.toLowerCase()} from Luxxelounge. Elegant interiors, modern luxury furniture and decor.`;
+
+  return buildPageMetadata({
+    title: productPageTitle(product.name),
+    description,
+    path: `/product/${product.slug}`,
+    image: product.image,
+    keywords: [product.name, product.category, "luxury furniture", "modern home decor", "Luxxelounge"]
+  });
+}
+
+export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
   const [product, shopProducts] = await Promise.all([getProductBySlug(slug), getShopProducts()]);
   if (!product) notFound();
@@ -20,13 +53,20 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     })
     .slice(0, 4);
 
+  const breadcrumbs = breadcrumbSchema([
+    { name: "Home", path: "/" },
+    { name: "Shop", path: "/shop" },
+    { name: product.name, path: `/product/${product.slug}` }
+  ]);
+
   return (
     <>
+      <JsonLd data={[productSchema(product), breadcrumbs]} />
       <Section>
         <Container className="grid gap-8 lg:grid-cols-2">
           <ProductGallery name={product.name} images={gallery} />
           <div className="space-y-5">
-            <Heading eyebrow={product.category} title={product.name} description={product.description} />
+            <Heading as="h1" eyebrow={product.category} title={product.name} description={product.description} />
             <BadgeSet tags={product.tags} />
             <Price price={product.price} compareAt={product.compareAt} />
             <div className="rounded-2xl border border-border p-4 text-sm">

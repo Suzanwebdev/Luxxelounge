@@ -1,5 +1,16 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Container, Heading, Section } from "@/components/storefront/primitives";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+
+export function generateMetadata(): Metadata {
+  return buildPageMetadata({
+    title: "Luxury Furniture Collections",
+    description:
+      "Browse curated luxury furniture and decor collections — best sellers, new arrivals, living room edits, and premium home styling at Luxxelounge.",
+    path: "/collections"
+  });
+}
 
 const collections = ["Home Furniture", "Best Sellers", "New Arrivals", "Living Room"];
 
@@ -7,7 +18,7 @@ export default function CollectionsPage() {
   return (
     <Section>
       <Container>
-        <Heading title="Collections" description="Browse curated edits crafted for premium interiors." />
+        <Heading as="h1" title="Collections" description="Browse curated edits crafted for premium interiors." />
         <div className="grid gap-4 md:grid-cols-2">
           {collections.map((collection) => {
             const slug = collection.toLowerCase().replaceAll(" ", "-");

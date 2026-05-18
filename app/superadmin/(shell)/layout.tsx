@@ -1,5 +1,9 @@
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { requireSuperadminAccess } from "@/lib/superadmin/auth";
+import { NOINDEX_METADATA } from "@/lib/seo/metadata";
+
+export const metadata: Metadata = NOINDEX_METADATA;
 import { SuperadminSidebar } from "@/components/superadmin/sidebar";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 

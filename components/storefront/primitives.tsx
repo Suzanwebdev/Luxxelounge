@@ -26,16 +26,19 @@ export function Section({
 export function Heading({
   eyebrow,
   title,
-  description
+  description,
+  as = "h2"
 }: {
   eyebrow?: string;
   title: string;
   description?: string;
+  as?: "h1" | "h2";
 }) {
+  const TitleTag = as;
   return (
     <div className="mb-8 space-y-2">
       {eyebrow ? <p className="text-sm uppercase tracking-[0.18em] text-muted-foreground">{eyebrow}</p> : null}
-      <h2 className="font-heading text-3xl md:text-4xl leading-tight">{title}</h2>
+      <TitleTag className="font-heading text-3xl md:text-4xl leading-tight">{title}</TitleTag>
       {description ? <p className="max-w-2xl text-muted-foreground">{description}</p> : null}
     </div>
   );

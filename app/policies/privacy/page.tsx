@@ -1,4 +1,14 @@
+import type { Metadata } from "next";
 import { Container, Section } from "@/components/storefront/primitives";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+
+export function generateMetadata(): Metadata {
+  return buildPageMetadata({
+    title: "Privacy Policy",
+    description: "How Luxxelounge collects, uses, and protects your personal information when you shop luxury furniture and decor online.",
+    path: "/policies/privacy"
+  });
+}
 
 export default function PrivacyPolicyPage() {
   return (

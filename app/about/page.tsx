@@ -1,5 +1,17 @@
+import type { Metadata } from "next";
 import { Container, Heading, Section } from "@/components/storefront/primitives";
 import { getPublishedCmsPage } from "@/lib/storefront/cms";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const cms = await getPublishedCmsPage<Record<string, unknown>>("about", {});
+  const title = String(cms.title || "About Luxxelounge");
+  const description = String(
+    cms.description ||
+      "Discover Luxxelounge — a premium luxury home furniture and decor brand crafting elegant interiors and timeless modern living spaces."
+  );
+  return buildPageMetadata({ title, description, path: "/about" });
+}
 
 export default async function AboutPage() {
   const cms = await getPublishedCmsPage<Record<string, unknown>>("about", {});
@@ -12,7 +24,7 @@ export default async function AboutPage() {
   return (
     <Section>
       <Container className="max-w-4xl">
-        <Heading title={title} description={description} />
+        <Heading as="h1" title={title} description={description} />
         <p className="text-muted-foreground">{body}</p>
       </Container>
     </Section>

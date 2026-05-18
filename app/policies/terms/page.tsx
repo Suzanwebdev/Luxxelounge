@@ -1,4 +1,14 @@
+import type { Metadata } from "next";
 import { Container, Section } from "@/components/storefront/primitives";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+
+export function generateMetadata(): Metadata {
+  return buildPageMetadata({
+    title: "Terms & Conditions",
+    description: "Terms of use and purchase policies for shopping luxury furniture and home decor at Luxxelounge.",
+    path: "/policies/terms"
+  });
+}
 
 export default function TermsPage() {
   return (
