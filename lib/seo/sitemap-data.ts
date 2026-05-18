@@ -8,6 +8,12 @@ export type SitemapEntry = {
   priority?: number;
 };
 
+function safeDate(value: unknown): Date | undefined {
+  if (!value) return undefined;
+  const date = new Date(String(value));
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
 const STATIC_ROUTES: SitemapEntry[] = [
   { path: "/", changeFrequency: "daily", priority: 1 },
   { path: "/shop", changeFrequency: "daily", priority: 0.9 },
@@ -32,11 +38,15 @@ export async function getSitemapEntries(): Promise<SitemapEntry[]> {
     return entries;
   }
 
-  const [{ data: products }, { data: collections }, { data: posts }] = await Promise.all([
+  const [productsResult, collectionsResult, postsResult] = await Promise.all([
     supabase.from("products").select("slug,updated_at").eq("status", "active"),
     supabase.from("collections").select("slug,updated_at"),
     supabase.from("blog_posts").select("slug,updated_at").eq("is_published", true)
   ]);
+
+  const products = productsResult.data;
+  const collections = collectionsResult.data;
+  const posts = postsResult.data;
 
   for (const row of products || []) {
     const slug = String(row.slug || "").trim();
@@ -44,7 +54,7 @@ export async function getSitemapEntries(): Promise<SitemapEntry[]> {
     slugSet.add(slug);
     entries.push({
       path: `/product/${slug}`,
-      lastModified: row.updated_at ? new Date(row.updated_at) : undefined,
+      lastModified: safeDate(row.updated_at),
       changeFrequency: "weekly",
       priority: 0.8
     });
@@ -59,7 +69,7 @@ export async function getSitemapEntries(): Promise<SitemapEntry[]> {
     const row = collections?.find((c) => c.slug === slug);
     entries.push({
       path: `/collections/${slug}`,
-      lastModified: row?.updated_at ? new Date(row.updated_at) : undefined,
+      lastModified: safeDate(row?.updated_at),
       changeFrequency: "weekly",
       priority: 0.75
     });
@@ -70,7 +80,7 @@ export async function getSitemapEntries(): Promise<SitemapEntry[]> {
     if (!slug) continue;
     entries.push({
       path: `/blog/${slug}`,
-      lastModified: row.updated_at ? new Date(row.updated_at) : undefined,
+      lastModified: safeDate(row.updated_at),
       changeFrequency: "monthly",
       priority: 0.55
     });
