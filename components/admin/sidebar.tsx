@@ -81,7 +81,7 @@ export function AdminSidebar({ showSuperadminLink = false, identity }: AdminSide
   const pathname = usePathname();
   const primary = identity.displayName?.trim() || identity.email;
   return (
-    <aside className="w-full rounded-3xl border border-border bg-card p-3 md:w-72">
+    <aside data-admin-sidebar className="w-full rounded-3xl border border-border bg-card p-3 md:w-72">
       <p className="px-3 pb-3 pt-2 font-heading text-2xl text-primary">Admin</p>
       <nav className="space-y-1">
         {showSuperadminLink ? (

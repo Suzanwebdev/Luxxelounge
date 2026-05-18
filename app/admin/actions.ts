@@ -8,6 +8,8 @@ import { requireAdminAccess } from "@/lib/admin/auth";
 import { STOREFRONT_CATEGORY_NAMES } from "@/lib/storefront/categories";
 import type { HomeContentSections } from "@/lib/storefront/queries";
 import { toSlug } from "@/lib/slug";
+import { orderDisplayNumber, resolveOrderCustomerEmail, statusLabel } from "@/lib/admin/admin-order";
+import { sendOrderUpdateEmail } from "@/lib/email/resend";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -540,6 +542,73 @@ export async function updateOrderStatusAction(formData: FormData) {
   const { error } = await supabase.from("orders").update({ status }).eq("id", id);
   if (error) return;
   revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${id}/invoice`);
+}
+
+export type SendOrderUpdateActionState = { ok: boolean; message: string } | null;
+
+export async function sendOrderCustomerUpdateAction(
+  _prev: SendOrderUpdateActionState,
+  formData: FormData
+): Promise<SendOrderUpdateActionState> {
+  await requireAdminAccess();
+  const supabase = await getAdminDataClient();
+  if (!supabase) return { ok: false, message: "Database client unavailable." };
+
+  const orderId = String(formData.get("orderId") || "").trim();
+  const message = String(formData.get("message") || "").trim();
+  const includeSummary = formData.get("includeSummary") === "on";
+
+  if (!orderId) return { ok: false, message: "Missing order id." };
+  if (!message) return { ok: false, message: "Write a message for the customer." };
+
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select(
+      "order_number,status,total_amount,currency,guest_email,guest_phone,notes,shipping_address,billing_address,customers(email,full_name,phone),order_items(product_name,quantity,total_price)"
+    )
+    .eq("id", orderId)
+    .maybeSingle();
+
+  if (error) return { ok: false, message: error.message };
+  if (!order) return { ok: false, message: "Order not found." };
+
+  const to = resolveOrderCustomerEmail({
+    guest_email: order.guest_email,
+    guest_phone: order.guest_phone,
+    notes: order.notes,
+    shipping_address: order.shipping_address,
+    billing_address: order.billing_address,
+    customers: order.customers
+  });
+
+  if (!to) {
+    return { ok: false, message: "This order has no customer email. Add guest email on the order first." };
+  }
+
+  const orderNumber = orderDisplayNumber({ id: orderId, order_number: order.order_number });
+  const items =
+    includeSummary && Array.isArray(order.order_items)
+      ? order.order_items.map((row) => ({
+          name: String(row.product_name || "Item"),
+          quantity: Number(row.quantity || 1),
+          lineTotal: Number(row.total_price || 0)
+        }))
+      : undefined;
+
+  const result = await sendOrderUpdateEmail({
+    to,
+    orderNumber,
+    status: statusLabel(String(order.status || "pending")),
+    message,
+    currency: String(order.currency || "GHS"),
+    totalAmount: Number(order.total_amount || 0),
+    items
+  });
+
+  if (!result.ok) return { ok: false, message: result.message };
+  revalidatePath("/admin/orders");
+  return { ok: true, message: `Update emailed to ${to}.` };
 }
 
 export type OrderItemQuantityActionState = { ok: boolean; message: string } | null;
